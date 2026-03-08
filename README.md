@@ -2,7 +2,9 @@
 Project on CITS5505 Agile Web 
 
 ## Introduction
-This is a Flask-API web application for 5505 subject, with the following members
+This is a Flask-API web application for 5505 subject, with the following members ->
+
+The application will be built using Python Flask for the backend and JavaScript for the frontend.
 
 ## Group Member
 | StudentId | Student Name | Github Account |
