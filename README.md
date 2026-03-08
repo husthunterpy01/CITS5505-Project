@@ -9,7 +9,7 @@ This is a Flask-API web application for 5505 subject, with the following members
 |-----------|--------------|---------------|
 | 24715379  | Martin Dang  | husthunterpy01 |
 | 25054008  | Adarsh Sharma   | aspoudel   |
-| 21941306  | Dan Collier  |      |
+| 21941306  | Dan Collier  | nathanielcollenstein-cmd |
 | 24819852 |Roshan Shanker | |
 
 ## Application launching
