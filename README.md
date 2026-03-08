@@ -1,5 +1,5 @@
 # CITS5505-Project
-Project on CITS5505 Agile Web 
+Project for CITS5505 Agile Web Development (SEM-1-2026)
 
 ## Introduction
 This is a Flask-API web application for 5505 subject, with the following members
