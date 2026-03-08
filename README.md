@@ -12,7 +12,7 @@ The application will be built using Python Flask for the backend and JavaScript 
 | 24715379  | Martin Dang  | husthunterpy01 |
 | 25054008  | Adarsh Sharma   | aspoudel   |
 | 21941306  | Dan Collier  | nathanielcollenstein-cmd |
-| 24819852 |Roshan Shanker | |
+| 24819852 |Roshan Shanker | roshss2508 |
 
 ## Application launching
 
