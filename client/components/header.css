@@ -1,0 +1,17 @@
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.site-header {
+    background-color: #1976D2;
+    color: white;
+}
