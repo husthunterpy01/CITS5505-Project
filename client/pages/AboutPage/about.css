@@ -1,76 +1,153 @@
-/* Layout for the About page content */
+/* 1. LOAD THE GOOGLE FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Fraunces:ital,wght@0,700;1,700&display=swap');
+
+/* 2. DEFINE THE COLOR VARIABLES */
+:root {
+  --bg:         #F0EEF8;
+  --primary:    #3D3A9E;
+  --mid:        #7B78D4;
+  --action:     #9C6A00;
+  --accent:     #E8A020;
+  --accent-lt:  #FDE8B0;
+  --white:      #FFFFFF;
+  --ink:        #1C1A3A;
+  --ink-mid:    #4A4870;
+  --ink-light:  #9896B8;
+  --card-bg:    #FAFAFF;
+  --border:     rgba(61,58,158,0.1);
+  --radius:     14px;
+  --radius-lg:  22px;
+  --sans:       'Nunito', sans-serif;
+  --serif:      'Fraunces', Georgia, serif;
+}
+
+/* 3. ABOUT PAGE STYLES */
 .about-container {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding-top: 100px; 
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: 8rem 2rem 5rem;
     text-align: center;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
+    animation: fadeIn .6s ease both;
 }
 
-/* Header/Nav styling for consistency */
-.nav-links {
-    display: flex;
-    list-style: none;
-    gap: 20px;
+.hero-section .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(61, 58, 158, 0.1);
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 1.25rem;
+    font-family: var(--sans);
 }
 
-.nav-links a {
-    color: white;
-    text-decoration: none;
-}
-
-/* Hero Section using the Header Blue (#1976D2) */
-.hero-section {
-    text-align: center;
-    margin-bottom: 50px;
+.hero-section .kicker-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--primary);
+    border-radius: 50%;
 }
 
 .hero-section h1 {
-    font-size: 2.8rem;
-    color: #1976D2; 
-    margin-bottom: 10px;
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+}
+
+.hero-section .underline {
+    color: var(--primary);
+    position: relative;
+    display: inline-block;
+}
+
+.hero-section .underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.hero-section .tag {
+    background: var(--accent);
+    color: var(--ink);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-style: normal;
+    display: inline-block;
+    transform: rotate(-1.5deg);
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .subtitle {
-    font-size: 1.25rem;
-    color: #666;
+    font-family: var(--sans);
+    font-size: 18px;
+    color: var(--ink-mid);
+    max-width: 600px;
+    margin: 0 auto 4rem;
+    line-height: 1.6;
 }
 
-/* Grid for Marketplace features */
+/* Mission Cards */
 .mission-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
+    gap: 2rem;
 }
 
 .mission-card {
-    background: #ffffff;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-    /* Adding the Footer Dark Purple (#12082A) for a premium feel */
-    border-top: 5px solid #12082A;
-    transition: transform 0.3s ease;
+    background: var(--card-bg);
+    padding: 2.5rem 2rem;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border);
+    transition: transform .3s ease, box-shadow .3s ease;
+    text-align: center;
 }
 
 .mission-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(61, 58, 158, 0.1);
 }
 
 .mission-card h3 {
-    color: #1976D2;
-    margin-top: 0;
+    font-family: var(--serif);
+    color: var(--ink);
+    margin-bottom: 1rem;
     font-size: 1.5rem;
 }
 
-/* Footer spacing */
-#page-footer {
-    padding: 40px 0;
-    margin-top: 60px;
+.mission-card p {
+    font-family: var(--sans);
+    color: var(--ink-mid);
+    font-size: 15px;
+    line-height: 1.5;
 }
 
+.mission-card .p-card-img {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1.5rem;
+    border-radius: 12px;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Backgrounds for Emojis */
+.bg-lav { background: #EDEAFF; }
+.bg-gold { background: #FFF3D0; }
+.bg-mint { background: #E0FAF5; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
