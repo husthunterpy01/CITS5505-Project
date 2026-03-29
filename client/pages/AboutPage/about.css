@@ -1,7 +1,7 @@
-/* 1. LOAD THE GOOGLE FONTS */
+
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Fraunces:ital,wght@0,700;1,700&display=swap');
 
-/* 2. DEFINE THE COLOR VARIABLES */
+
 :root {
   --bg:         #F0EEF8;
   --primary:    #3D3A9E;
@@ -21,7 +21,7 @@
   --serif:      'Fraunces', Georgia, serif;
 }
 
-/* 3. ABOUT PAGE STYLES */
+
 .about-container {
     max-width: 1100px;
     margin: 0 auto;
@@ -96,7 +96,7 @@
     line-height: 1.6;
 }
 
-/* Mission Cards */
+
 .mission-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -142,7 +142,7 @@
     justify-content: center;
 }
 
-/* Backgrounds for Emojis */
+
 .bg-lav { background: #EDEAFF; }
 .bg-gold { background: #FFF3D0; }
 .bg-mint { background: #E0FAF5; }
