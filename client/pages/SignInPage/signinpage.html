@@ -1,5 +1,29 @@
-<section>
-    <h1 class="text-3xl font bold">
-        This is the Sign In Page
-    </h1>
-</section>
+<div class="flex flex-1 h-full w-full items-center justify-center">
+  <div class="flex h-full w-[55%] flex-col items-center justify-center px-16 lg:px-24">
+    <a href="#home" class="inline-block transition-opacity hover:opacity-80">
+      <img alt="Swanflip Logo" class="mb-8 h-20 w-auto cursor-pointer" src="/client/assets/logo/swanflip_logo.png">
+    </a>
+    <p class="max-w-md text-sm leading-relaxed text-gray-800">Sign in to access listings, connect with other students,
+      and continue buying or selling within a trusted campus
+      network. Whether you're looking for affordable essentials or listing something of your own, everything here is
+      tailored for UWA students.</p>
+  </div>
+  <div class="h-[70vh] w-px bg-gray-400"></div>
+  <div class="flex h-full w-[45%] flex-col justify-center px-16 lg:px-24">
+    <h1 class="mb-10 text-5xl font-semibold text-black">Sign In</h1>
+    <div class="flex flex-col space-y-6">
+      <input type="email" placeholder="Enter your email"
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+      <input type="password" placeholder="Enter your password"
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+      <p class="text-sm text-black">
+        Don't have an account?
+        <a href="#signup" class="text-blue-800 underline">Sign up</a>
+        instead.
+      </p>
+      <button
+        class="w-fit rounded-lg bg-[#3D3A9E] px-10 py-3 font-medium text-white transition-all hover:bg-blue-900 hover:scale-105 transform">Sign
+        in</button>
+    </div>
+  </div>
+</div>

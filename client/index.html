@@ -1,19 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SwanFlip</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+
+    <!-- Loading Tailwind.css -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+
+
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="pages/WelcomePage/welcomepage.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
 </head>
-<body class="min-h-screen flex flex-col">
-    <div id="header"></div>
-    <main id="main-content" class="flex-1 p-6"></main>
+
+<body class="h-screen flex flex-col font-sans">
+    <div id="header">
+    </div>
+    <main id="main-content" class="flex flex-1 flex-col overflow-y-auto"></main>
     <div id="footer"></div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
     <script src="index.js"></script>
+
 </body>
+
 </html>
