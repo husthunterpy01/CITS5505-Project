@@ -4,7 +4,7 @@ This is the project followed by the subject CITS5505 Agile Web Development (SEM-
 ## Introduction
 **SwanFlip** is dedicated peer-to-peer marketplace platform designed for the University of Western Australia students. 
 
-Being a student is expensive, and campus life moves fast. uswap provides a secure, localized platform where UWA students can buy, sell, or trade textbooks, lab gear, electronics, and furniture. By keeping trade within the Crawley and Albany campuses, we aim to reduce the financial burden on students while promoting a circular economy that keeps usable items out of landfills.
+Being a student is expensive, and campus life moves fast. SwanFlip provides a secure, localized platform where UWA students can buy, sell, or trade textbooks, lab gear, electronics, and furniture. By keeping trade within the Crawley and Albany campuses, we aim to reduce the financial burden on students while promoting a circular economy that keeps usable items out of landfills.
 
 The application will be built using Python Flask for the backend and JavaScript, HTML and CSS for the frontend.
 
