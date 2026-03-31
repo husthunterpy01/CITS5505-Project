@@ -1,5 +1,35 @@
-<section>
-    <h1 class="text-3xl font bold">
-        This is the SignUpPage
-    </h1>
-</section>
+<div class="flex flex-1 h-full w-full items-center justify-center">
+    <div class="flex h-full w-[55%] flex-col items-center justify-center px-16 lg:px-24">
+        <a href="#home" class="inline-block transition-opacity hover:opacity-80">
+            <img alt="Swanflip Logo" class="mb-8 h-20 w-auto cursor-pointer"
+                src="/client/assets/logo/swanflip_logo.png">
+        </a>
+        <p class="max-w-md text-lg text-justify leading-relaxed text-gray-800">Join SwanFlip and become part of a
+            secure,
+            student-only marketplace designed for the University of Western Australia community. Create your account to
+            buy, sell, and connect with fellow students in a safe and familiar environment. From textbooks and
+            electronics to everyday essentials, SwanFlip makes it simple to exchange value within your campus.</p>
+    </div>
+    <div class="h-[70vh] w-px bg-gray-400"></div>
+    <div class="flex h-full w-[45%] flex-col justify-center px-16 lg:px-24">
+        <h1 class="mb-10 text-5xl font-semibold text-black">Sign Up</h1>
+        <div class="flex flex-col space-y-6">
+            <input placeholder="Enter your first name"
+                class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+            <input placeholder="Enter your last name"
+                class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+            <input type="email" placeholder="Enter your email"
+                class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+            <input type="password" placeholder="Enter your password"
+                class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
+            <p class="text-sm text-black">
+                Already have an account?
+                <a href="#signin" class="text-blue-800 underline">Sign in</a>
+                instead.
+            </p>
+            <button
+                class="w-fit rounded-lg bg-[#3D3A9E] px-10 py-3 font-medium text-white transition-all hover:bg-blue-900 hover:scale-105 transform">Sign
+                up</button>
+        </div>
+    </div>
+</div>
