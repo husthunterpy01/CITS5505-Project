@@ -9,17 +9,16 @@ function loadComponent(id, file) {
 }
 
 const routes = {
-"#home": "./pages/WelcomePage/welcomepage.html",
-"#signin": "./pages/SignInPage/signinpage.html",
-"#about": "./pages/AboutPage/about.html",
-"#signup": "./pages/SignUpPage/signuppage.html"
+  "#home": "./pages/WelcomePage/welcomepage.html",
+  "#signin": "./pages/SignInPage/signinpage.html",
+  "#about": "./pages/AboutPage/about.html",
+  "#signup": "./pages/SignUpPage/signuppage.html",
 };
 
-function toggleLayoutByHash(hash){
-    const isAuth = hash === "#signin" || hash === "#signup";
-    // Show header and footer only on non-auth pages
-    $("#header").toggle(!isAuth);
-    $("#footer").toggle(!isAuth);
+function toggleLayoutByHash(hash) {
+  const isAuth = hash === "#signin" || hash === "#signup";
+  // Show header only on non-auth pages
+  $("#header").toggle(!isAuth);
 }
 
 function renderByHash() {
