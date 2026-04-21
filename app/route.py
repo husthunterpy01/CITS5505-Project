@@ -23,6 +23,3 @@ def signup_page():
     return render_template('signuppage.html')
 
 
-@main.route('/api/health')
-def health_check():
-    return jsonify({'message': 'Flask + SQLite connected!'})
