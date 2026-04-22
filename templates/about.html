@@ -1,6 +1,4 @@
-<link rel="stylesheet" href="./pages/AboutPage/about.css">
-
-<main class="about-container">
+<div class="about-container">
     <section class="hero-section">
         <div class="hero-kicker">
             <span class="kicker-dot"></span>
@@ -8,9 +6,9 @@
         </div>
 
         <div class="hero-logo">
-            <img src="./assets/logo/uwa_logo.webp" alt="UWA Logo" class="logo-img">
+            <img src="{{ url_for('static', filename='assets/logo/uwa_logo.webp') }}" alt="UWA Logo" class="logo-img">
             <span class="logo-cross">×</span>
-            <img src="./assets/logo/swanflip_logo.png" alt="SwanFlip Logo" class="logo-img">
+            <img src="{{ url_for('static', filename='assets/logo/swanflip_logo.png') }}" alt="SwanFlip Logo" class="logo-img">
         </div>
 
         <h1>Your Campus. <span class="underline">Your</span> <span class="tag">Marketplace.</span></h1>
@@ -68,4 +66,4 @@
         </div>
     </div>
 </section>  
-</main>
+</div>

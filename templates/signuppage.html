@@ -1,8 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - SwanFlip{% endblock %}
+
+{% block content %}
 <div class="flex flex-1 h-full w-full items-center justify-center">
     <div class="flex h-full w-[55%] flex-col items-center justify-center px-16 lg:px-24">
-        <a href="#home" class="inline-block transition-opacity hover:opacity-80">
+        <a href="{{ url_for('main.home_page') }}" class="inline-block transition-opacity hover:opacity-80">
             <img alt="Swanflip Logo" class="mb-8 h-20 w-auto cursor-pointer"
-                src="/client/assets/logo/swanflip_logo.png">
+                src="{{ url_for('static', filename='assets/logo/swanflip_logo.png') }}">
         </a>
         <p class="max-w-md text-lg text-justify leading-relaxed text-gray-800">Join SwanFlip and become part of a
             secure,
@@ -24,7 +29,7 @@
                 class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800" />
             <p class="text-sm text-black">
                 Already have an account?
-                <a href="#signin" class="text-blue-800 underline">Sign in</a>
+                <a href="{{ url_for('main.signin_page') }}" class="text-blue-800 underline">Sign in</a>
                 instead.
             </p>
             <button
@@ -33,3 +38,4 @@
         </div>
     </div>
 </div>
+{% endblock %}

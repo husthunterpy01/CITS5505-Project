@@ -4,9 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwanFlip</title>
+    <title>{% block title %}SwanFlip{% endblock %}</title>
 
-    <!-- Loading Tailwind.css -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,8 +19,11 @@
         }
     </script>
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/footer.css') }}">
+    {% block page_css %}{% endblock %}
 
-    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -30,16 +32,15 @@
 </head>
 
 <body class="h-screen flex flex-col font-sans">
-    <div id="header">
-    </div>
-    <main id="main-content" class="flex flex-1 flex-col overflow-y-auto"></main>
-    <div id="footer"></div>
+    {% if show_header|default(True) %}
+    {% include 'header.html' %}
+    {% endif %}
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <main class="flex flex-1 flex-col overflow-y-auto">
+        {% block content %}{% endblock %}
+    </main>
 
-
-    <script src="index.js"></script>
-
+    {% include 'footer.html' %}
 </body>
 
 </html>
