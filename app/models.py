@@ -8,16 +8,14 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='normal')  # 'normal' | 'admin'
+    password = db.Column(db.String(255), nullable=False)
+    role         = db.Column(db.String(20), nullable=False, default='normal') 
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    # One user (seller) → many products
     products          = db.relationship('Product', backref='seller', lazy=True,
                                         foreign_keys='Product.seller_id')
-    # Messages sent / received
     sent_messages     = db.relationship('Message', backref='sender', lazy=True,
                                         foreign_keys='Message.sender_id')
     received_messages = db.relationship('Message', backref='receiver', lazy=True,
