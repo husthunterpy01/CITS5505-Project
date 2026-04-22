@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}About - SwanFlip{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages/AboutPage/about.css') }}">
+{% endblock %}
+
+{% block content %}
+{% include 'about.html' %}
+{% endblock %}
