@@ -1,52 +1,71 @@
 from app.extensions import db
 from datetime import datetime
 
-# Create models
-class Customer(db.Model):
-    customerId = db.Column(db.String, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(120), nullable=False)
-    createdAt = db.Column(db.DateTime, nullable=False)
-    admin_id = db.Column(db.String, db.ForeignKey('admin.adminId'), nullable=True)
-    createdAt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+class User(db.Model):
+    __tablename__ = 'users'
 
-    orders   = db.relationship('Order',   backref='customer', lazy=True)
-    products = db.relationship('Product', backref='customer', lazy=True)
+    user_id      = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    first_name   = db.Column(db.String(100), nullable=False)
+    last_name    = db.Column(db.String(100), nullable=False)
+    email        = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role         = db.Column(db.String(20), nullable=False, default='normal')  # 'normal' | 'admin'
+    is_report    = db.Column(db.Boolean, nullable=False, default=False)
+    review       = db.Column(db.Text, nullable=True)
+    created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-class Admin(db.Model):
-    adminId = db.Column(db.String, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(120), nullable=False)
-    createdAt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    customers = db.relationship('Customer', backref='admin', lazy=True)
+    # One user (seller) → many products
+    products          = db.relationship('Product', backref='seller', lazy=True,
+                                        foreign_keys='Product.seller_id')
+    # Messages sent / received
+    sent_messages     = db.relationship('Message', backref='sender', lazy=True,
+                                        foreign_keys='Message.sender_id')
+    received_messages = db.relationship('Message', backref='receiver', lazy=True,
+                                        foreign_keys='Message.receiver_id')
 
-class Order(db.Model):
-    orderId = db.Column(db.String, primary_key=True)
-    customerId = db.Column(db.String, db.ForeignKey('customer.customerId'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False, default=0)
-    orderStatus = db.Column(db.String, nullable=False, default='pending')
-    createdAt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    order_products = db.relationship('OrderProduct', backref='order', lazy=True)
+class Category(db.Model):
+    __tablename__ = 'categories'
+
+    category_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    category_name = db.Column(db.String(100), nullable=False, unique=True)
+
+    products = db.relationship('Product', backref='category', lazy=True)
+
 
 class Product(db.Model):
-    productId = db.Column(db.String, primary_key=True)
-    customerId = db.Column(db.String, db.ForeignKey('customer.customerId'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False, default=0)
-    availability = db.Column(db.String, nullable=False, default='available')
-    price = db.Column(db.Float, nullable=False, default=0.0)
-    location = db.Column(db.String, nullable=False)
-    createdAt = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    __tablename__ = 'products'
 
-    order_products = db.relationship('OrderProduct', backref='product', lazy=True)
+    product_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_name = db.Column(db.String(200), nullable=False)
+    description  = db.Column(db.Text, nullable=True)
+    seller_id    = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    category_id  = db.Column(db.Integer, db.ForeignKey('categories.category_id'), nullable=False)
+    price        = db.Column(db.Float, nullable=False, default=0.0)
+    location     = db.Column(db.String(200), nullable=False)
+    is_legit     = db.Column(db.Boolean, nullable=False, default=True)
+    status       = db.Column(db.String(20), nullable=False, default='available')
+    created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-class OrderProduct(db.Model):
-    orderProductId = db.Column(db.String, primary_key=True)
-    orderId = db.Column(db.String, db.ForeignKey('order.orderId'), nullable=False)
-    productId = db.Column(db.String, db.ForeignKey('product.productId'), nullable=False)
-    numberProdductPerOrder = db.Column(db.Integer, nullable=False, default=0)
+    images   = db.relationship('ProductImage', backref='product', lazy=True)
+    messages = db.relationship('Message', backref='product', lazy=True)
+
+
+class ProductImage(db.Model):
+    __tablename__ = 'product_images'
+
+    image_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False)
+    image_url  = db.Column(db.String(500), nullable=False)
+    is_primary = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+
+    message_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_id  = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False)
+    sender_id   = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    content     = db.Column(db.Text, nullable=False)
+    sent_at     = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
