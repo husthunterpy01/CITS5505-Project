@@ -22,4 +22,6 @@ def signin_page():
 def signup_page():
     return render_template('signuppage.html')
 
-
+@main.route('/personalprofile')
+def personal_profile_page():
+    return render_template('personalprofile.html')
