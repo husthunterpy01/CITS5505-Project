@@ -18,6 +18,7 @@ const activateTab = (targetId) => {
     });
 };
 
+// Hide/show password input and toggle button text in profile page
 tabButtons.forEach((button) => {
     button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
 });
