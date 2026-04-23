@@ -10,7 +10,7 @@ def home_page():
 
 @main.route('/about')
 def about_page():
-    return render_template('about_page.html')
+    return render_template('about.html')
 
 
 @main.route('/signin')
