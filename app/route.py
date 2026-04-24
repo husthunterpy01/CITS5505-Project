@@ -47,8 +47,8 @@ def signup_page():
         return redirect(url_for('main.home_page'))
 
     if request.method == 'POST':
-        first_name = request.form.get('first_name', '')
-        last_name = request.form.get('last_name', '')
+        first_name = request.form.get('first_name', '').strip().lower()
+        last_name = request.form.get('last_name', '').strip().lower()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
