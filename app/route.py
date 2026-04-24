@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import User
 from app.extensions import db
+from app.models import User
+from app.service.auth import AuthService
+from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 
@@ -23,25 +24,15 @@ def signin_page():
         return redirect(url_for('main.home_page'))
 
     if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
+        email = request.form.get('email', '')
         password = request.form.get('password', '')
 
-        if not email or not password:
-            flash('Please fill in all the fields.', 'error')
-            return render_template('signinpage.html')
-        
-        existing_user = User.query.filter_by(email=email).first()
-        if not existing_user:
-            flash('User does not exist', 'error')
-            return render_template('signinpage.html')
-        
-        if not check_password_hash(existing_user.password, password):
-            flash('Incorrect password', 'error')
+        existing_user, error = AuthService.signin_user(email, password)
+        if error:
+            flash(error, 'error')
             return render_template('signinpage.html')
 
-        session['user_id'] = existing_user.user_id
-        session['user_name'] = existing_user.first_name
-        session['user_role'] = existing_user.role
+        AuthService.login_user(existing_user)
 
         flash("Login Successful", 'success')
         return redirect(url_for('main.home_page'))
@@ -56,51 +47,71 @@ def signup_page():
         return redirect(url_for('main.home_page'))
 
     if request.method == 'POST':
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        email = request.form.get('email', '').strip().lower()
+        first_name = request.form.get('first_name', '')
+        last_name = request.form.get('last_name', '')
+        email = request.form.get('email', '')
         password = request.form.get('password', '')
 
-        if not first_name or not last_name or not email or not password:
-            flash('Please fill in all the fields.', 'error')
+        new_user, error = AuthService.signup_user(first_name, last_name, email, password)
+        if error:
+            flash(error, 'error')
             return render_template('signuppage.html')
-        
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            flash('An account with that email already exists.', 'error')
-            return render_template('signuppage.html')
-        
-        hashed_password = generate_password_hash(password)
 
-        new_user = User(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password=hashed_password,
-            role='normal',
-            is_report=False
-        )
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        session['user_id'] = new_user.user_id
-        session['user_name'] = new_user.first_name
-        session['user_role'] = new_user.role
+        AuthService.login_user(new_user)
 
         flash('Account created successfully.', 'success')
         return redirect(url_for('main.home_page'))
     
     return render_template('signuppage.html')
 
-@main.route('/personalprofile')
-def personal_profile_page():
-    return render_template('personalprofile.html')
-
 @main.route('/logout')
 def logout():
-    session.clear()
+    AuthService.logout_user()
     flash('You have been logged out', 'success')
-    return redirect(url_for('main.home_page'))
+    return redirect(url_for('main.home_page'))  
+
+
+@main.route('/personalprofile', methods=['POST','GET'])
+@AuthService.role_accepted(*user_roles.keys())
+def personal_profile_page():
+    current_user_id = session.get('user_id')
+    user_profile = User.query.get(current_user_id)
+    display_name = ''
+
+    if user_profile:
+        display_name = f'{user_profile.first_name} {user_profile.last_name}'.strip()
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+        if form_type == 'profile_update':
+            # Handle update info
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            email = request.form.get('email', '').strip().lower()
+            # Update info into database
+            if first_name:
+                user_profile.first_name = first_name
+            if last_name:
+                user_profile.last_name = last_name
+            if email:
+                user_profile.email = email
+            db.session.commit()
+            flash('Profile updated successfully.', 'success')
+            return redirect(url_for('main.personal_profile_page'))
+        elif form_type == 'password_update':
+            # Handle update password
+            # Check old password
+            old_pwd = request.form.get('current_password', '').strip()
+            new_pwd = request.form.get('new_password', '').strip()
+            confirm_pwd = request.form.get('confirm_password', '').strip()
+            error = AuthService.change_password(current_user_id, old_pwd, new_pwd, confirm_pwd)
+            if error:
+                flash(error, 'error')
+            else:
+                flash('Password updated successfully.', 'success')
+                return redirect(url_for('main.personal_profile_page'))
+
+    return render_template('personalprofile.html', user=user_profile, username=display_name)
+
+
 
 
