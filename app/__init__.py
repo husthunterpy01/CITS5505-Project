@@ -8,11 +8,15 @@ from app.models import db
 from app.route import main
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
+
+os.makedirs(INSTANCE_DIR, exist_ok=True)
 
 app = Flask(
 	__name__,
 	template_folder=os.path.join(BASE_DIR, 'templates'),
 	static_folder=os.path.join(BASE_DIR, 'static'),
+	instance_path=INSTANCE_DIR,
 	static_url_path='/static',
 )
 app.config.from_object(Config)
