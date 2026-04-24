@@ -24,7 +24,7 @@ def signin_page():
         return redirect(url_for('main.home_page'))
 
     if request.method == 'POST':
-        email = request.form.get('email', '')
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
         existing_user, error = AuthService.signin_user(email, password)
@@ -49,7 +49,7 @@ def signup_page():
     if request.method == 'POST':
         first_name = request.form.get('first_name', '')
         last_name = request.form.get('last_name', '')
-        email = request.form.get('email', '')
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
