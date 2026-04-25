@@ -8,47 +8,21 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-<<<<<<< HEAD
-    password_hash = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='normal')  # 'normal' | 'admin'
-=======
     password = db.Column(db.String(255), nullable=False)
     role         = db.Column(db.String(20), nullable=False, default='normal') 
->>>>>>> 81ad7a4917015a95109bda32eb4d240bc4b4bad3
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-<<<<<<< HEAD
-    # One user (seller) → many products
-    products          = db.relationship('Product', backref='seller', lazy=True,
-                                        foreign_keys='Product.seller_id')
-    # Messages sent / received
-    sent_messages     = db.relationship('Message', backref='sender', lazy=True,
-                                        foreign_keys='Message.sender_id')
-    received_messages = db.relationship('Message', backref='receiver', lazy=True,
-                                        foreign_keys='Message.receiver_id')
-
-
-=======
     products          = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
     sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
     received_messages = db.relationship('Message', backref='receiver', lazy=True, foreign_keys='Message.receiver_id')
 
-
-
->>>>>>> 81ad7a4917015a95109bda32eb4d240bc4b4bad3
 class Category(db.Model):
     __tablename__ = 'categories'
 
     category_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_name = db.Column(db.String(100), nullable=False, unique=True)
-
-<<<<<<< HEAD
-    products = db.relationship('Product', backref='category', lazy=True)
-=======
     products = db.relationship('Product', backref='category', lazy=True, foreign_keys='Product.category_id')
->>>>>>> 81ad7a4917015a95109bda32eb4d240bc4b4bad3
 
 
 class Product(db.Model):
@@ -65,13 +39,8 @@ class Product(db.Model):
     status       = db.Column(db.String(20), nullable=False, default='available')
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-<<<<<<< HEAD
-    images   = db.relationship('ProductImage', backref='product', lazy=True)
-    messages = db.relationship('Message', backref='product', lazy=True)
-=======
     images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
->>>>>>> 81ad7a4917015a95109bda32eb4d240bc4b4bad3
 
 
 class ProductImage(db.Model):
