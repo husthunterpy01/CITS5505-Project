@@ -47,8 +47,8 @@ def signup_page():
         return redirect(url_for('main.home_page'))
 
     if request.method == 'POST':
-        first_name = request.form.get('first_name', '').strip().lower()
-        last_name = request.form.get('last_name', '').strip().lower()
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
@@ -100,9 +100,9 @@ def personal_profile_page():
         elif form_type == 'password_update':
             # Handle update password
             # Check old password
-            old_pwd = request.form.get('current_password', '').strip()
-            new_pwd = request.form.get('new_password', '').strip()
-            confirm_pwd = request.form.get('confirm_password', '').strip()
+            old_pwd = request.form.get('current_password', '')
+            new_pwd = request.form.get('new_password', '')
+            confirm_pwd = request.form.get('confirm_password', '')
             error = AuthService.change_password(current_user_id, old_pwd, new_pwd, confirm_pwd)
             if error:
                 flash(error, 'error')
