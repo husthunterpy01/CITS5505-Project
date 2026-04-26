@@ -114,7 +114,7 @@ def personal_profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.filter_by(status='available').order_by(Product.created_at.desc()).all()
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
     
     products = []
 
@@ -135,6 +135,7 @@ def browse_page():
             'description': product.description,
             'price': product.price,
             'location': product.location,
+            'status': product.status,
             'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
             'image': primary_image
         })

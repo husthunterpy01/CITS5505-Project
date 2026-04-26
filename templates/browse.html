@@ -11,13 +11,14 @@
     </div>
 
     <div class="flex flex-wrap gap-6">
-      {% for product in products %}
+      {% for product in products %} {% set is_sold = product.status == 'sold' %}
+
       <article
         class="flex w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
       >
         <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
           <img
-            src="{{url_for('static', filename=product.image)}}"
+            src="{{product.image}}"
             alt="{{product.title}}"
             class="h-full w-full object-cover"
           />
@@ -30,24 +31,30 @@
           <p class="mt-2 text-sm font-medium text-blue-700">
             ${{'%.2f'|format(product.price)}}
           </p>
-
-          <p class="mt-2 text-sm text-slate-500">
-            {{product.location}} • Seller: {{ product.seller_name }}
-          </p>
-
+          <div class="mt-2 flex items-center justify-between gap-3">
+            <p class="mt-2 text-sm text-slate-500">{{product.location}}</p>
+            <span
+              class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
+            >
+              {{product.status|capitalize}}
+            </span>
+          </div>
           <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
             {{product.description}}
           </p>
 
+          {% if not is_sold %}
           <button
             type="button"
             class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
             data-product-id="{{product.product_id}}"
             data-seller-name="{{product.seller_name}}"
             data-product-title="{{product.title}}"
+            data-product-status="{{product.status}}"
           >
             Chat with Seller
           </button>
+          {% endif %}
         </div>
       </article>
       {% endfor %}
