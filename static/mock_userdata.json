@@ -1,19 +1,4 @@
 {
-  "user": {
-    "username": "David John",
-    "first_name": "David",
-    "last_name": "John",
-    "email": "abc@example.com",
-    "avatar_url": "",
-    "member_since": "2023-01-15",
-    "last_login": "2024-06-01 14:30",
-    "stats": {
-      "total_transactions": 25,
-      "successful_transactions": 23,
-      "posts": 10,
-      "comments": 15
-    }
-  },
   "charts": {
     "totalBuyingByMonth": {
       "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -22,6 +7,10 @@
     "postsComments": {
       "posts": 10,
       "comments": 15
+    },
+    "transactionOutcome": {
+      "successful": 23,
+      "failed": 2
     }
   }
 }
