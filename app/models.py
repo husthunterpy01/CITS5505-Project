@@ -13,7 +13,6 @@ class User(db.Model):
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
     products          = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
     sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
     received_messages = db.relationship('Message', backref='receiver', lazy=True, foreign_keys='Message.receiver_id')
@@ -25,7 +24,6 @@ class Category(db.Model):
 
     category_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_name = db.Column(db.String(100), nullable=False, unique=True)
-
     products = db.relationship('Product', backref='category', lazy=True, foreign_keys='Product.category_id')
 
 

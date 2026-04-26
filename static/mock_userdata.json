@@ -1,0 +1,16 @@
+{
+  "charts": {
+    "totalBuyingByMonth": {
+      "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      "values": [3, 3, 5, 4, 5, 7]
+    },
+    "postsComments": {
+      "posts": 10,
+      "comments": 15
+    },
+    "transactionOutcome": {
+      "successful": 23,
+      "failed": 2
+    }
+  }
+}

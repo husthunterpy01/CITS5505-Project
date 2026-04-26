@@ -1,4 +1,8 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from app.extensions import db
+from app.models import User
+from app.service.auth import AuthService
+from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 
@@ -10,16 +14,104 @@ def home_page():
 
 @main.route('/about')
 def about_page():
-    return render_template('about_page.html')
+    return render_template('about.html')
 
 
-@main.route('/signin')
+@main.route('/signin', methods=['POST', 'GET'])
 def signin_page():
+    if 'user_id' in session:
+        flash('You are already signed in.', 'error')
+        return redirect(url_for('main.home_page'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        existing_user, error = AuthService.signin_user(email, password)
+        if error:
+            flash(error, 'error')
+            return render_template('signinpage.html')
+
+        AuthService.login_user(existing_user)
+
+        flash("Login Successful", 'success')
+        return redirect(url_for('main.home_page'))
+
     return render_template('signinpage.html')
 
 
-@main.route('/signup')
+@main.route('/signup', methods=['POST', 'GET'])
 def signup_page():
+    if 'user_id' in session:
+        flash('You are already signed in', 'error')
+        return redirect(url_for('main.home_page'))
+
+    if request.method == 'POST':
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        new_user, error = AuthService.signup_user(first_name, last_name, email, password)
+        if error:
+            flash(error, 'error')
+            return render_template('signuppage.html')
+
+        AuthService.login_user(new_user)
+
+        flash('Account created successfully.', 'success')
+        return redirect(url_for('main.home_page'))
+    
     return render_template('signuppage.html')
+
+@main.route('/logout')
+def logout():
+    AuthService.logout_user()
+    flash('You have been logged out', 'success')
+    return redirect(url_for('main.home_page'))  
+
+
+@main.route('/personalprofile', methods=['POST','GET'])
+@AuthService.role_accepted(*user_roles.keys())
+def personal_profile_page():
+    current_user_id = session.get('user_id')
+    user_profile = User.query.get(current_user_id)
+    display_name = ''
+
+    if user_profile:
+        display_name = f'{user_profile.first_name} {user_profile.last_name}'.strip()
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+        if form_type == 'profile_update':
+            # Handle update info
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            email = request.form.get('email', '').strip().lower()
+            # Update info into database
+            if first_name:
+                user_profile.first_name = first_name
+            if last_name:
+                user_profile.last_name = last_name
+            if email:
+                user_profile.email = email
+            db.session.commit()
+            flash('Profile updated successfully.', 'success')
+            return redirect(url_for('main.personal_profile_page'))
+        elif form_type == 'password_update':
+            # Handle update password
+            # Check old password
+            old_pwd = request.form.get('current_password', '')
+            new_pwd = request.form.get('new_password', '')
+            confirm_pwd = request.form.get('confirm_password', '')
+            error = AuthService.change_password(current_user_id, old_pwd, new_pwd, confirm_pwd)
+            if error:
+                flash(error, 'error')
+            else:
+                flash('Password updated successfully.', 'success')
+                return redirect(url_for('main.personal_profile_page'))
+
+    return render_template('personalprofile.html', user=user_profile, username=display_name)
+
+
 
 
