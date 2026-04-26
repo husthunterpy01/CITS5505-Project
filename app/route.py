@@ -47,3 +47,17 @@ def logout():
     return redirect(url_for('main.home_page'))
 
 
+@main.route('/profile')
+def profile_page():
+    if not session.get('user_id'):
+        return redirect(url_for('main.signin_page'))
+    return render_template('profilepage.html')
+
+
+@main.route('/my-listings')
+def my_listings_page():
+    if not session.get('user_id'):
+        return redirect(url_for('main.signin_page'))
+    return render_template('mylistingspage.html')
+
+

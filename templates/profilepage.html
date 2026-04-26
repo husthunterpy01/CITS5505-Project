@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - SwanFlip{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-4xl px-6 py-10">
+  <h1 class="mb-4 text-3xl font-semibold text-gray-900">My Profile</h1>
+  <p class="text-gray-700">
+    Welcome, {{ session.get('user_name', 'User') }}. This is your profile page.
+  </p>
+</section>
+{% endblock %}
