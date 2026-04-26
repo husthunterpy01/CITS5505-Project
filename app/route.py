@@ -111,7 +111,3 @@ def personal_profile_page():
                 return redirect(url_for('main.personal_profile_page'))
 
     return render_template('personalprofile.html', user=user_profile, username=display_name)
-
-
-
-
