@@ -1,8 +1,8 @@
-import base64
-
-from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
-
-from app.models import User
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from app.extensions import db
+from app.models import User, Product
+from app.service.auth import AuthService
+from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 
@@ -14,50 +14,136 @@ def home_page():
 
 @main.route('/about')
 def about_page():
-    return render_template('about_page.html')
+    return render_template('about.html')
 
 
-@main.route('/signin', methods=['GET', 'POST'])
+@main.route('/signin', methods=['POST', 'GET'])
 def signin_page():
+    if 'user_id' in session:
+        flash('You are already signed in.', 'error')
+        return redirect(url_for('main.home_page'))
+
     if request.method == 'POST':
-        email = (request.form.get('email') or "").strip().lower()
-        password = request.form.get('password') or ""
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
 
-        user = User.query.filter_by(email=email).first()
-        encoded_password = base64.b64encode(password.encode("utf-8")).decode("utf-8")
+        existing_user, error = AuthService.signin_user(email, password)
+        if error:
+            flash(error, 'error')
+            return render_template('signinpage.html')
 
-        if user and user.password == encoded_password:
-            initials = f"{user.first_name[:1]}{user.last_name[:1]}".upper()
-            session['user_id'] = user.user_id
-            session['user_name'] = f"{user.first_name} {user.last_name}"
-            session['user_initials'] = initials
-            return redirect(url_for('main.home_page'))
+        AuthService.login_user(existing_user)
+
+        flash("Login Successful", 'success')
+        return redirect(url_for('main.home_page'))
 
     return render_template('signinpage.html')
 
 
-@main.route('/signup')
+@main.route('/signup', methods=['POST', 'GET'])
 def signup_page():
+    if 'user_id' in session:
+        flash('You are already signed in', 'error')
+        return redirect(url_for('main.home_page'))
+
+    if request.method == 'POST':
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        new_user, error = AuthService.signup_user(first_name, last_name, email, password)
+        if error:
+            flash(error, 'error')
+            return render_template('signuppage.html')
+
+        AuthService.login_user(new_user)
+
+        flash('Account created successfully.', 'success')
+        return redirect(url_for('main.home_page'))
+
     return render_template('signuppage.html')
 
 
 @main.route('/logout')
 def logout():
-    session.clear()
+    AuthService.logout_user()
+    flash('You have been logged out', 'success')
     return redirect(url_for('main.home_page'))
+
+
+@main.route('/personalprofile', methods=['POST', 'GET'])
+@AuthService.role_accepted(*user_roles.keys())
+def personal_profile_page():
+    current_user_id = session.get('user_id')
+    user_profile = User.query.get(current_user_id)
+    display_name = ''
+
+    if user_profile:
+        display_name = f'{user_profile.first_name} {user_profile.last_name}'.strip()
+
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+        if form_type == 'profile_update':
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            email = request.form.get('email', '').strip().lower()
+
+            if first_name:
+                user_profile.first_name = first_name
+            if last_name:
+                user_profile.last_name = last_name
+            if email:
+                user_profile.email = email
+            db.session.commit()
+            flash('Profile updated successfully.', 'success')
+            return redirect(url_for('main.personal_profile_page'))
+
+        elif form_type == 'password_update':
+            old_pwd = request.form.get('current_password', '')
+            new_pwd = request.form.get('new_password', '')
+            confirm_pwd = request.form.get('confirm_password', '')
+            error = AuthService.change_password(current_user_id, old_pwd, new_pwd, confirm_pwd)
+            if error:
+                flash(error, 'error')
+            else:
+                flash('Password updated successfully.', 'success')
+                return redirect(url_for('main.personal_profile_page'))
+
+    return render_template('personalprofile.html', user=user_profile, username=display_name)
 
 
 @main.route('/profile')
 def profile_page():
-    if not session.get('user_id'):
-        return redirect(url_for('main.signin_page'))
-    return render_template('profilepage.html')
+    return redirect(url_for('main.personal_profile_page'))
 
 
-@main.route('/my-listings')
-def my_listings_page():
-    if not session.get('user_id'):
-        return redirect(url_for('main.signin_page'))
-    return render_template('mylistingspage.html')
+@main.route('/browse', methods=['POST', 'GET'])
+def browse_page():
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
 
+    products = []
 
+    for product in all_products:
+        primary_image = None
+
+        for image in product.images:
+            if image.is_primary:
+                primary_image = image.image_url
+                break
+
+        if not primary_image:
+            primary_image = 'assets/logo/UWA_logo.webp'
+
+        products.append({
+            'product_id': product.product_id,
+            'title': product.product_name,
+            'description': product.description,
+            'price': product.price,
+            'location': product.location,
+            'status': product.status,
+            'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
+            'image': primary_image
+        })
+
+    return render_template('browse.html', products=products)

@@ -1,46 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}SwanFlip{% endblock %}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                },
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
             },
-        }
+          },
+        },
+      };
     </script>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='components/header.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='components/footer.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='components/header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='components/footer.css') }}"
+    />
     {% block page_css %}{% endblock %}
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-        rel="stylesheet">
-</head>
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-<body class="h-screen flex flex-col font-sans">
-    {% if show_header|default(True) %}
-    {% include 'header.html' %}
-    {% endif %}
+  <body class="h-screen flex flex-col font-sans">
+    {% if show_header|default(True) %} {% include 'header.html' %} {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div
+      id="flash-container"
+      class="fixed top-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 space-y-3 px-4 transition-opacity duration-500"
+    >
+      {% for category, message in messages %}
+      <div
+        class="flash-message rounded-lg border px-4 py-3 text-sm shadow-lg {% if category == 'error' %}border-red-300 bg-red-100 text-red-700{% else %}border-green-300 bg-green-100 text-green-700{% endif %}"
+      >
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
 
     <main class="flex flex-1 flex-col overflow-y-auto">
-        {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
     </main>
-
     {% include 'footer.html' %}
-</body>
-
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
 </html>

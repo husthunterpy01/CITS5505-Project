@@ -78,16 +78,16 @@ def seed_database(force_reset: bool = False) -> None:
         db.session.flush()
 
         images = [
-            ProductImage(product_id=products[0].product_id, image_url="https://example.com/images/iphone12.jpg", is_primary=True),
-            ProductImage(product_id=products[1].product_id, image_url="https://example.com/images/python-book.jpg", is_primary=True),
-            ProductImage(product_id=products[2].product_id, image_url="https://example.com/images/desk-lamp.jpg", is_primary=True),
-            ProductImage(product_id=products[3].product_id, image_url="https://example.com/images/vintage-jacket.jpg", is_primary=True),
-            ProductImage(product_id=products[4].product_id, image_url="https://example.com/images/yoga-mat.jpg", is_primary=True),
-            ProductImage(product_id=products[5].product_id, image_url="https://example.com/images/skincare-set.jpg", is_primary=True),
-            ProductImage(product_id=products[6].product_id, image_url="https://example.com/images/lego-box.jpg", is_primary=True),
-            ProductImage(product_id=products[7].product_id, image_url="https://example.com/images/car-phone-holder.jpg", is_primary=True),
-            ProductImage(product_id=products[8].product_id, image_url="https://example.com/images/garden-hose.jpg", is_primary=True),
-            ProductImage(product_id=products[9].product_id, image_url="https://example.com/images/gaming-keyboard.jpg", is_primary=True),
+            ProductImage(product_id=products[0].product_id, image_url="https://www.apple.com/newsroom/images/product/iphone/geo/apple_iphone-12_2-up_geo_10132020_inline.jpg.large.jpg", is_primary=True),
+            ProductImage(product_id=products[1].product_id, image_url="https://miro.medium.com/1*bK7mTjpXcWosebjDQsZgYA.jpeg", is_primary=True),
+            ProductImage(product_id=products[2].product_id, image_url="https://lifeinteriors.com.au/cdn/shop/products/DL-MFL-MARG-SABR-LIFESTYLE.jpg?v=1666064170&width=800", is_primary=True),
+            ProductImage(product_id=products[3].product_id, image_url="https://www.arcanefox.com/cdn/shop/files/custom-mens-trucker-distressed-leather-jacket-in-dark-brown-arcane-fox.png?v=1704898302&width=533", is_primary=True),
+            ProductImage(product_id=products[4].product_id, image_url="https://contents.mediadecathlon.com/p2939785/k$84ca93a383ab82ea901a517640dc2590/8-mm-grippy-and-comfortable-gentle-yoga-mat-burgundy-kimjaly-8644104.jpg", is_primary=True),
+            ProductImage(product_id=products[5].product_id, image_url="https://assets.manscaped.com/manscaped-prod/image/upload/f_png,h_1000,w_1000,f_auto,q_auto/v1/site-assets/strapi-assets/mens-advanced-skincare-set/mens-advanced-skincare-set_buy-box-6?_a=AXALAXh0", is_primary=True),
+            ProductImage(product_id=products[6].product_id, image_url="https://www.lego.com/cdn/cs/set/assets/bltf7601db33f12c491/10698_box1_na.png", is_primary=True),
+            ProductImage(product_id=products[7].product_id, image_url="https://m.media-amazon.com/images/I/81D75XKZHiL.jpg", is_primary=True),
+            ProductImage(product_id=products[8].product_id, image_url="https://valvewarehouseaustralia.com.au/wp-content/uploads/pvc-garden-hose-20m-1.jpg", is_primary=True),
+            ProductImage(product_id=products[9].product_id, image_url="https://images.ctfassets.net/w5r1fvmogo3f/2Sx0d0xP1sqQ4lqnNghSTr/f7fc939bbb9f196bdd62805af0642dd6/3f91bf6de6ad4e3ca3c86bd3b46264c5.jpg", is_primary=True),
         ]
         db.session.add_all(images)
 
