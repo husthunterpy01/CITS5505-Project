@@ -59,6 +59,9 @@ class AuthService:
         session['user_id'] = user.user_id
         session['user_name'] = user.first_name
         session['user_role'] = user.role
+        first_initial = (user.first_name or "")[:1]
+        last_initial = (user.last_name or "")[:1]
+        session['user_initials'] = f"{first_initial}{last_initial}".upper() or "U"
 
     @staticmethod
     def logout_user():
