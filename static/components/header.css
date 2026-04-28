@@ -15,3 +15,59 @@
     background-color: #1976D2;
     color: white;
 }
+
+.profile-menu {
+    position: relative;
+}
+
+.profile-menu summary {
+    list-style: none;
+}
+
+.profile-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.profile-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.profile-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    background-color: #f0f5ff;
+    color: #1e40af;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 160px;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 6px 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.dropdown-link {
+    display: block;
+    color: #1f2937;
+    text-decoration: none;
+    padding: 10px 14px;
+    line-height: 1.2;
+}
+
+.dropdown-link:hover {
+    background-color: #f3f4f6;
+}
