@@ -1,13 +1,13 @@
 import argparse
-import base64
 
 from app import app
 from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
+from werkzeug.security import generate_password_hash
 
 
-def _to_base64(raw_password: str) -> str:
-    return base64.b64encode(raw_password.encode("utf-8")).decode("utf-8")
+def _hash_password(raw_password: str) -> str:
+    return generate_password_hash(raw_password)
 
 
 def seed_database(force_reset: bool = False) -> None:
@@ -33,16 +33,16 @@ def seed_database(force_reset: bool = False) -> None:
             db.session.commit()
 
         users = [
-            User(first_name="Alice", last_name="Nguyen", email="alice@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Ben", last_name="Lee", email="ben@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Carol", last_name="Tan", email="carol@example.com", password=_to_base64("admin123"), role="admin"),
-            User(first_name="David", last_name="Wong", email="david@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Eva", last_name="Lim", email="eva@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Farah", last_name="Hassan", email="farah@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="George", last_name="Tan", email="george@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Hannah", last_name="Yeo", email="hannah@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Ivan", last_name="Koh", email="ivan@example.com", password=_to_base64("password123"), role="normal"),
-            User(first_name="Jasmine", last_name="Teo", email="jasmine@example.com", password=_to_base64("password123"), role="normal"),
+            User(first_name="Alice", last_name="Nguyen", email="alice@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Ben", last_name="Lee", email="ben@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Carol", last_name="Tan", email="carol@example.com", password=_hash_password("admin123"), role="admin"),
+            User(first_name="David", last_name="Wong", email="david@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Eva", last_name="Lim", email="eva@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Farah", last_name="Hassan", email="farah@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="George", last_name="Tan", email="george@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Hannah", last_name="Yeo", email="hannah@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Ivan", last_name="Koh", email="ivan@example.com", password=_hash_password("password123"), role="normal"),
+            User(first_name="Jasmine", last_name="Teo", email="jasmine@example.com", password=_hash_password("password123"), role="normal"),
         ]
         db.session.add_all(users)
         db.session.flush()
