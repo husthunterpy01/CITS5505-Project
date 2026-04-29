@@ -17,6 +17,7 @@ class User(db.Model):
     sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
     received_messages = db.relationship('Message', backref='receiver', lazy=True, foreign_keys='Message.receiver_id')
 
+
 class Category(db.Model):
     __tablename__ = 'categories'
 
@@ -41,6 +42,7 @@ class Product(db.Model):
 
     images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
+
 
 
 class ProductImage(db.Model):

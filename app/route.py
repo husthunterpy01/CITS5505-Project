@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session
 from app.extensions import db
-from app.models import User
+from app.models import User, Product
 from app.service.auth import AuthService
 from app.utils import user_roles
 
@@ -68,7 +68,7 @@ def signup_page():
 def logout():
     AuthService.logout_user()
     flash('You have been logged out', 'success')
-    return redirect(url_for('main.home_page'))  
+    return redirect(url_for('main.home_page'))
 
 
 @main.route('/personalprofile', methods=['POST','GET'])
@@ -100,9 +100,9 @@ def personal_profile_page():
         elif form_type == 'password_update':
             # Handle update password
             # Check old password
-            old_pwd = request.form.get('current_password', '').strip()
-            new_pwd = request.form.get('new_password', '').strip()
-            confirm_pwd = request.form.get('confirm_password', '').strip()
+            old_pwd = request.form.get('current_password', '')
+            new_pwd = request.form.get('new_password', '')
+            confirm_pwd = request.form.get('confirm_password', '')
             error = AuthService.change_password(current_user_id, old_pwd, new_pwd, confirm_pwd)
             if error:
                 flash(error, 'error')
@@ -111,3 +111,33 @@ def personal_profile_page():
                 return redirect(url_for('main.personal_profile_page'))
 
     return render_template('personalprofile.html', user=user_profile, username=display_name)
+
+@main.route('/browse', methods=['POST', 'GET'])
+def browse_page():
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    
+    products = []
+
+    for product in all_products:
+        primary_image = None
+
+        for image in product.images:
+            if image.is_primary:
+                primary_image = image.image_url
+                break
+
+        if not primary_image:
+            primary_image = 'assets/logo/UWA_logo.webp'
+
+        products.append({
+            'product_id': product.product_id,
+            'title': product.product_name,
+            'description': product.description,
+            'price': product.price,
+            'location': product.location,
+            'status': product.status,
+            'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
+            'image': primary_image
+        })
+    
+    return render_template('browse.html', products=products)
