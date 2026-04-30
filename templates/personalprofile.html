@@ -30,12 +30,28 @@
         
         <!-- Profile tab -->
         <div class="mb-5 border-b border-slate-200" role="tablist" aria-label="Personal profile tabs">
+            <button  type="button"
+                role="tab"
+                aria-selected="true"
+                data-tab-target="mylisting-tab"
+                class="profile-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition"
+            > My listings
+            </button>
             <button
                 type="button"
                 role="tab"
-                aria-selected="true"
+                aria-selected="false"
+                data-tab-target="activity-tab"
+                class="profile-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            >
+                Activity
+            </button>
+            <button
+                type="button"
+                role="tab"
+                aria-selected="false"
                 data-tab-target="profile-tab"
-                class="profile-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition"
+                class="profile-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
             >
                 Edit Personal Profile
             </button>
@@ -44,72 +60,234 @@
                 role="tab"
                 aria-selected="false"
                 data-tab-target="security-tab"
-                class="profile-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+                class="profile-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
             >
                 Security
             </button>
-            <button
-                type="button"
-                role="tab"
-                aria-selected="false"
-                data-tab-target="dashboard-tab"
-                class="profile-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-            >
-                Dashboard
-            </button>
         </div>
 
-        <!-- Profile section -->
-        <div id="profile-tab" class="profile-tab-panel" role="tabpanel">
-            <form id="profileEditForm" method="POST" class="space-y-4">
-                <input type="hidden" name="form_type" value="profile_update">
-                <div>
-                    <label for="first-name" class="mb-1 block text-sm font-medium text-slate-700">First Name</label>
-                    <input type="text" id="first-name" name="first_name" value="{{ user.first_name }}" placeholder="Your first name" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                </div>
-                <div>
-                    <label for="last-name" class="mb-1 block text-sm font-medium text-slate-700">Last Name</label>
-                    <input type="text" id="last-name" name="last_name" value="{{ user.last_name }}" placeholder="Your last name" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                </div>
-                <div>
-                    <label for="email" class="mb-1 block text-sm font-medium text-slate-700">Email</label>
-                    <input type="email" id="email" name="email" value="{{ user.email }}" placeholder="Your email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                </div>
-                <button type="submit" class="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">Update Profile</button>
-            </form>
-        </div>
-        
-        <!-- Password section -->
-        <div id="security-tab" class="profile-tab-panel hidden" role="tabpanel">
-            <form id="changePasswordForm" method="POST" class="space-y-5">
-                <input type="hidden" name="form_type" value="password_update">
-                <div>
-                    <label for="current-password" class="mb-1 block text-sm font-medium text-slate-700">Enter current password</label>
-                    <div class="relative">
-                        <input type="password" id="current-password" name="current_password" placeholder="Enter current password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                        <button type="button" data-toggle-password data-target-input="current-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
+        <!-- My listings section -->
+        <div id="mylisting-tab" class="profile-tab-panel" role="tabpanel">
+            <div class="rounded-lg border border-slate-200 p-4">
+                <!-- Stats row -->
+                <div class="stats-row grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" id="stats-row">
+                    <div class="stat rounded-xl border border-blue-700 bg-blue-800 px-5 py-4 text-white shadow-sm">
+                        <p class="stat-label text-sm font-semibold text-blue-100">Total listed</p>
+                        <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-total">{{ total_listed }}</p>
+                    </div>
+                    <div class="stat rounded-xl border border-emerald-700 bg-emerald-800 px-5 py-4 text-white shadow-sm">
+                        <p class="stat-label text-sm font-semibold text-emerald-100">Active</p>
+                        <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-active">{{ active_listed }}</p>
+                    </div>
+                    <div class="stat rounded-xl border border-amber-700 bg-amber-700 px-5 py-4 text-white shadow-sm">
+                        <p class="stat-label text-sm font-semibold text-amber-100">Total views</p>
+                        <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-views">{{ total_views }}</p>
+                    </div>
+                    <div class="stat rounded-xl border border-rose-700 bg-rose-800 px-5 py-4 text-white shadow-sm">
+                        <p class="stat-label text-sm font-semibold text-rose-100">Earned</p>
+                        <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-earned">${{ "%.2f"|format(earned_total) }}</p>
                     </div>
                 </div>
-                <div>
-                    <label for="new-password" class="mb-1 block text-sm font-medium text-slate-700">Enter new password</label>
-                    <div class="relative">
-                        <input type="password" id="new-password" name="new_password" placeholder="Enter new password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                        <button type="button" data-toggle-password data-target-input="new-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
-                    </div>
+
+                <!-- Product listings table -->
+                <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                    {% set next_direction = 'asc' if sort_direction == 'desc' else 'desc' %}
+                    <form method="GET" class="grid gap-4 lg:grid-cols-[1fr_220px_auto] lg:items-end">
+                        <div>
+                            <label for="listing-search" class="mb-1 block text-sm font-medium text-slate-700">Search listings</label>
+                            <input
+                                type="text"
+                                id="listing-search"
+                                name="q"
+                                value="{{ filter_query }}"
+                                placeholder="Search by product name"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                            >
+                        </div>
+                        <div>
+                            <label for="listing-status" class="mb-1 block text-sm font-medium text-slate-700">Status</label>
+                            <select
+                                id="listing-status"
+                                name="status"
+                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                            >
+                                <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All listings</option>
+                                <option value="available" {% if filter_status == 'available' %}selected{% endif %}>Active</option>
+                                <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="sold" {% if filter_status == 'sold' %}selected{% endif %}>Sold</option>
+                            </select>
+                            <input type="hidden" name="sort" value="{{ sort_by }}">
+                            <input type="hidden" name="direction" value="{{ sort_direction }}">
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">Apply</button>
+                            <a href="{{ url_for('main.personal_profile_page') }}" class="rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Reset</a>
+                        </div>
+                    </form>
                 </div>
-                <div>
-                    <label for="confirm-password" class="mb-1 block text-sm font-medium text-slate-700">Confirm new password</label>
-                    <div class="relative">
-                        <input type="password" id="confirm-password" name="confirm_password" placeholder="Confirm new password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
-                        <button type="button" data-toggle-password data-target-input="confirm-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
+
+                {% if user_products %}
+                <div class="mt-8">
+                    <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Your Products</h3>
+                        <p class="text-sm text-slate-500">
+                            Showing {{ pagination.start_item }}-{{ pagination.end_item }} of {{ pagination.total_items }}
+                        </p>
                     </div>
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="w-full border-collapse text-left text-sm">
+                            <thead class="bg-slate-700 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold">
+                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='item', direction=next_direction if sort_by == 'item' else 'asc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
+                                            Item
+                                            {% if sort_by == 'item' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold">
+                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='price', direction=next_direction if sort_by == 'price' else 'asc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
+                                            Price
+                                            {% if sort_by == 'price' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold">
+                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='status', direction=next_direction if sort_by == 'status' else 'asc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
+                                            Status
+                                            {% if sort_by == 'status' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold">
+                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='views', direction=next_direction if sort_by == 'views' else 'asc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
+                                            Views
+                                            {% if sort_by == 'views' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold">
+                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='posted', direction=next_direction if sort_by == 'posted' else 'desc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
+                                            Posted
+                                            {% if sort_by == 'posted' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-700">
+                                {% for product in user_products %}
+                                <tr class="border-t border-slate-200 hover:bg-slate-50">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex-shrink-0 w-10 h-10 bg-slate-200 rounded border border-slate-300 flex items-center justify-center text-xs text-slate-500">
+                                                {% if product.images and product.images|selectattr('is_primary')|first %}
+                                                    <img src="{{ product.images|selectattr('is_primary')|first|attr('image_url') }}" alt="{{ product.product_name }}" class="w-full h-full object-cover rounded" />
+                                                {% else %}
+                                                    📷
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-slate-800 truncate">{{ product.product_name }}</p>
+                                                <p class="text-xs text-slate-500">{{ product.category.category_name if product.category else 'Uncategorized' }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 font-semibold text-blue-600">${{ '%.2f'|format(product.price) }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="inline-block rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% elif product.status == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                                            {% if product.status == 'available' %}Active{% elif product.status == 'pending' %}Pending{% elif product.status == 'sold' %}Inactive{% else %}{{ product.status|capitalize }}{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-600">0</td>
+                                    <td class="px-4 py-3 text-slate-600">{{ product.created_at.strftime('%d %b') if product.created_at else '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex gap-2 justify-center">
+                                            <button type="button" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs font-semibold">
+                                                Edit ↗
+                                            </button>
+                                            <button type="button" class="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 transition text-xs font-semibold">
+                                                Sold ↗
+                                            </button>
+                                            <button type="button" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition text-xs font-semibold" onclick="if(confirm('Are you sure you want to delete this product?')) { }">
+                                                Delete ✕
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if pagination.total_pages > 1 %}
+                    <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-3">
+                            <p class="text-sm text-slate-500">Page {{ pagination.page }} of {{ pagination.total_pages }}</p>
+                            <div class="flex items-center gap-1">
+                                <label for="footer-per-page" class="text-xs font-medium text-slate-600">Per page:</label>
+                                <form method="GET" class="inline">
+                                    <input type="hidden" name="q" value="{{ filter_query }}">
+                                    <input type="hidden" name="status" value="{{ filter_status }}">
+                                    <input type="hidden" name="sort" value="{{ sort_by }}">
+                                    <input type="hidden" name="direction" value="{{ sort_direction }}">
+                                    <input type="hidden" name="page" value="1">
+                                    <select
+                                        id="footer-per-page"
+                                        name="per_page"
+                                        onchange="this.form.submit()"
+                                        class="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition hover:border-slate-400"
+                                    >
+                                        <option value="2" {% if per_page == 2 %}selected{% endif %}>2</option>
+                                        <option value="4" {% if per_page == 4 %}selected{% endif %}>4</option>
+                                        <option value="6" {% if per_page == 6 %}selected{% endif %}>6</option>
+                                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            {% if pagination.page > 1 %}
+                            <a
+                                href="{{ url_for('main.personal_profile_page', page=pagination.page - 1, status=filter_status, q=filter_query, sort=sort_by, direction=sort_direction, per_page=per_page) }}"
+                                class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                                Previous
+                            </a>
+                            {% endif %}
+
+                            {% for page_number in page_numbers %}
+                            <a
+                                href="{{ url_for('main.personal_profile_page', page=page_number, status=filter_status, q=filter_query, sort=sort_by, direction=sort_direction, per_page=per_page) }}"
+                                class="rounded-lg px-3 py-2 text-sm font-semibold transition {% if page_number == pagination.page %}bg-blue-700 text-white{% else %}border border-slate-300 text-slate-700 hover:bg-slate-100{% endif %}"
+                                {% if page_number == pagination.page %}aria-current="page"{% endif %}
+                            >
+                                {{ page_number }}
+                            </a>
+                            {% endfor %}
+
+                            {% if pagination.page < pagination.total_pages %}
+                            <a
+                                href="{{ url_for('main.personal_profile_page', page=pagination.page + 1, status=filter_status, q=filter_query, sort=sort_by, direction=sort_direction, per_page=per_page) }}"
+                                class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                                Next
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                <button type="submit" class="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800" id="update-password-btn">Update Password</button>
-            </form>
+                {% else %}
+                <div class="mt-8 text-center py-8">
+                    {% if total_listed > 0 %}
+                    <p class="text-slate-600">No products match your filters.</p>
+                    {% else %}
+                    <p class="text-slate-600">You haven't listed any products yet.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Dashboard section -->
-        <div id="dashboard-tab" class="profile-tab-panel hidden" role="tabpanel">
+        <!-- Activity section -->
+        <div id="activity-tab" class="profile-tab-panel hidden" role="tabpanel">
             <div class="overflow-hidden rounded-lg border border-slate-200">
                 <table class="w-full border-collapse text-left text-sm">
                     <thead class="bg-slate-100 text-slate-700">
@@ -174,6 +352,55 @@
                     <canvas id="totalBuyingLineChart"></canvas>
                 </div>
             </div>
+        </div>
+
+        <!-- Profile section -->
+        <div id="profile-tab" class="profile-tab-panel hidden" role="tabpanel">
+            <form id="profileEditForm" method="POST" class="space-y-4">
+                <input type="hidden" name="form_type" value="profile_update">
+                <div>
+                    <label for="first-name" class="mb-1 block text-sm font-medium text-slate-700">First Name</label>
+                    <input type="text" id="first-name" name="first_name" value="{{ user.first_name }}" placeholder="Your first name" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                </div>
+                <div>
+                    <label for="last-name" class="mb-1 block text-sm font-medium text-slate-700">Last Name</label>
+                    <input type="text" id="last-name" name="last_name" value="{{ user.last_name }}" placeholder="Your last name" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                </div>
+                <div>
+                    <label for="email" class="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="email" name="email" value="{{ user.email }}" placeholder="Your email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                </div>
+                <button type="submit" class="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">Update Profile</button>
+            </form>
+        </div>
+        
+        <!-- Password section -->
+        <div id="security-tab" class="profile-tab-panel hidden" role="tabpanel">
+            <form id="changePasswordForm" method="POST" class="space-y-5">
+                <input type="hidden" name="form_type" value="password_update">
+                <div>
+                    <label for="current-password" class="mb-1 block text-sm font-medium text-slate-700">Enter current password</label>
+                    <div class="relative">
+                        <input type="password" id="current-password" name="current_password" placeholder="Enter current password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                        <button type="button" data-toggle-password data-target-input="current-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="new-password" class="mb-1 block text-sm font-medium text-slate-700">Enter new password</label>
+                    <div class="relative">
+                        <input type="password" id="new-password" name="new_password" placeholder="Enter new password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                        <button type="button" data-toggle-password data-target-input="new-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="confirm-password" class="mb-1 block text-sm font-medium text-slate-700">Confirm new password</label>
+                    <div class="relative">
+                        <input type="password" id="confirm-password" name="confirm_password" placeholder="Confirm new password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-slate-900 outline-none ring-0 transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                        <button type="button" data-toggle-password data-target-input="confirm-password" class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800" id="update-password-btn">Update Password</button>
+            </form>
         </div>
 
     </div>
