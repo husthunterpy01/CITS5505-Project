@@ -20,7 +20,6 @@ def seed_database(force_reset: bool = False) -> None:
             return
 
         if force_reset:
-            # Delete child tables first to avoid foreign-key issues.
             Message.query.delete()
             ProductImage.query.delete()
             Product.query.delete()
@@ -29,49 +28,20 @@ def seed_database(force_reset: bool = False) -> None:
             db.session.commit()
 
         users = [
-            User(
-                first_name="Alice",
-                last_name="Nguyen",
-                email="alice@example.com",
-                password=generate_password_hash("password123"),
-                role="normal",
-            ),
-            User(
-                first_name="Ben",
-                last_name="Lee",
-                email="ben@example.com",
-                password=generate_password_hash("password123"),
-                role="normal",
-            ),
-            User(
-                first_name="Carol",
-                last_name="Tan",
-                email="carol@example.com",
-                password=generate_password_hash("password123"),
-                role="admin",
-            ),
-            User(
-                first_name="Hiden",
-                last_name="Aruto",
-                email="hiden.aruto@example.com",
-                password=generate_password_hash("password123"),
-                role="normal",
-            )
-        ]
-        db.session.add_all(users)
-        db.session.flush()
-
-        users.extend([
+            User(first_name="Alice",last_name="Nguyen",email="alice@example.com",password=generate_password_hash("password123"), role="normal"),
+            User(first_name="Ben",last_name="Lee",email="ben@example.com",password=generate_password_hash("password123"),role="normal"),
+            User(first_name="Carol",last_name="Tan",email="carol@example.com",password=generate_password_hash("password123"),role="admin"),
+            User(first_name="Hiden", last_name="Aruto", email="hiden.aruto@example.com", password=generate_password_hash("password123"), role="normal"),
             User(first_name="Daisy", last_name="Wong", email="daisy@example.com", password=generate_password_hash("password123"), role="normal"),
             User(first_name="Ethan", last_name="Smith", email="ethan@example.com", password=generate_password_hash("password123"), role="normal"),
             User(first_name="Fiona", last_name="Brown", email="fiona@example.com", password=generate_password_hash("password123"), role="normal"),
             User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="normal"),
             User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="normal"),
-        ])
-
+            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="normal")
+        ]
         db.session.add_all(users)
         db.session.flush()
+
 
         categories = [
             Category(category_name="Electronics"),
