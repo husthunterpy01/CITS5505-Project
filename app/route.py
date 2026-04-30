@@ -61,8 +61,9 @@ def signup_page():
 
         flash('Account created successfully.', 'success')
         return redirect(url_for('main.home_page'))
-    
+
     return render_template('signuppage.html')
+
 
 @main.route('/logout')
 def logout():
@@ -71,7 +72,7 @@ def logout():
     return redirect(url_for('main.home_page'))
 
 
-@main.route('/personalprofile', methods=['POST','GET'])
+@main.route('/personalprofile', methods=['POST', 'GET'])
 @AuthService.role_accepted(*user_roles.keys())
 def personal_profile_page():
     current_user_id = session.get('user_id')
@@ -80,14 +81,14 @@ def personal_profile_page():
 
     if user_profile:
         display_name = f'{user_profile.first_name} {user_profile.last_name}'.strip()
+
     if request.method == 'POST':
         form_type = request.form.get('form_type')
         if form_type == 'profile_update':
-            # Handle update info
             first_name = request.form.get('first_name', '').strip()
             last_name = request.form.get('last_name', '').strip()
             email = request.form.get('email', '').strip().lower()
-            # Update info into database
+
             if first_name:
                 user_profile.first_name = first_name
             if last_name:
@@ -97,9 +98,8 @@ def personal_profile_page():
             db.session.commit()
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('main.personal_profile_page'))
+
         elif form_type == 'password_update':
-            # Handle update password
-            # Check old password
             old_pwd = request.form.get('current_password', '')
             new_pwd = request.form.get('new_password', '')
             confirm_pwd = request.form.get('confirm_password', '')
@@ -112,10 +112,16 @@ def personal_profile_page():
 
     return render_template('personalprofile.html', user=user_profile, username=display_name)
 
+
+@main.route('/profile')
+def profile_page():
+    return redirect(url_for('main.personal_profile_page'))
+
+
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
-    
+
     products = []
 
     for product in all_products:
@@ -139,5 +145,4 @@ def browse_page():
             'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
             'image': primary_image
         })
-    
     return render_template('browse.html', products=products)
