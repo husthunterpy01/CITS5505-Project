@@ -192,7 +192,7 @@
                                     <td class="px-4 py-3 font-semibold text-blue-600">${{ '%.2f'|format(product.price) }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-block rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% elif product.status == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">
-                                            {% if product.status == 'available' %}Active{% elif product.status == 'pending' %}Pending{% elif product.status == 'sold' %}Inactive{% else %}{{ product.status|capitalize }}{% endif %}
+                                            {% if product.status == 'available' %}Active{% elif product.status == 'pending' %}Pending{% elif product.status == 'sold' %}Sold{% else %}{{ product.status|capitalize }}{% endif %}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600">0</td>
