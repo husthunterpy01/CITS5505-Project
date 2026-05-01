@@ -19,15 +19,15 @@ html, body {
 }
 
 .moderation-badge.status-reported {
-    background-color: #be123c; /* rose-700 */
-    color: #ffffff; /* white */
+    background-color: #be123c;
+    color: #ffffff;
     border: 1px solid rgba(190,18,60,0.12);
     box-shadow: 0 1px 0 rgba(190,18,60,0.06);
 }
 
 .moderation-badge.status-suspicious {
-    background-color: #fffbeb; /* amber-100 */
-    color: #92400e; /* amber-700 */
+    background-color: #fffbeb;
+    color: #92400e; 
     border: 1px solid rgba(146,64,14,0.08);
 }
 
