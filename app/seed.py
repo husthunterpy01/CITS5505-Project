@@ -1,8 +1,14 @@
 import argparse
+import base64
 
 from app import app
 from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
+
+
+def _to_base64(text: str) -> str:
+    """Convert a string to base64."""
+    return base64.b64encode(text.encode('utf-8')).decode('utf-8')
 
 
 def seed_database(force_reset: bool = False) -> None:
@@ -38,6 +44,8 @@ def seed_database(force_reset: bool = False) -> None:
             ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
             ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
             ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
+        ]
+
         users = [
             User(
                 first_name="Alice",
@@ -87,7 +95,9 @@ def seed_database(force_reset: bool = False) -> None:
             "Toys",
             "Automotive",
             "Garden",
-            "Gaming",
+            "Gaming"
+        ]
+
         categories = [
             Category(category_name="Electronics"),
             Category(category_name="Books"),
