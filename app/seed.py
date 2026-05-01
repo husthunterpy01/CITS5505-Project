@@ -1,5 +1,4 @@
 import argparse
-
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
