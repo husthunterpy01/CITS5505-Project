@@ -70,20 +70,16 @@
         <div id="mylisting-tab" class="profile-tab-panel" role="tabpanel">
             <div class="rounded-lg border border-slate-200 p-4">
                 <!-- Stats row -->
-                <div class="stats-row grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" id="stats-row">
-                    <div class="stat rounded-xl border border-blue-700 bg-blue-800 px-5 py-4 text-white shadow-sm">
+                <div class="stats-row grid grid-cols-1 gap-6 sm:grid-cols-3 justify-items-center" id="stats-row">
+                    <div class="stat rounded-xl border border-blue-700 bg-blue-800 px-8 py-3 text-white shadow-sm w-full max-w-xs text-center">
                         <p class="stat-label text-sm font-semibold text-blue-100">Total listed</p>
                         <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-total">{{ total_listed }}</p>
                     </div>
-                    <div class="stat rounded-xl border border-emerald-700 bg-emerald-800 px-5 py-4 text-white shadow-sm">
+                    <div class="stat rounded-xl border border-emerald-700 bg-emerald-800 px-8 py-3 text-white shadow-sm w-full max-w-xs text-center">
                         <p class="stat-label text-sm font-semibold text-emerald-100">Active</p>
                         <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-active">{{ active_listed }}</p>
                     </div>
-                    <div class="stat rounded-xl border border-amber-700 bg-amber-700 px-5 py-4 text-white shadow-sm">
-                        <p class="stat-label text-sm font-semibold text-amber-100">Total views</p>
-                        <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-views">{{ total_views }}</p>
-                    </div>
-                    <div class="stat rounded-xl border border-rose-700 bg-rose-800 px-5 py-4 text-white shadow-sm">
+                    <div class="stat rounded-xl border border-rose-700 bg-rose-800 px-8 py-3 text-white shadow-sm w-full max-w-xs text-center">
                         <p class="stat-label text-sm font-semibold text-rose-100">Earned</p>
                         <p class="stat-val mt-2 text-4xl font-bold leading-none" id="s-earned">${{ "%.2f"|format(earned_total) }}</p>
                     </div>
@@ -157,12 +153,6 @@
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 font-semibold">
-                                        <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='views', direction=next_direction if sort_by == 'views' else 'asc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
-                                            Views
-                                            {% if sort_by == 'views' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
-                                        </a>
-                                    </th>
-                                    <th class="px-4 py-3 font-semibold">
                                         <a href="{{ url_for('main.personal_profile_page', q=filter_query, status=filter_status, sort='posted', direction=next_direction if sort_by == 'posted' else 'desc', per_page=per_page) }}" class="inline-flex items-center gap-1 hover:text-blue-200">
                                             Posted
                                             {% if sort_by == 'posted' %}<span>{{ '▲' if sort_direction == 'asc' else '▼' }}</span>{% endif %}
@@ -195,7 +185,6 @@
                                             {% if product.status == 'available' %}Active{% elif product.status == 'pending' %}Pending{% elif product.status == 'sold' %}Sold{% else %}{{ product.status|capitalize }}{% endif %}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-600">0</td>
                                     <td class="px-4 py-3 text-slate-600">{{ product.created_at.strftime('%d %b') if product.created_at else '-' }}</td>
                                     <td class="px-4 py-3">
                                         <div class="flex gap-2 justify-center">
