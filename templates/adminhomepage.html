@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Home - SwanFlip{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mb-8 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-8 text-white shadow-lg">
+    <p class="text-sm uppercase tracking-[0.2em] text-blue-200">Admin Dashboard</p>
+    <h1 class="mt-2 text-3xl font-bold">Welcome, {{ admin_username }} Admin</h1>
+    <p class="mt-3 max-w-2xl text-sm text-slate-200">
+      Monitor users, review product listings, and manage reports from one place.
+    </p>
+  </div>
+
+  <div class="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Total Users</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ total_users or 0 }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Total Products</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ total_products or 0 }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Reported Users</p>
+      <p class="mt-2 text-3xl font-bold text-rose-600">{{ reported_users or 0 }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Pending Products</p>
+      <p class="mt-2 text-3xl font-bold text-amber-600">{{ pending_products or 0 }}</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+      <!-- Tab headers -->
+      <div class="mb-4 border-b border-slate-200" role="tablist" aria-label="Admin moderation tabs">
+        <button type="button" role="tab" aria-selected="true" data-tab-target="reported-users" class="admin-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition">Reported Users</button>
+        <button type="button" role="tab" aria-selected="false" data-tab-target="suspicious-products" class="admin-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700">Suspicious Products</button>
+      </div>
+
+      <!-- Tab panels -->
+      <div id="reported-users" class="admin-tab-panel">
+        <div class="overflow-hidden rounded-lg border border-slate-200 mb-6">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700">
+              <tr>
+                <th class="px-4 py-3 font-semibold">Name</th>
+                <th class="px-4 py-3 font-semibold">Email</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {% for u in reported_users_list or [] %}
+              <tr class="bg-white">
+                <td class="px-4 py-3 font-medium text-slate-900">{{ u.first_name }} {{ u.last_name }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ u.email }}</td>
+                <td class="px-4 py-3">
+                  <span class="moderation-badge status-reported">Reported</span>
+                </td>
+                <td class="px-4 py-3">
+                  <a href="{{ url_for('main.admin_users_page') }}" class="text-blue-700 hover:underline">Manage</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" class="px-4 py-6 text-center text-slate-500">No reported users.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="suspicious-products" class="admin-tab-panel hidden" role="tabpanel">
+        <div class="overflow-hidden rounded-lg border border-slate-200">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700">
+              <tr>
+                <th class="px-4 py-3 font-semibold">Product</th>
+                <th class="px-4 py-3 font-semibold">Seller</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              {% for p in suspicious_products_list or [] %}
+              <tr class="bg-white">
+                <td class="px-4 py-3 font-medium text-slate-900">{{ p.product_name }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ p.seller.first_name }} {{ p.seller.last_name }}</td>
+                <td class="px-4 py-3">
+                  <span class="moderation-badge status-suspicious">Suspicious</span>
+                </td>
+                <td class="px-4 py-3">
+                  <a href="{{ url_for('main.admin_reports_page') }}" class="text-blue-700 hover:underline">Review</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" class="px-4 py-6 text-center text-slate-500">No suspicious products.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Quick Actions</h2>
+        <div class="mt-4 space-y-3">
+          <a href="#" class="block rounded-lg bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800">
+            Manage Users
+          </a>
+          <a href="#" class="block rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+            Review Products
+          </a>
+          <a href="#" class="block rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            View Reports
+          </a>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Recent Signups</h2>
+        <div class="mt-4 space-y-3">
+          {% for user in recent_users or [] %}
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+            <div>
+              <p class="font-medium text-slate-900">{{ user.first_name }} {{ user.last_name }}</p>
+              <p class="text-xs text-slate-500">{{ user.email }}</p>
+            </div>
+            <span class="text-xs text-slate-500">{{ user.role }}</span>
+          </div>
+          {% else %}
+          <p class="text-sm text-slate-500">No recent users.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Recent Listings</h2>
+        <div class="mt-4 space-y-3">
+          {% for product in recent_products or [] %}
+          <div class="rounded-lg bg-slate-50 px-4 py-3">
+            <p class="font-medium text-slate-900">{{ product.product_name }}</p>
+            <p class="text-xs text-slate-500">{{ product.status }} · ${{ '%.2f'|format(product.price) }}</p>
+          </div>
+          {% else %}
+          <p class="text-sm text-slate-500">No recent listings.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+// Simple tab toggler for admin moderation panels
+document.addEventListener('DOMContentLoaded', function () {
+  const tabButtons = document.querySelectorAll('.admin-tab-button');
+  const panels = document.querySelectorAll('.admin-tab-panel');
+
+  function activate(targetId, button) {
+    panels.forEach(p => p.classList.add('hidden'));
+    tabButtons.forEach(b => b.classList.remove('text-blue-700', 'border-blue-700'));
+    const panel = document.getElementById(targetId);
+    if (panel) panel.classList.remove('hidden');
+    if (button) {
+      button.classList.add('text-blue-700', 'border-blue-700');
+    }
+  }
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const target = btn.getAttribute('data-tab-target');
+      activate(target, btn);
+    });
+  });
+});
+</script>
+
+{% endblock %}
