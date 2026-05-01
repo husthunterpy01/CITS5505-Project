@@ -185,5 +185,4 @@ def browse_page():
             'seller_name': seller_name,
             'image': primary_image
         })
-
     return render_template('browse.html', products=products)
