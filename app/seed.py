@@ -13,11 +13,6 @@ def seed_database(force_reset: bool = False) -> None:
     with app.app_context():
         db.create_all()
 
-        if User.query.first() and not force_reset:
-            print("Seed skipped: database already contains data.")
-            print("Run with --force-reset to clear and reseed.")
-            return
-
         if force_reset:
             # Delete child tables first to avoid foreign-key issues.
             Message.query.delete()
@@ -26,7 +21,23 @@ def seed_database(force_reset: bool = False) -> None:
             Category.query.delete()
             User.query.delete()
             db.session.commit()
+            
+        if Product.query.first() and not force_reset:
+            print("Seed skipped: products already exist.")
+            print("Run with --force-reset to clear and reseed.")
+            return
 
+        user_seed_data = [
+            ("Alice", "Nguyen", "alice@example.com", "password123", "normal"),
+            ("Ben", "Lee", "ben@example.com", "password123", "normal"),
+            ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
+            ("David", "Wong", "david@example.com", "password123", "normal"),
+            ("Eva", "Lim", "eva@example.com", "password123", "normal"),
+            ("Farah", "Hassan", "farah@example.com", "password123", "normal"),
+            ("George", "Tan", "george@example.com", "password123", "normal"),
+            ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
+            ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
+            ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
         users = [
             User(
                 first_name="Alice",
@@ -50,16 +61,47 @@ def seed_database(force_reset: bool = False) -> None:
                 role="admin",
             ),
         ]
-        db.session.add_all(users)
-        db.session.flush()
 
+        users = []
+        for first_name, last_name, email, raw_password, role in user_seed_data:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=_to_base64(raw_password),
+                    role=role,
+                )
+                db.session.add(user)
+                db.session.flush()
+            users.append(user)
+
+        category_seed_names = [
+            "Electronics",
+            "Books",
+            "Home",
+            "Fashion",
+            "Sports",
+            "Beauty",
+            "Toys",
+            "Automotive",
+            "Garden",
+            "Gaming",
         categories = [
             Category(category_name="Electronics"),
             Category(category_name="Books"),
             Category(category_name="Home"),
         ]
-        db.session.add_all(categories)
-        db.session.flush()
+
+        categories = []
+        for category_name in category_seed_names:
+            category = Category.query.filter_by(category_name=category_name).first()
+            if not category:
+                category = Category(category_name=category_name)
+                db.session.add(category)
+                db.session.flush()
+            categories.append(category)
 
         products = [
             Product(
@@ -138,7 +180,7 @@ def seed_database(force_reset: bool = False) -> None:
         print("Database seeded successfully.")
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description="Seed SQLite database with sample data.")
     parser.add_argument(
         "--force-reset",
