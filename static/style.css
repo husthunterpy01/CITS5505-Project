@@ -6,3 +6,39 @@ html, body {
     min-height: 100vh;
 }
 
+/* Moderation badge styles for admin dashboard */
+.moderation-badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem; 
+    font-weight: 600;
+    border-radius: 9999px; 
+    line-height: 1;
+    vertical-align: middle;
+    transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.moderation-badge.status-reported {
+    background-color: #be123c; /* rose-700 */
+    color: #ffffff; /* white */
+    border: 1px solid rgba(190,18,60,0.12);
+    box-shadow: 0 1px 0 rgba(190,18,60,0.06);
+}
+
+.moderation-badge.status-suspicious {
+    background-color: #fffbeb; /* amber-100 */
+    color: #92400e; /* amber-700 */
+    border: 1px solid rgba(146,64,14,0.08);
+}
+
+.moderation-badge.status-pending {
+    background-color: #eef2ff; /* indigo-100 */
+    color: #3730a3; /* indigo-700 */
+    border: 1px solid rgba(55,48,163,0.08);
+}
+
+.moderation-badge:hover {
+    transform: translateY(-1px);
+}
+
+
