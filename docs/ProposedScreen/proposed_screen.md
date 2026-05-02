@@ -1,0 +1,18 @@
+# SwanFlip — Main Pages
+- Landing Page for general_users.
+- Home / Main Product Page  
+- Product Detail Page  
+- Create Listing Page  
+- Edit Listing Page  
+- Login Page  
+- Sign Up Page  
+- User Profile Page  
+- My Listings Page  
+- Favourite / Saved Items Page  
+- Category Browse Page  
+- Search Results Page  
+- Notifications Page  
+- Messages / Chat Page  
+- Admin Dashboard  
+- Admin User Management Page  
+- Admin Listing Moderation Page  
