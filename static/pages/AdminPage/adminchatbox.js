@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (message) {
         console.log('Message sent:', message);
         messageInput.value = '';
-        // Here you can add code to send the message via AJAX
       }
     });
   }
