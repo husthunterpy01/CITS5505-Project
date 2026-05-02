@@ -48,6 +48,7 @@
             >
                 Security
             </button>
+            {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
                 role="tab"
@@ -57,6 +58,7 @@
             >
                 Dashboard
             </button>
+            {% endif %}
         </div>
 
         <!-- Profile section -->
@@ -109,6 +111,7 @@
         </div>
 
         <!-- Dashboard section -->
+        {% if session.get('user_role') != 'admin' %}
         <div id="dashboard-tab" class="profile-tab-panel hidden" role="tabpanel">
             <div class="overflow-hidden rounded-lg border border-slate-200">
                 <table class="w-full border-collapse text-left text-sm">
@@ -175,6 +178,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
     </div>
 </section>
