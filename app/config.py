@@ -14,3 +14,5 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
     }
+    LISTING_DEFAULT_IMAGE = 'assets/logo/UWA_logo.webp'
+    SEARCH_RESULT_LIMIT = 200

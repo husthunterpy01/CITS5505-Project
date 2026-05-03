@@ -13,3 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 500);
   }, 5000);
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Browse search wiring now lives in static/pages/BrowsePage/browsepage.js
+});

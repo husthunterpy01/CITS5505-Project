@@ -1,63 +1,101 @@
 {% extends 'base.html' %} {% block title %}Browse Products - Swanflip{% endblock
 %} {% block content %}
 
-<section class="w-full px-4 py-8 sm:px-6 lg:px-8">
+<section
+  id="browse-root"
+  class="w-full px-4 py-3 sm:px-6 lg:px-8"
+  data-search-url="{{ url_for('main.api_products_search') }}"
+>
   <div class="mx-auto w-full max-w-7xl">
-    <div class="mb-8">
+    <div class="mb-3">
       <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
-      <p class="mt-2 text-sm text-slate-600">
+      <p class="mt-1.5 text-sm text-slate-600">
         Find useful items from other UWA students.
       </p>
     </div>
 
-    <div class="flex flex-wrap gap-6">
-      {% for product in products %} {% set is_sold = product.status == 'sold' %}
-
-      <article
-        class="flex w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-      >
-        <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
-          <img
-            src="{{product.image}}"
-            alt="{{product.title}}"
-            class="h-full w-full object-cover"
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+      <aside class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+          <label class="sr-only" for="browse-search-input">Search products</label>
+          <input
+            type="search"
+            id="browse-search-input"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            placeholder="Search by title or description..."
+            autocomplete="off"
           />
-        </div>
-        <div class="flex flex-1 flex-col p-5">
-          <h2 class="text-lg font-semibold text-slate-800">
-            {{product.title}}
-          </h2>
-
-          <p class="mt-2 text-sm font-medium text-blue-700">
-            ${{'%.2f'|format(product.price)}}
-          </p>
-          <div class="mt-2 flex items-center justify-between gap-3">
-            <p class="mt-2 text-sm text-slate-500">{{product.location}}</p>
-            <span
-              class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
-            >
-              {{product.status|capitalize}}
-            </span>
-          </div>
-          <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
-            {{product.description}}
-          </p>
-
-          {% if not is_sold %}
           <button
             type="button"
-            class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
-            data-product-id="{{product.product_id}}"
-            data-seller-name="{{product.seller_name}}"
-            data-product-title="{{product.title}}"
-            data-product-status="{{product.status}}"
+            id="browse-search-submit"
+            class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            title="Search listings"
+            aria-label="Search listings"
           >
-            Chat with Seller
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
           </button>
-          {% endif %}
         </div>
-      </article>
-      {% endfor %}
+      </aside>
+
+      <div class="min-w-0">
+        <p id="browse-search-feedback" class="mb-3 hidden text-sm font-medium text-slate-700"></p>
+
+        <div id="browse-product-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {% for product in products %} {% set is_sold = product.status == 'sold' %}
+
+          <article
+            data-product-id="{{ product.product_id }}"
+            class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+          >
+            <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+              <img
+                src="{{product.image}}"
+                alt="{{product.title}}"
+                class="h-full w-full object-cover"
+              />
+            </div>
+            <div class="flex flex-1 flex-col p-5">
+              <h2 class="text-lg font-semibold text-slate-800">
+                {{product.title}}
+              </h2>
+
+              <p class="mt-2 text-sm font-medium text-blue-700">
+                ${{'%.2f'|format(product.price)}}
+              </p>
+              <div class="mt-2 flex items-center justify-between gap-3">
+                <p class="mt-2 text-sm text-slate-500">{{product.location}}</p>
+                <span
+                  class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
+                >
+                  {{product.status|capitalize}}
+                </span>
+              </div>
+              <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
+                {{ product.description or '' }}
+              </p>
+
+              {% if not is_sold %}
+              <button
+                type="button"
+                class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+                data-product-id="{{product.product_id}}"
+                data-seller-name="{{product.seller_name}}"
+                data-product-title="{{product.title}}"
+                data-product-status="{{product.status}}"
+              >
+                Chat with Seller
+              </button>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
+          No listings to show. Try different keywords or clear the search.
+        </p>
+      </div>
     </div>
   </div>
 </section>
