@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
@@ -9,9 +9,6 @@ from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 
-_DEFAULT_LISTING_IMAGE = 'assets/logo/UWA_logo.webp'
-_SEARCH_RESULT_LIMIT = 200
-
 
 def _primary_image_for_product(product):
     primary_image = None
@@ -20,7 +17,7 @@ def _primary_image_for_product(product):
             primary_image = image.image_url
             break
     if not primary_image:
-        primary_image = _DEFAULT_LISTING_IMAGE
+        primary_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
     return primary_image
 
 
@@ -172,8 +169,10 @@ def api_products_search():
     q = raw_q.strip()
     base = _products_listing_query()
 
+    search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
+
     if not q:
-        rows = base.limit(_SEARCH_RESULT_LIMIT).all()
+        rows = base.limit(search_limit).all()
     else:
         pattern = f'%{q}%'
         rows = (
@@ -183,7 +182,7 @@ def api_products_search():
                     Product.description.ilike(pattern),
                 )
             )
-            .limit(_SEARCH_RESULT_LIMIT)
+            .limit(search_limit)
             .all()
         )
 

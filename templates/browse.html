@@ -20,6 +20,7 @@
       {% for product in products %} {% set is_sold = product.status == 'sold' %}
 
       <article
+        data-product-id="{{ product.product_id }}"
         class="browse-product-card flex w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
       >
         <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
@@ -65,6 +66,9 @@
       </article>
       {% endfor %}
     </div>
+    <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
+      No listings to show. Try different keywords or clear the search.
+    </p>
   </div>
 </section>
 <script src="{{ url_for('static', filename='pages/BrowsePage/browsepage.js') }}"></script>

@@ -2,51 +2,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const root = document.getElementById("browse-root");
   const grid = document.getElementById("browse-product-grid");
   const feedback = document.getElementById("browse-search-feedback");
-
-  function escapeHtml(value) {
-    if (value == null) return "";
-    const div = document.createElement("div");
-    div.textContent = String(value);
-    return div.innerHTML;
-  }
-
-  function statusBadgeClass(status) {
-    if (status === "available") return "bg-green-100 text-green-700";
-    if (status === "sold") return "bg-red-100 text-red-700";
-    return "bg-slate-100 text-slate-600";
-  }
-
-  function capitalizeStatus(status) {
-    if (!status) return "";
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  }
-
-  function renderProductCard(product) {
-    const isSold = product.status === "sold";
-    const price = Number(product.price);
-    const priceStr = Number.isFinite(price) ? price.toFixed(2) : "0.00";
-    const chatBlock = isSold
-      ? ""
-      : `<button type="button" class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800" data-product-id="${escapeHtml(product.product_id)}" data-seller-name="${escapeHtml(product.seller_name)}" data-product-title="${escapeHtml(product.title)}" data-product-status="${escapeHtml(product.status)}">Chat with Seller</button>`;
-
-    return `
-      <article class="browse-product-card flex w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-        <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
-          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" class="h-full w-full object-cover" />
-        </div>
-        <div class="flex flex-1 flex-col p-5">
-          <h2 class="text-lg font-semibold text-slate-800">${escapeHtml(product.title)}</h2>
-          <p class="mt-2 text-sm font-medium text-blue-700">$${priceStr}</p>
-          <div class="mt-2 flex items-center justify-between gap-3">
-            <p class="mt-2 text-sm text-slate-500">${escapeHtml(product.location)}</p>
-            <span class="rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(product.status)}">${escapeHtml(capitalizeStatus(product.status))}</span>
-          </div>
-          <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">${escapeHtml(product.description || "")}</p>
-          ${chatBlock}
-        </div>
-      </article>
-    `;
-  }
+  const emptyState = document.getElementById("browse-empty-state");
+  const productCards = Array.from(grid ? grid.querySelectorAll("[data-product-id]") : []);
 
   function setFeedback(message, show) {
     if (!feedback) return;
@@ -57,6 +14,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     feedback.textContent = message;
     feedback.classList.remove("hidden");
+  }
+
+  function setEmptyState(show) {
+    if (!emptyState) return;
+    if (show) {
+      emptyState.classList.remove("hidden");
+    } else {
+      emptyState.classList.add("hidden");
+    }
   }
 
   function bindChatDelegation(container) {
@@ -97,6 +63,17 @@ document.addEventListener("DOMContentLoaded", function () {
     return res.json();
   }
 
+  function applyVisibleProducts(visibleProductIds) {
+    let visibleCount = 0;
+    productCards.forEach((card) => {
+      const id = card.dataset.productId;
+      const visible = visibleProductIds.has(id);
+      card.classList.toggle("hidden", !visible);
+      if (visible) visibleCount += 1;
+    });
+    setEmptyState(visibleCount === 0);
+  }
+
   document.addEventListener("swanflip:browse-search", async function (ev) {
     const raw = ev.detail && ev.detail.query != null ? String(ev.detail.query) : "";
     const q = raw.trim();
@@ -115,14 +92,11 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         setFeedback("", false);
       }
-      if (items.length === 0) {
-        grid.innerHTML =
-          '<p class="w-full py-8 text-center text-sm text-slate-600">No listings to show. Try different keywords or clear the search.</p>';
-      } else {
-        grid.innerHTML = items.map(renderProductCard).join("");
-      }
+      const visibleIds = new Set(items.map((item) => String(item.product_id)));
+      applyVisibleProducts(visibleIds);
     } catch {
       setFeedback("Something went wrong. Please try again.", true);
+      setEmptyState(false);
     } finally {
       grid.classList.remove("opacity-60", "pointer-events-none");
     }
