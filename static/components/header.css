@@ -78,3 +78,74 @@
 .dropdown-link:hover {
     background-color: #f3f4f6;
 }
+
+.header-container {
+    position: relative;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.nav-search-wrap {
+    position: relative;
+}
+
+.nav-search-toggle {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.nav-search-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    z-index: 1100;
+    min-width: min(20rem, calc(100vw - 2rem));
+    padding: 0.75rem;
+    background: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Dropdown opens under the icon when search sits next to Browse (left side of nav group). */
+.nav-search-panel--align-start {
+    left: 0;
+    right: auto;
+}
+
+.nav-search-panel.hidden {
+    display: none;
+}
+
+.nav-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    outline: none;
+}
+
+.nav-search-input:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.25);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}

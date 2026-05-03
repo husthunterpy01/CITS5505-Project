@@ -1,10 +1,50 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+
 from app.extensions import db
 from app.models import User, Product
 from app.service.auth import AuthService
 from app.utils import user_roles
 
 main = Blueprint('main', __name__)
+
+_DEFAULT_LISTING_IMAGE = 'assets/logo/UWA_logo.webp'
+_SEARCH_RESULT_LIMIT = 200
+
+
+def _primary_image_for_product(product):
+    primary_image = None
+    for image in product.images:
+        if image.is_primary:
+            primary_image = image.image_url
+            break
+    if not primary_image:
+        primary_image = _DEFAULT_LISTING_IMAGE
+    return primary_image
+
+
+def serialize_product_for_listing(product):
+    return {
+        'product_id': product.product_id,
+        'title': product.product_name,
+        'description': product.description or '',
+        'price': product.price,
+        'location': product.location,
+        'status': product.status,
+        'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
+        'image': _primary_image_for_product(product),
+    }
+
+
+def _products_listing_query():
+    return (
+        Product.query.options(
+            joinedload(Product.seller),
+            joinedload(Product.images),
+        )
+        .order_by(Product.created_at.desc())
+    )
 
 
 @main.route('/')
@@ -120,29 +160,39 @@ def profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
-
-    products = []
-
-    for product in all_products:
-        primary_image = None
-
-        for image in product.images:
-            if image.is_primary:
-                primary_image = image.image_url
-                break
-
-        if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
-
-        products.append({
-            'product_id': product.product_id,
-            'title': product.product_name,
-            'description': product.description,
-            'price': product.price,
-            'location': product.location,
-            'status': product.status,
-            'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
-            'image': primary_image
-        })
+    all_products = _products_listing_query().all()
+    products = [serialize_product_for_listing(p) for p in all_products]
     return render_template('browse.html', products=products)
+
+
+@main.route('/api/products/search', methods=['GET'])
+def api_products_search():
+    """Full-text style search on title and description; bounded for responsiveness."""
+    raw_q = request.args.get('q', '') or ''
+    q = raw_q.strip()
+    base = _products_listing_query()
+
+    if not q:
+        rows = base.limit(_SEARCH_RESULT_LIMIT).all()
+    else:
+        pattern = f'%{q}%'
+        rows = (
+            base.filter(
+                or_(
+                    Product.product_name.ilike(pattern),
+                    Product.description.ilike(pattern),
+                )
+            )
+            .limit(_SEARCH_RESULT_LIMIT)
+            .all()
+        )
+
+    items = [serialize_product_for_listing(p) for p in rows]
+    payload = {
+        'success': True,
+        'query': q,
+        'products': items,
+    }
+    if q and not items:
+        payload['message'] = 'No products matched your search.'
+    return jsonify(payload)
