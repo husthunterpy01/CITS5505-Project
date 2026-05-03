@@ -6,24 +6,21 @@
                     <img src="{{ url_for('static', filename='assets/logo/swanflip_logo.png') }}" alt="SwanFlip Logo" class="logo">
                 </a></li>
                 <li class="ml-auto"><a class="hover:underline nav-link" href="{{ url_for('main.browse_page') }}">Browse</a></li>
-                {% if request.endpoint == 'main.browse_page' %}
-                <li class="nav-search-wrap relative">
-                    <button type="button" id="nav-search-toggle" class="nav-search-toggle flex items-center justify-center rounded-lg p-2 text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/80" aria-expanded="false" aria-controls="nav-search-panel" title="Search listings">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                    </button>
-                    <div id="nav-search-panel" class="nav-search-panel nav-search-panel--align-start hidden" role="dialog" aria-label="Search listings">
-                        <label class="sr-only" for="nav-search-input">Search products</label>
-                        <input type="search" id="nav-search-input" class="nav-search-input" placeholder="Search by title or description…" autocomplete="off" />
-                    </div>
-                </li>
-                {% endif %}
                 <li><a class="hover:underline nav-link" href="{{ url_for('main.home_page') }}#categories">Categories</a></li>
                 <li><a class="hover:underline nav-link" href="{{ url_for('main.about_page') }}">About</a></li>
                 {% if session.get('user_id') %}
-                <li><a class="hover:underline nav-link" href="{{ url_for('main.personal_profile_page') }}">Profile</a></li>
-                <li><a class="hover:underline nav-link" href="{{ url_for('main.logout') }}">Logout</a></li>
+                <li>
+                    <details class="profile-menu">
+                        <summary class="profile-trigger">
+                            <span class="profile-avatar">{{ session.get('user_initials', 'U') }}</span>
+                            <span class="profile-name">{{ session.get('user_name', 'User') }}</span>
+                        </summary>
+                        <div class="profile-dropdown">
+                            <a class="dropdown-link" href="{{ url_for('main.personal_profile_page') }}">My Profile</a>
+                            <a class="dropdown-link" href="{{ url_for('main.logout') }}">Log out</a>
+                        </div>
+                    </details>
+                </li>
                 {% else %}
                 <li><a class="hover:underline nav-link" href="{{ url_for('main.signin_page') }}">Sign In</a></li>
                 <li><a class="hover:underline nav-link" href="{{ url_for('main.signup_page') }}">Sign Up</a></li>

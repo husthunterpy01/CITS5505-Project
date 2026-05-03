@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const grid = document.getElementById("browse-product-grid");
   const feedback = document.getElementById("browse-search-feedback");
   const emptyState = document.getElementById("browse-empty-state");
+  const searchInput = document.getElementById("browse-search-input");
+  const searchSubmit = document.getElementById("browse-search-submit");
   const productCards = Array.from(grid ? grid.querySelectorAll("[data-product-id]") : []);
 
   function setFeedback(message, show) {
@@ -74,10 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setEmptyState(visibleCount === 0);
   }
 
-  document.addEventListener("swanflip:browse-search", async function (ev) {
-    const raw = ev.detail && ev.detail.query != null ? String(ev.detail.query) : "";
-    const q = raw.trim();
-
+  async function performSearch(q) {
     setFeedback("", false);
     grid.classList.add("opacity-60", "pointer-events-none");
 
@@ -100,5 +99,23 @@ document.addEventListener("DOMContentLoaded", function () {
     } finally {
       grid.classList.remove("opacity-60", "pointer-events-none");
     }
+  }
+
+  document.addEventListener("swanflip:browse-search", async function (ev) {
+    const raw = ev.detail && ev.detail.query != null ? String(ev.detail.query) : "";
+    await performSearch(raw.trim());
   });
+
+  if (searchInput && searchSubmit) {
+    searchInput.addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      await performSearch(searchInput.value.trim());
+    });
+
+    searchSubmit.addEventListener("click", async () => {
+      await performSearch(searchInput.value.trim());
+      searchInput.focus();
+    });
+  }
 });
