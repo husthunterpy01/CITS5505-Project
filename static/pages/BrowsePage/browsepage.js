@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("browse-search-input");
   const searchSubmit = document.getElementById("browse-search-submit");
   const productCards = Array.from(grid ? grid.querySelectorAll("[data-product-id]") : []);
+  const defaultVisibleIds = new Set(
+    productCards.map((card) => String(card.dataset.productId)),
+  );
 
   function setFeedback(message, show) {
     if (!feedback) return;
@@ -77,6 +80,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function performSearch(q) {
+    if (!q) {
+      setFeedback("", false);
+      applyVisibleProducts(defaultVisibleIds);
+      return;
+    }
+
     setFeedback("", false);
     grid.classList.add("opacity-60", "pointer-events-none");
 
@@ -107,6 +116,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   if (searchInput && searchSubmit) {
+    searchInput.addEventListener("input", () => {
+      if (!searchInput.value.trim()) {
+        setFeedback("", false);
+        applyVisibleProducts(defaultVisibleIds);
+      }
+    });
+
     searchInput.addEventListener("keydown", async (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
