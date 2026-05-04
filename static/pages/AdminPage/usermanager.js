@@ -1,10 +1,59 @@
-// User data embedded in the page
 let usersData = [];
+let pendingReportUserId = null;
+
+function loadUsersFromDom() {
+  const rows = document.querySelectorAll('.user-row');
+  return Array.from(rows).map((row) => ({
+    id: Number(row.getAttribute('data-user-id')),
+    firstName: row.getAttribute('data-first-name') || '',
+    lastName: row.getAttribute('data-last-name') || '',
+    email: row.getAttribute('data-email') || '',
+    role: row.getAttribute('data-role') || 'user',
+    isReport: row.getAttribute('data-reported') === 'true',
+    review: row.getAttribute('data-review') || 'No notes',
+    createdAt: row.getAttribute('data-created-at') || 'N/A',
+    productCount: Number(row.getAttribute('data-product-count')) || 0,
+  }));
+}
 
 // Initialize page with user data from global variable
 function initializeUserManager(users) {
   usersData = users;
   setupEventListeners();
+}
+
+function updateUserReportStatus(userId, action, reason) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/admin/users', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch (error) {
+          reject(error);
+        }
+      } else {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch (error) {
+          reject(error);
+        }
+      }
+    };
+
+    xhr.onerror = function () {
+      reject(new Error('Network request failed'));
+    };
+
+    xhr.send(JSON.stringify({
+      user_id: userId,
+      action: action,
+      reason: reason || ''
+    }));
+  });
 }
 
 function setupEventListeners() {
@@ -35,7 +84,7 @@ function setupEventListeners() {
       
       rows.forEach(row => {
         const name = row.getAttribute('data-name');
-        const email = row.getAttribute('data-email');
+        const email = row.getAttribute('data-email-search') || '';
         
         if (name.includes(searchTerm) || email.includes(searchTerm)) {
           row.style.display = '';
@@ -54,6 +103,93 @@ function setupEventListeners() {
         closeModal();
       }
     });
+  }
+
+  const reportModal = document.getElementById('report-modal');
+  if (reportModal) {
+    reportModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeReportReasonModal();
+      }
+    });
+  }
+
+  const reportCancelBtn = document.getElementById('report-cancel');
+  if (reportCancelBtn) {
+    reportCancelBtn.addEventListener('click', function() {
+      closeReportReasonModal();
+    });
+  }
+
+  const reportForm = document.getElementById('report-form');
+  if (reportForm) {
+    reportForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (!pendingReportUserId) {
+        return;
+      }
+
+      const reasonInput = document.getElementById('report-reason');
+      const errorLabel = document.getElementById('report-form-error');
+      const reason = (reasonInput?.value || '').trim();
+
+      if (!reason) {
+        if (errorLabel) {
+          errorLabel.textContent = 'Report reason is required.';
+          errorLabel.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (errorLabel) {
+        errorLabel.classList.add('hidden');
+      }
+
+      updateUserReportStatus(pendingReportUserId, 'report', reason).then(result => {
+        if (!result.ok) {
+          if (errorLabel) {
+            errorLabel.textContent = result.message || 'Unable to update user status.';
+            errorLabel.classList.remove('hidden');
+          }
+          return;
+        }
+        window.location.reload();
+      }).catch(() => {
+        if (errorLabel) {
+          errorLabel.textContent = 'Unable to update user status. Please try again.';
+          errorLabel.classList.remove('hidden');
+        }
+      });
+    });
+  }
+}
+
+function openReportReasonModal(userId) {
+  pendingReportUserId = userId;
+  const reportModal = document.getElementById('report-modal');
+  const reasonInput = document.getElementById('report-reason');
+  const errorLabel = document.getElementById('report-form-error');
+
+  if (reasonInput) {
+    reasonInput.value = '';
+    reasonInput.focus();
+  }
+
+  if (errorLabel) {
+    errorLabel.classList.add('hidden');
+  }
+
+  if (reportModal) {
+    reportModal.classList.remove('hidden');
+  }
+}
+
+function closeReportReasonModal() {
+  pendingReportUserId = null;
+  const reportModal = document.getElementById('report-modal');
+  if (reportModal) {
+    reportModal.classList.add('hidden');
   }
 }
 
@@ -82,8 +218,6 @@ function viewUserDetails(userId) {
 
   const modal = document.getElementById('user-modal');
   const content = document.getElementById('modal-content');
-
-  const isAdmin = user.role.toLowerCase() === 'admin';
 
   content.innerHTML = `
     <div class="space-y-4">
@@ -123,8 +257,6 @@ function viewUserDetails(userId) {
         <p class="text-sm font-medium text-slate-600">Notes</p>
         <p class="text-slate-900 mt-1 text-sm bg-slate-50 p-2 rounded">${user.review}</p>
       </div>
-      
-      ${isAdmin ? '<div class="text-sm text-slate-500 bg-blue-50 p-3 rounded">Admin users cannot be reported.</div>' : ''}
     </div>
   `;
 
@@ -146,24 +278,28 @@ function reportUser(userId) {
     return;
   }
 
-  if (confirm('Are you sure you want to report this user?')) {
-    // This would typically call an API endpoint to update the user status
-    alert('User reported successfully. This would be implemented with a backend API call.');
-  }
+  openReportReasonModal(userId);
 }
 
 function unreportUser(userId) {
   if (confirm('Are you sure you want to unreport this user?')) {
-    // This would typically call an API endpoint to update the user status
-    alert('User unreported successfully. This would be implemented with a backend API call.');
+    updateUserReportStatus(userId, 'unreport', '').then(result => {
+      if (!result.ok) {
+        alert(result.message || 'Unable to update user status.');
+        return;
+      }
+      window.location.reload();
+    }).catch(() => {
+      alert('Unable to update user status. Please try again.');
+    });
   }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-  setupEventListeners();
-  // Initialize the user manager if usersData is available
-  if (typeof usersData !== 'undefined' && usersData.length > 0) {
-    initializeUserManager(usersData);
-  }
-});
+// Initialize safely for both static and dynamically injected script loading.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeUserManager(loadUsersFromDom());
+  });
+} else {
+  initializeUserManager(loadUsersFromDom());
+}

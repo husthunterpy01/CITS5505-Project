@@ -94,7 +94,18 @@
         <tbody class="divide-y divide-slate-200">
           {% if users %}
             {% for user in users %}
-            <tr class="bg-white hover:bg-slate-50 transition user-row" data-reported="{{ user.is_report|lower }}" data-role="{{ user.role|lower }}" data-name="{{ user.first_name }} {{ user.last_name }}".lower() data-email="{{ user.email|lower }}">
+            <tr class="bg-white hover:bg-slate-50 transition user-row"
+              data-user-id="{{ user.user_id }}"
+              data-first-name="{{ user.first_name|e }}"
+              data-last-name="{{ user.last_name|e }}"
+              data-email="{{ user.email|e }}"
+              data-role="{{ user.role|lower }}"
+              data-reported="{{ user.is_report|lower }}"
+              data-review="{{ (user.review or 'No notes')|e }}"
+              data-created-at="{{ (user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A')|e }}"
+              data-product-count="{{ user.products|length or 0 }}"
+              data-name="{{ (user.first_name ~ ' ' ~ user.last_name)|lower|e }}"
+              data-email-search="{{ user.email|lower|e }}">
               <td class="px-6 py-4 font-medium text-slate-900">
                 <div class="flex items-center gap-3">
                   <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -188,24 +199,39 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='pages/AdminPage/usermanager.js') }}"></script>
-<script>
-  // User data from server - passed to external script
-  const usersData = [
-    {% for user in users %}
-    {
-      id: {{ user.user_id }},
-      firstName: "{{ user.first_name }}",
-      lastName: "{{ user.last_name }}",
-      email: "{{ user.email }}",
-      role: "{{ user.role }}",
-      isReport: {{ user.is_report|lower }},
-      review: "{{ user.review or 'No notes' }}",
-      createdAt: "{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}",
-      productCount: {{ user.products|length or 0 }}
-    },
-    {% endfor %}
-  ];
-</script>
+<!-- Report Reason Modal -->
+<div id="report-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4">
+    <div class="bg-gradient-to-r from-rose-700 to-red-800 p-6 text-white rounded-t-xl">
+      <h2 class="text-xl font-bold">Report User</h2>
+      <p class="mt-1 text-sm text-rose-100">Provide a reason for this report.</p>
+    </div>
+    <form id="report-form" class="p-6">
+      <label for="report-reason" class="block text-sm font-medium text-slate-700">Reason</label>
+      <textarea
+        id="report-reason"
+        name="report_reason"
+        rows="4"
+        maxlength="500"
+        required
+        class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+        placeholder="Explain why this user should be reported..."></textarea>
+      <p id="report-form-error" class="mt-2 hidden text-sm text-red-600"></p>
+      <div class="mt-5 flex gap-3">
+        <button
+          type="button"
+          id="report-cancel"
+          class="flex-1 rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 transition">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="flex-1 rounded-lg bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 transition">
+          Submit Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
 from app.models import User, Product
 from app.service.auth import AuthService
@@ -219,9 +219,47 @@ def admin_home_page():
     )
 
 
-@main.route('/admin/users')
+@main.route('/admin/users', methods=['GET', 'POST'])
 @AuthService.role_accepted('admin')
 def admin_users_page():
+    if request.method == 'POST':
+        payload = request.get_json(silent=True) or request.form
+        action = (payload.get('action') or '').strip().lower()
+        raw_user_id = payload.get('user_id')
+        reason = (payload.get('reason') or '').strip()
+
+        if not action or not raw_user_id:
+            return jsonify({'ok': False, 'message': 'Missing action or user_id.'}), 400
+
+        try:
+            user_id = int(raw_user_id)
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'message': 'Invalid user_id.'}), 400
+
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+        if target_user.role == 'admin' and action == 'report':
+            return jsonify({'ok': False, 'message': 'Admin users cannot be reported.'}), 400
+
+        if action == 'report':
+            if not reason:
+                return jsonify({'ok': False, 'message': 'Report reason is required.'}), 400
+            target_user.is_report = True
+            target_user.review = reason
+        elif action == 'unreport':
+            target_user.is_report = False
+        else:
+            return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
+
+        db.session.commit()
+        return jsonify({
+            'ok': True,
+            'message': f"{target_user.first_name} {target_user.last_name} updated successfully.",
+            'is_report': target_user.is_report,
+        })
+
     all_users = User.query.all()
     return render_template('usermanager.html', users=all_users)
 
