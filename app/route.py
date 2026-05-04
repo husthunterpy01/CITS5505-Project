@@ -264,10 +264,51 @@ def admin_users_page():
     return render_template('usermanager.html', users=all_users)
 
 
-@main.route('/admin/reports')
+@main.route('/admin/reports', methods=['GET', 'POST'])
 @AuthService.role_accepted('admin')
 def admin_reports_page():
-    suspicious_products = Product.query.filter_by(is_legit=False).all()
-    return render_template('postmanager.html', products=suspicious_products)
+    if request.method == 'POST':
+        payload = request.get_json(silent=True) or request.form
+        action = (payload.get('action') or '').strip().lower()
+        raw_product_id = payload.get('product_id')
+        reason = (payload.get('reason') or '').strip()
+
+        if not action or not raw_product_id:
+            return jsonify({'ok': False, 'message': 'Missing action or product_id.'}), 400
+
+        try:
+            product_id = int(raw_product_id)
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'message': 'Invalid product_id.'}), 400
+
+        target_product = Product.query.get(product_id)
+        if not target_product:
+            return jsonify({'ok': False, 'message': 'Product not found.'}), 404
+
+        # Do not allow moderation actions on sold products
+        if getattr(target_product, 'status', '') == 'sold':
+            return jsonify({'ok': False, 'message': 'Cannot moderate a sold product.'}), 400
+
+        if action == 'approve':
+            target_product.is_legit = True
+            # clear previous review when approving
+            target_product.review = None
+        elif action == 'flag':
+            if not reason:
+                return jsonify({'ok': False, 'message': 'Reason is required when flagging a post.'}), 400
+            target_product.is_legit = False
+            target_product.review = reason
+        else:
+            return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
+
+        db.session.commit()
+        return jsonify({
+            'ok': True,
+            'message': f"{target_product.product_name} updated successfully.",
+            'is_legit': target_product.is_legit,
+        })
+
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    return render_template('postmanager.html', products=all_products)
 
 
