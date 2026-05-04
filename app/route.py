@@ -223,13 +223,13 @@ def admin_home_page():
 @AuthService.role_accepted('admin')
 def admin_users_page():
     all_users = User.query.all()
-    return render_template('admin_users.html', users=all_users)
+    return render_template('usermanager.html', users=all_users)
 
 
 @main.route('/admin/reports')
 @AuthService.role_accepted('admin')
 def admin_reports_page():
     suspicious_products = Product.query.filter_by(is_legit=False).all()
-    return render_template('admin_reports.html', products=suspicious_products)
+    return render_template('postmanager.html', products=suspicious_products)
 
 

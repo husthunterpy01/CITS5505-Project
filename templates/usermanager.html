@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - SwanFlip{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pages/AdminPage/usermanager.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-8 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-8 text-white shadow-lg">
+    <p class="text-sm uppercase tracking-[0.2em] text-blue-200">User Management</p>
+    <h1 class="mt-2 text-3xl font-bold">Manage Users</h1>
+    <p class="mt-3 max-w-2xl text-sm text-slate-200">
+      View all registered users, check their status, and manage reported accounts.
+    </p>
+  </div>
+
+  <!-- Stats -->
+  <div class="mb-8 grid gap-4 sm:grid-cols-3">
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Total Users</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ users|length or 0 }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Reported Users</p>
+      <p class="mt-2 text-3xl font-bold text-rose-600">
+        {% set reported_count = users|selectattr('is_report')|list|length %}
+        {{ reported_count }}
+      </p>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">Admin Users</p>
+      <p class="mt-2 text-3xl font-bold text-blue-600">
+        {% set admin_count = users|selectattr('role', 'equalto', 'admin')|list|length %}
+        {{ admin_count }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex gap-2">
+        <button 
+          type="button" 
+          data-filter="all" 
+          class="filter-btn rounded-lg border-2 border-blue-700 bg-blue-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-800">
+          All Users
+        </button>
+        <button 
+          type="button" 
+          data-filter="reported" 
+          class="filter-btn rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400">
+          Reported Only
+        </button>
+        <button 
+          type="button" 
+          data-filter="active" 
+          class="filter-btn rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400">
+          Active Only
+        </button>
+        <button 
+          type="button" 
+          data-filter="admin" 
+          class="filter-btn rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400">
+          Admin
+        </button>
+      </div>
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Search by name or email..." 
+        class="rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+      />
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-100 text-slate-700 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-4 font-semibold">Name</th>
+            <th class="px-6 py-4 font-semibold">Email</th>
+            <th class="px-6 py-4 font-semibold">Role</th>
+            <th class="px-6 py-4 font-semibold">Status</th>
+            <th class="px-6 py-4 font-semibold">Joined</th>
+            <th class="px-6 py-4 font-semibold text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% if users %}
+            {% for user in users %}
+            <tr class="bg-white hover:bg-slate-50 transition user-row" data-reported="{{ user.is_report|lower }}" data-role="{{ user.role|lower }}" data-name="{{ user.first_name }} {{ user.last_name }}".lower() data-email="{{ user.email|lower }}">
+              <td class="px-6 py-4 font-medium text-slate-900">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+                    {{ (user.first_name[0]|upper) }}{{ (user.last_name[0]|upper) }}
+                  </div>
+                  <span>{{ user.first_name }} {{ user.last_name }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-slate-700">{{ user.email }}</td>
+              <td class="px-6 py-4">
+                <span class="role-badge role-{{ user.role|lower }}">
+                  {{ user.role|capitalize }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                {% if user.is_report %}
+                  <span class="user-status-badge status-reported">🚩 Reported</span>
+                {% else %}
+                  <span class="user-status-badge status-active">✓ Active</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 text-slate-600">
+                {{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}
+              </td>
+              <td class="px-6 py-4 text-center">
+                {% if user.role|lower == 'admin' %}
+                <button 
+                  type="button" 
+                  class="inline-flex items-center rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 transition"
+                  onclick="viewUserDetails({{ user.user_id }})">
+                  View
+                </button>
+                {% else %}
+                <div class="flex items-center justify-center gap-2">
+                  <button 
+                    type="button" 
+                    class="inline-flex items-center rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-200 transition"
+                    onclick="viewUserDetails({{ user.user_id }})">
+                    View
+                  </button>
+                  {% if user.is_report %}
+                  <button 
+                    type="button" 
+                    class="inline-flex items-center rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-200 transition"
+                    onclick="unreportUser({{ user.user_id }})">
+                    Unreport
+                  </button>
+                  {% else %}
+                  <button 
+                    type="button" 
+                    class="inline-flex items-center rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200 transition"
+                    onclick="reportUser({{ user.user_id }})">
+                    Report
+                  </button>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                No users found.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- User Details Modal -->
+<div id="user-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+    <div class="bg-gradient-to-r from-slate-900 to-blue-900 p-6 text-white rounded-t-xl">
+      <h2 class="text-xl font-bold">User Details</h2>
+    </div>
+    <div id="modal-content" class="p-6">
+      <!-- Content will be populated by JavaScript -->
+    </div>
+    <div class="flex gap-3 border-t border-slate-200 p-6">
+      <button 
+        type="button" 
+        onclick="closeModal()" 
+        class="flex-1 rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='pages/AdminPage/usermanager.js') }}"></script>
+<script>
+  // User data from server - passed to external script
+  const usersData = [
+    {% for user in users %}
+    {
+      id: {{ user.user_id }},
+      firstName: "{{ user.first_name }}",
+      lastName: "{{ user.last_name }}",
+      email: "{{ user.email }}",
+      role: "{{ user.role }}",
+      isReport: {{ user.is_report|lower }},
+      review: "{{ user.review or 'No notes' }}",
+      createdAt: "{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}",
+      productCount: {{ user.products|length or 0 }}
+    },
+    {% endfor %}
+  ];
+</script>
+
+{% endblock %}
