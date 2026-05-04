@@ -61,6 +61,35 @@ block content %}
         required
       />
 
+      <div class="w-full max-w-sm rounded-lg border border-slate-300 bg-slate-50 p-3">
+        <div class="flex items-start gap-3">
+          <input
+            id="terms-accepted-checkbox"
+            type="checkbox"
+            name="terms_accepted"
+            class="mt-1 h-4 w-4 rounded border-gray-400 text-blue-800 focus:ring-blue-700"
+          />
+          <label for="terms-accepted-checkbox" class="text-sm leading-6 text-slate-700">
+            I agree to the
+            <button
+              type="button"
+              data-legal-trigger="terms"
+              class="font-semibold text-blue-800 underline hover:text-blue-900"
+            >
+              Terms of Service
+            </button>
+            and
+            <button
+              type="button"
+              data-legal-trigger="privacy"
+              class="font-semibold text-blue-800 underline hover:text-blue-900"
+            >
+              Privacy Policy
+            </button>.
+          </label>
+        </div>
+      </div>
+
       <p class="text-sm text-black">
         Already have an account?
         <a
@@ -73,11 +102,46 @@ block content %}
 
       <button
         type="submit"
+        id="signup-submit-btn"
+        disabled
         class="w-fit rounded-lg bg-[#3D3A9E] px-10 py-3 font-medium text-white transition-all hover:scale-105 hover:bg-blue-900"
       >
         Sign up
       </button>
     </form>
+  </div>
+</div>
+
+<div
+  id="legal-modal-overlay"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4"
+>
+  <div class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
+    <div class="mb-4 flex items-start justify-between gap-4">
+      <h2 id="legal-modal-title" class="text-2xl font-bold text-slate-800">Terms of Service</h2>
+      <button
+        type="button"
+        id="legal-modal-close"
+        class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        aria-label="Close legal modal"
+      >
+        X
+      </button>
+    </div>
+    <div id="legal-modal-content" class="max-h-[60vh] space-y-4 overflow-y-auto pr-1 text-sm leading-6 text-slate-700">
+      <p>
+        SwanFlip is a student marketplace for the UWA community. By using this platform, you agree to list items honestly and communicate respectfully.
+      </p>
+      <p>
+        Buyers and sellers are responsible for arranging safe meetups, checking item condition, and following Australian law and UWA policies.
+      </p>
+      <p>
+        Prohibited listings include illegal goods, dangerous items, and misleading or fraudulent posts.
+      </p>
+      <p>
+        Your account information is used to provide core marketplace features, account security, and transaction-related communication.
+      </p>
+    </div>
   </div>
 </div>
 {% endblock %}
