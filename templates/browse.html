@@ -7,16 +7,21 @@
   data-search-url="{{ url_for('main.api_products_search') }}"
 >
   <div class="mx-auto w-full max-w-7xl">
-    <section class="mb-3 rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm">
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
-          <p class="mt-1.5 text-sm text-slate-600">
-            Find useful items from other UWA students.
-          </p>
-        </div>
-        <div class="w-full lg:max-w-3xl">
-          <div class="rounded-xl border border-slate-200 bg-white p-2">
+    <section class="mb-3">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
+        <p class="mt-1.5 text-sm text-slate-600">
+          Find useful items from other UWA students.
+        </p>
+      </div>
+    </section>
+
+    <section class="mb-3">
+      <div class="grid grid-cols-1 gap-3 xl:grid-cols-4 xl:items-end">
+        <div aria-hidden="true"></div>
+
+        <div class="xl:col-span-2">
+          <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
             <div class="flex items-center gap-2">
               <label class="sr-only" for="browse-search-input">Search products</label>
               <input
@@ -40,6 +45,20 @@
             </div>
           </div>
         </div>
+
+        <div class="xl:col-start-4">
+          <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+            <label class="sr-only" for="browse-sort-select">Sort products</label>
+            <select
+              id="browse-sort-select"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -51,6 +70,8 @@
 
           <article
             data-product-id="{{ product.product_id }}"
+            data-price="{{ product.price }}"
+            data-rank="{{ loop.index0 }}"
             class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
           >
             <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">

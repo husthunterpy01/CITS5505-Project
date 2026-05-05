@@ -5,7 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const emptyState = document.getElementById("browse-empty-state");
   const searchInput = document.getElementById("browse-search-input");
   const searchSubmit = document.getElementById("browse-search-submit");
-  const productCards = Array.from(grid ? grid.querySelectorAll("[data-product-id]") : []);
+  const sortSelect = document.getElementById("browse-sort-select");
+  const productCards = Array.from(
+    grid ? grid.querySelectorAll("article.browse-product-card[data-product-id]") : [],
+  );
   const defaultVisibleIds = new Set(
     productCards.map((card) => String(card.dataset.productId)),
   );
@@ -77,6 +80,25 @@ document.addEventListener("DOMContentLoaded", function () {
       if (visible) visibleCount += 1;
     });
     setEmptyState(visibleCount === 0);
+    applySort();
+  }
+
+  function applySort() {
+    if (!grid) return;
+    const mode = sortSelect ? sortSelect.value : "newest";
+    const cards = Array.from(
+      grid.querySelectorAll("article.browse-product-card[data-product-id]"),
+    );
+    cards.sort((a, b) => {
+      if (mode === "price-low") {
+        return Number(a.dataset.price || 0) - Number(b.dataset.price || 0);
+      }
+      if (mode === "price-high") {
+        return Number(b.dataset.price || 0) - Number(a.dataset.price || 0);
+      }
+      return Number(a.dataset.rank || 0) - Number(b.dataset.rank || 0);
+    });
+    cards.forEach((card) => grid.appendChild(card));
   }
 
   async function performSearch(q) {
@@ -132,6 +154,12 @@ document.addEventListener("DOMContentLoaded", function () {
     searchSubmit.addEventListener("click", async () => {
       await performSearch(searchInput.value.trim());
       searchInput.focus();
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      applySort();
     });
   }
 });
