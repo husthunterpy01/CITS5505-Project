@@ -1,5 +1,7 @@
 import argparse
 
+from werkzeug.security import generate_password_hash
+
 from app import app
 from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
@@ -38,28 +40,6 @@ def seed_database(force_reset: bool = False) -> None:
             ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
             ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
             ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
-        users = [
-            User(
-                first_name="Alice",
-                last_name="Nguyen",
-                email="alice@example.com",
-                password="password123",
-                role="normal",
-            ),
-            User(
-                first_name="Ben",
-                last_name="Lee",
-                email="ben@example.com",
-                password="password123",
-                role="normal",
-            ),
-            User(
-                first_name="Carol",
-                last_name="Tan",
-                email="carol@example.com",
-                password="password123",
-                role="admin",
-            ),
         ]
 
         users = []
@@ -70,7 +50,7 @@ def seed_database(force_reset: bool = False) -> None:
                     first_name=first_name,
                     last_name=last_name,
                     email=email,
-                    password=_to_base64(raw_password),
+                    password=generate_password_hash(raw_password),
                     role=role,
                 )
                 db.session.add(user)
@@ -88,10 +68,6 @@ def seed_database(force_reset: bool = False) -> None:
             "Automotive",
             "Garden",
             "Gaming",
-        categories = [
-            Category(category_name="Electronics"),
-            Category(category_name="Books"),
-            Category(category_name="Home"),
         ]
 
         categories = []
