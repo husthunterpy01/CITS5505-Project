@@ -1,47 +1,16 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 
 from app.extensions import db
-from app.models import User, Product
+from app.models import User
 from app.service.auth import AuthService
-from app.utils import user_roles
+from app.utils import (
+    user_roles,
+    products_listing_query,
+    serialize_product_for_listing,
+    search_products_for_listing,
+)
 
 main = Blueprint('main', __name__)
-
-
-def _primary_image_for_product(product):
-    primary_image = None
-    for image in product.images:
-        if image.is_primary:
-            primary_image = image.image_url
-            break
-    if not primary_image:
-        primary_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
-    return primary_image
-
-
-def serialize_product_for_listing(product):
-    return {
-        'product_id': product.product_id,
-        'title': product.product_name,
-        'description': product.description or '',
-        'price': product.price,
-        'location': product.location,
-        'status': product.status,
-        'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
-        'image': _primary_image_for_product(product),
-    }
-
-
-def _products_listing_query():
-    return (
-        Product.query.options(
-            joinedload(Product.seller),
-            joinedload(Product.images),
-        )
-        .order_by(Product.created_at.desc())
-    )
 
 
 @main.route('/')
@@ -157,8 +126,9 @@ def profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = _products_listing_query().all()
-    products = [serialize_product_for_listing(p) for p in all_products]
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
+    all_products = products_listing_query().all()
+    products = [serialize_product_for_listing(p, default_image) for p in all_products]
     return render_template('browse.html', products=products)
 
 
@@ -167,26 +137,11 @@ def api_products_search():
     """Full-text style search on title and description; bounded for responsiveness."""
     raw_q = request.args.get('q', '') or ''
     q = raw_q.strip()
-    base = _products_listing_query()
 
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
     search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
-
-    if not q:
-        rows = base.limit(search_limit).all()
-    else:
-        pattern = f'%{q}%'
-        rows = (
-            base.filter(
-                or_(
-                    Product.product_name.ilike(pattern),
-                    Product.description.ilike(pattern),
-                )
-            )
-            .limit(search_limit)
-            .all()
-        )
-
-    items = [serialize_product_for_listing(p) for p in rows]
+    rows = search_products_for_listing(q, search_limit)
+    items = [serialize_product_for_listing(p, default_image) for p in rows]
     payload = {
         'success': True,
         'query': q,
