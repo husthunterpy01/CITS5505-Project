@@ -88,6 +88,11 @@ def signup_page():
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        terms_accepted = request.form.get('terms_accepted') == 'on'
+
+        if not terms_accepted:
+            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
+            return render_template('signuppage.html')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
