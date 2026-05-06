@@ -1,5 +1,5 @@
 <!-- Admin Chatbox Popup -->
-<div id="admin-chatbox" class="fixed bottom-20 right-6 z-50" data-current-user-id="{{ session.get('user_id', '') }}">
+<div id="admin-chatbox" class="fixed bottom-20 right-6 z-50" data-current-user-id="{{ session.get('user_id', '') }}" data-current-user-role="{{ session.get('user_role', '') }}">
   <!-- Floating Chat Icon -->
   <button id="chatbox-toggle" class="chatbox-icon rounded-full bg-blue-700 text-white p-4 shadow-lg hover:bg-blue-800 transition" title="Open Chat">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">

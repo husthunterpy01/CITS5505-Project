@@ -97,6 +97,7 @@ def seed_database(force_reset: bool = False):
             Conversation(product_id=products[1].product_id, conv_type='direct'),
             Conversation(product_id=products[5].product_id, conv_type='direct'),
             Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
         ]
         db.session.add_all(conversations)
         db.session.flush()
@@ -110,6 +111,8 @@ def seed_database(force_reset: bool = False):
             ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id, participant_role='seller'),
             ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id, participant_role='buyer'),
             ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id, participant_role='seller'),
         ]
         db.session.add_all(participants)
         db.session.flush()
@@ -150,6 +153,18 @@ def seed_database(force_reset: bool = False):
                 product_id=products[9].product_id,
                 sender_id=users[7].user_id,
                 content="Could you hold the keyboard until Friday?",
+            ),
+            Message(
+                conversation_id=conversations[4].conversation_id,
+                product_id=products[9].product_id,
+                sender_id=users[0].user_id,
+                content="Hi George, is the gaming keyboard still available?",
+            ),
+            Message(
+                conversation_id=conversations[4].conversation_id,
+                product_id=products[9].product_id,
+                sender_id=users[6].user_id,
+                content="Hi Alice, yes it is available and works perfectly.",
             ),
         ]
         db.session.add_all(messages)

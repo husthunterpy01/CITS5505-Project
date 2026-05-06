@@ -245,10 +245,21 @@ def handle_start_conversation(payload):
         emit('error', {'message': 'Target user not found'})
         return
 
+    current_user = User.query.get(user_id)
+    if not current_user:
+        emit('error', {'message': 'User not found'})
+        return
+
+    # Enforce product-entry flow for normal users:
+    # user-to-user conversations require product context.
+    requested_product_id = payload.get('product_id')
+    if current_user.role == 'user' and target_user.role == 'user' and not requested_product_id:
+        emit('error', {'message': 'User-to-user chat must be started from a product page'})
+        return
+
     shared_conv = _find_shared_conversation(user_id, target_user_id)
     if not shared_conv:
-        current_user = User.query.get(user_id)
-        product_id = payload.get('product_id') or _default_product_id()
+        product_id = requested_product_id or _default_product_id()
         if not product_id:
             emit('error', {'message': 'No product found to start conversation'})
             return
