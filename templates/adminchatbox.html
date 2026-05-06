@@ -1,5 +1,5 @@
 <!-- Admin Chatbox Popup -->
-<div id="admin-chatbox" class="fixed bottom-20 right-6 z-50">
+<div id="admin-chatbox" class="fixed bottom-20 right-6 z-50" data-current-user-id="{{ session.get('user_id', '') }}">
   <!-- Floating Chat Icon -->
   <button id="chatbox-toggle" class="chatbox-icon rounded-full bg-blue-700 text-white p-4 shadow-lg hover:bg-blue-800 transition" title="Open Chat">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -61,11 +61,11 @@
 
             <!-- Right: messages container -->
             <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="admins-messages-container">
-              <div class="p-3 flex-1 overflow-y-auto" id="admins-messages-list"><!-- messages appended here --></div>
-              <div class="p-3 border-t bg-slate-50">
-                <div class="flex gap-2">
-                  <input id="admins-message-input" class="flex-1 rounded-lg border px-3 py-2" placeholder="Type a message...">
-                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 admins-send-btn">Send</button>
+              <div class="p-3 flex-1 overflow-y-auto msger-chat" id="admins-messages-list"><!-- messages appended here --></div>
+              <div class="p-3 border-t bg-slate-50 msger-inputarea">
+                <div class="flex gap-2 w-full">
+                  <input id="admins-message-input" class="flex-1 rounded-lg border px-3 py-2 msger-input" placeholder="Type a message...">
+                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 admins-send-btn msger-send-btn">Send</button>
                 </div>
               </div>
             </div>
@@ -87,11 +87,11 @@
 
             <!-- Right: messages container -->
             <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="users-messages-container">
-              <div class="p-3 flex-1 overflow-y-auto" id="users-messages-list"><!-- messages appended here --></div>
-              <div class="p-3 border-t bg-slate-50">
-                <div class="flex gap-2">
-                  <input id="users-message-input" class="flex-1 rounded-lg border px-3 py-2" placeholder="Type a message...">
-                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 users-send-btn">Send</button>
+              <div class="p-3 flex-1 overflow-y-auto msger-chat" id="users-messages-list"><!-- messages appended here --></div>
+              <div class="p-3 border-t bg-slate-50 msger-inputarea">
+                <div class="flex gap-2 w-full">
+                  <input id="users-message-input" class="flex-1 rounded-lg border px-3 py-2 msger-input" placeholder="Type a message...">
+                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 users-send-btn msger-send-btn">Send</button>
                 </div>
               </div>
             </div>

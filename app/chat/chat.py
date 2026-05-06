@@ -158,9 +158,15 @@ def handle_send_message(message_payload):
         sent_at=datetime.utcnow(),
         created_at=datetime.utcnow(),
     )
-    db.session.add(message)
-    conversation.updated_at = datetime.utcnow()
-    db.session.commit()
+    try:
+        db.session.add(message)
+        conversation.updated_at = datetime.utcnow()
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        print(f'Failed to commit message for conversation {conversation_id}: {exc}')
+        emit('error', {'message': 'Failed to save message. Please try again.'})
+        return
 
     sender = User.query.get(user_id)
     # Broadcast new message to current active channel

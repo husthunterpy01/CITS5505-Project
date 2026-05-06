@@ -38,6 +38,30 @@
     return panelElement && panelElement.id && panelElement.id.startsWith('admins') ? 'admins' : 'users';
   }
 
+  function setActiveTab(targetTab, tabButtons, tabPanels) {
+    tabPanels.forEach((panel) => {
+      panel.classList.add('hidden');
+      panel.classList.remove('active');
+    });
+
+    tabButtons.forEach((otherBtn) => {
+      otherBtn.classList.remove('active', 'text-blue-700', 'border-blue-700');
+      otherBtn.classList.add('text-slate-500');
+    });
+
+    const targetPanel = document.getElementById(`${targetTab}-panel`);
+    if (targetPanel) {
+      targetPanel.classList.remove('hidden');
+      targetPanel.classList.add('active');
+    }
+
+    const targetBtn = Array.from(tabButtons).find((btn) => btn.getAttribute('data-tab') === targetTab);
+    if (targetBtn) {
+      targetBtn.classList.add('active', 'text-blue-700', 'border-blue-700');
+      targetBtn.classList.remove('text-slate-500');
+    }
+  }
+
   function createContactCard(conv, roleLabel) {
     const other = conv.other_participant;
     const card = document.createElement('div');
@@ -115,11 +139,30 @@
 
   function appendMessageToList(message) {
     if (!messagesList) return;
+
+    const root = document.getElementById('admin-chatbox');
+    const currentUserId = Number(root && root.dataset ? root.dataset.currentUserId : 0);
+    const senderId = Number(message.sender_id || 0);
+    const senderName = (message.sender_username || String(message.sender_id || 'User')).trim();
+    const initials = senderName.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'U';
+    const isOwn = currentUserId > 0 && senderId === currentUserId;
+    const sideClass = isOwn ? 'right-msg' : 'left-msg';
+    const time = message.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const safeText = String(message.content || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
     const el = document.createElement('div');
-    el.className = 'p-2 mb-2 rounded bg-slate-50';
-    el.innerHTML = `<p class="text-xs text-slate-600">${message.sender_username || message.sender_id}</p>
-                    <p class="text-sm text-slate-900">${message.content}</p>
-                    <p class="text-xs text-slate-400 mt-1">${message.sent_at ? new Date(message.sent_at).toLocaleTimeString() : ''}</p>`;
+    el.className = `msg ${sideClass}`;
+    el.innerHTML = `<div class="msg-img">${initials}</div>
+                    <div class="msg-bubble">
+                      <div class="msg-info">
+                        <div class="msg-info-name">${senderName}</div>
+                        <div class="msg-info-time">${time}</div>
+                      </div>
+                      <div class="msg-text">${safeText}</div>
+                    </div>`;
     messagesList.appendChild(el);
     messagesList.scrollTop = messagesList.scrollHeight;
   }
@@ -161,6 +204,7 @@
         const isHidden = chatboxPopup.classList.toggle('hidden');
         if (!isHidden) {
           resetToMenuMode();
+          setActiveTab('admins', tabButtons, tabPanels);
           setListStatus('Loading...');
           requestConversations();
         }
@@ -183,23 +227,12 @@
     tabButtons.forEach((btn) => {
       btn.addEventListener('click', function () {
         const targetTab = btn.getAttribute('data-tab');
-        tabPanels.forEach((panel) => {
-          panel.classList.add('hidden');
-          panel.classList.remove('active');
-        });
-        tabButtons.forEach((otherBtn) => {
-          otherBtn.classList.remove('active', 'text-blue-700', 'border-blue-700');
-          otherBtn.classList.add('text-slate-500');
-        });
-        const targetPanel = document.getElementById(`${targetTab}-panel`);
-        if (targetPanel) {
-          targetPanel.classList.remove('hidden');
-          targetPanel.classList.add('active');
-        }
-        btn.classList.add('active', 'text-blue-700', 'border-blue-700');
-        btn.classList.remove('text-slate-500');
+        setActiveTab(targetTab, tabButtons, tabPanels);
       });
     });
+
+    // Ensure initial state is truly on Admins tab.
+    setActiveTab('admins', tabButtons, tabPanels);
 
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
