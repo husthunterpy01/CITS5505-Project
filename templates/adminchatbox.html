@@ -11,7 +11,14 @@
   <div id="chatbox-popup" class="chatbox-popup hidden absolute bottom-20 right-0 w-96 bg-white rounded-lg shadow-2xl flex flex-col" style="height: 600px;">
     <!-- Header -->
     <div class="bg-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between">
-      <h3 class="font-semibold text-lg">Admin Chat</h3>
+      <div class="flex items-center gap-2">
+        <button id="chatbox-back" class="hidden hover:bg-blue-600 rounded p-1 transition" title="Back to conversations">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        <h3 id="chatbox-title" class="font-semibold text-lg">Chat</h3>
+      </div>
       <button id="chatbox-close" class="hover:bg-blue-600 rounded p-1 transition">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -20,7 +27,7 @@
     </div>
 
     <!-- Tab Navigation -->
-    <div class="border-b border-slate-200 px-4 pt-3 flex gap-0">
+    <div id="chatbox-tab-nav" class="chatbox-menu-only border-b border-slate-200 px-4 pt-3 flex gap-0">
       <button class="chatbox-tab-btn mr-2 pb-3 px-3 text-sm font-semibold border-b-2 border-blue-700 text-blue-700 transition" data-tab="admins">
         Admins
       </button>
@@ -30,7 +37,7 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="p-4 border-b border-slate-200">
+    <div id="chatbox-search-wrap" class="chatbox-menu-only p-4 border-b border-slate-200">
       <input
         type="text"
         id="chatbox-search"
@@ -44,49 +51,55 @@
       <!-- Admins Tab -->
       <div id="admins-panel" class="chatbox-tab-panel">
         <div class="p-4 space-y-2">
-          <p class="text-xs text-slate-500 mb-3">Recent conversations</p>
-          <div class="space-y-2" id="admins-list">
-            <!-- Dynamically populated -->
-            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
-              <p class="font-medium text-sm text-slate-900">Carol Tan</p>
-              <p class="text-xs text-slate-500">admin • Last message: today</p>
+          <p class="chat-list-title text-xs text-slate-500 mb-3">Recent conversations</p>
+
+          <div class="flex gap-4">
+            <!-- Left: conversation list -->
+            <div class="w-1/3 space-y-2" id="admins-list">
+              <div class="p-3 text-xs text-slate-400">Loading...</div>
+            </div>
+
+            <!-- Right: messages container -->
+            <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="admins-messages-container">
+              <div class="p-3 flex-1 overflow-y-auto" id="admins-messages-list"><!-- messages appended here --></div>
+              <div class="p-3 border-t bg-slate-50">
+                <div class="flex gap-2">
+                  <input id="admins-message-input" class="flex-1 rounded-lg border px-3 py-2" placeholder="Type a message...">
+                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 admins-send-btn">Send</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
 
       <!-- Users Tab -->
       <div id="users-panel" class="chatbox-tab-panel hidden">
         <div class="p-4 space-y-2">
-          <p class="text-xs text-slate-500 mb-3">Recent conversations</p>
-          <div class="space-y-2" id="users-list">
-            <!-- Dynamically populated -->
-            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
-              <p class="font-medium text-sm text-slate-900">Alice Nguyen</p>
-              <p class="text-xs text-slate-500">user • Last message: today</p>
+          <p class="chat-list-title text-xs text-slate-500 mb-3">Recent conversations</p>
+
+          <div class="flex gap-4">
+            <!-- Left: conversation list -->
+            <div class="w-1/3 space-y-2" id="users-list">
+              <div class="p-3 text-xs text-slate-400">Loading...</div>
             </div>
-            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
-              <p class="font-medium text-sm text-slate-900">Ben Lee</p>
-              <p class="text-xs text-slate-500">user • Last message: yesterday</p>
+
+            <!-- Right: messages container -->
+            <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="users-messages-container">
+              <div class="p-3 flex-1 overflow-y-auto" id="users-messages-list"><!-- messages appended here --></div>
+              <div class="p-3 border-t bg-slate-50">
+                <div class="flex gap-2">
+                  <input id="users-message-input" class="flex-1 rounded-lg border px-3 py-2" placeholder="Type a message...">
+                  <button class="bg-blue-700 text-white rounded-lg px-4 py-2 users-send-btn">Send</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Message Input -->
-    <div class="border-t border-slate-200 p-4 bg-slate-50 rounded-b-lg">
-      <div class="flex gap-2">
-        <input
-          type="text"
-          id="chatbox-message-input"
-          placeholder="Type a message..."
-          class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-        >
-        <button class="bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-800 transition">
-          Send
-        </button>
-      </div>
-    </div>
+    <!-- global message input removed; per-panel inputs shown when a conversation is selected -->
   </div>
 </div>

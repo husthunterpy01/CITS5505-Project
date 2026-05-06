@@ -3,7 +3,11 @@ from sqlalchemy import asc, desc, func
 from app.models import Product
 from app.extensions import db
 
+
 class ProductQueryService:
+    PAGE_WINDOW = 2
+    MAX_PER_PAGE = 100
+    DEFAULT_PER_PAGE = 4
 
     SORT_MAP = {
         'item':   Product.product_name,
@@ -12,10 +16,6 @@ class ProductQueryService:
         'views':  Product.product_id,
         'posted': Product.created_at,
     }
-
-    PAGE_WINDOW = 2
-    MAX_PER_PAGE = 100
-    DEFAULT_PER_PAGE = 4
 
     @classmethod
     def _sortable_column(cls, sort_by):

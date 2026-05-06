@@ -1,5 +1,8 @@
-from app.extensions import db
 from datetime import datetime
+
+from sqlalchemy.orm import synonym
+
+from app.extensions import db
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -8,14 +11,16 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='normal') 
+    password_hash = db.Column(db.String(255), nullable=False)
+    password = synonym('password_hash')
+    role         = db.Column(db.String(20), nullable=False, default='user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     products          = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
+    conversations     = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
+    loggings          = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
     sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
-    received_messages = db.relationship('Message', backref='receiver', lazy=True, foreign_keys='Message.receiver_id')
 
 
 class Category(db.Model):
@@ -43,6 +48,7 @@ class Product(db.Model):
 
     images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
+    conversations = db.relationship('Conversation', backref='product', lazy=True, foreign_keys='Conversation.product_id')
 
 
 
@@ -55,12 +61,51 @@ class ProductImage(db.Model):
     is_primary = db.Column(db.Boolean, nullable=False, default=False)
 
 
+class Conversation(db.Model):
+    __tablename__ = 'conversations'
+
+    conversation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_id      = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=True)
+    conv_type       = db.Column(db.String(30), nullable=False, default='direct')
+    created_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    message_id      = db.Column(db.Integer, db.ForeignKey('messages.message_id'), nullable=True)
+    participant_id  = db.Column(db.Integer, db.ForeignKey('conversation_participants.conversation_participant_id'), nullable=True)
+
+    messages = db.relationship('Message', backref='conversation', lazy=True, foreign_keys='Message.conversation_id')
+    participants = db.relationship('ConversationParticipant', backref='conversation', lazy=True, foreign_keys='ConversationParticipant.conversation_id')
+
+
+class ConversationParticipant(db.Model):
+    __tablename__ = 'conversation_participants'
+
+    conversation_participant_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    conversation_id             = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
+    user_id                     = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    participant_role            = db.Column(db.String(30), nullable=False, default='member')
+
+
 class Message(db.Model):
     __tablename__ = 'messages'
 
-    message_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    product_id  = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False)
-    sender_id   = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    content     = db.Column(db.Text, nullable=False)
-    sent_at     = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    message_id     = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
+    product_id     = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False)
+    sender_id      = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    content        = db.Column(db.Text, nullable=False)
+    is_read        = db.Column(db.Boolean, nullable=False, default=False)
+    read_at        = db.Column(db.DateTime, nullable=True)
+    sent_at        = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at     = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+class Logging(db.Model):
+    __tablename__ = 'logging'
+
+    logging_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
+    target_id   = db.Column(db.Integer, nullable=False)
+    action      = db.Column(db.String(100), nullable=False)
+    reason      = db.Column(db.Text, nullable=True)
+    created_at  = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

@@ -2,7 +2,7 @@ import argparse
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
-from app.models import Category, Message, Product, ProductImage, User
+from app.models import Category, Conversation, ConversationParticipant, Logging, Message, Product, ProductImage, User
 
 
 def seed_database(force_reset: bool = False):
@@ -20,6 +20,9 @@ def seed_database(force_reset: bool = False):
 
         if force_reset:
             Message.query.delete()
+            ConversationParticipant.query.delete()
+            Conversation.query.delete()
+            Logging.query.delete()
             ProductImage.query.delete()
             Product.query.delete()
             Category.query.delete()
@@ -27,15 +30,15 @@ def seed_database(force_reset: bool = False):
             db.session.commit()
 
         users = [
-            User(first_name="Alice",last_name="Nguyen",email="alice@example.com",password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ben",last_name="Lee",email="ben@example.com",password=generate_password_hash("password123"),role="user"),
-            User(first_name="Carol",last_name="Tan",email="carol@example.com",password=generate_password_hash("password123"),role="admin"),
+            User(first_name="Alice", last_name="Nguyen", email="alice@example.com", password=generate_password_hash("password123"), role="user"),
+            User(first_name="Ben", last_name="Lee", email="ben@example.com", password=generate_password_hash("password123"), role="user"),
+            User(first_name="Carol", last_name="Tan", email="carol@example.com", password=generate_password_hash("password123"), role="admin"),
             User(first_name="Daisy", last_name="Wong", email="daisy@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
             User(first_name="Ethan", last_name="Smith", email="ethan@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
             User(first_name="Fiona", last_name="Brown", email="fiona@example.com", password=generate_password_hash("password123"), role="user"),
             User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="user"),
             User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="user")
+            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="user"),
         ]
         db.session.add_all(users)
         db.session.flush()
@@ -89,27 +92,102 @@ def seed_database(force_reset: bool = False):
         ]
         db.session.add_all(images)
 
+        conversations = [
+            Conversation(product_id=products[0].product_id, conv_type='direct'),
+            Conversation(product_id=products[1].product_id, conv_type='direct'),
+            Conversation(product_id=products[5].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
+        ]
+        db.session.add_all(conversations)
+        db.session.flush()
+
+        participants = [
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id, participant_role='buyer'),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id, participant_role='buyer'),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id, participant_role='buyer'),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id, participant_role='seller'),
+        ]
+        db.session.add_all(participants)
+        db.session.flush()
+
         messages = [
             Message(
+                conversation_id=conversations[0].conversation_id,
                 product_id=products[0].product_id,
                 sender_id=users[1].user_id,
-                receiver_id=users[3].user_id,
                 content="Hi, is this still available?",
             ),
             Message(
+                conversation_id=conversations[0].conversation_id,
                 product_id=products[0].product_id,
                 sender_id=users[3].user_id,
-                receiver_id=users[1].user_id,
                 content="Yes, it is available.",
             ),
             Message(
+                conversation_id=conversations[1].conversation_id,
                 product_id=products[1].product_id,
                 sender_id=users[0].user_id,
-                receiver_id=users[1].user_id,
                 content="Can you do $20?",
+            ),
+            Message(
+                conversation_id=conversations[2].conversation_id,
+                product_id=products[5].product_id,
+                sender_id=users[4].user_id,
+                content="Is this skincare set unused and sealed?",
+            ),
+            Message(
+                conversation_id=conversations[2].conversation_id,
+                product_id=products[5].product_id,
+                sender_id=users[3].user_id,
+                content="Yes, still sealed and ready for pickup.",
+            ),
+            Message(
+                conversation_id=conversations[3].conversation_id,
+                product_id=products[9].product_id,
+                sender_id=users[7].user_id,
+                content="Could you hold the keyboard until Friday?",
             ),
         ]
         db.session.add_all(messages)
+
+        # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
+        admin_conv = Conversation(product_id=None, conv_type='admin')
+        db.session.add(admin_conv)
+        db.session.flush()
+
+        admin_participants = [
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id, participant_role='admin'),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id, participant_role='user'),
+        ]
+        db.session.add_all(admin_participants)
+        db.session.flush()
+
+        admin_messages = [
+            Message(
+                conversation_id=admin_conv.conversation_id,
+                product_id=products[0].product_id,
+                sender_id=users[2].user_id,
+                content="Hello Alice, I can help with your issue.",
+            ),
+            Message(
+                conversation_id=admin_conv.conversation_id,
+                product_id=products[0].product_id,
+                sender_id=users[0].user_id,
+                content="Thanks Carol, I have a question about my listing.",
+            ),
+        ]
+        db.session.add_all(admin_messages)
+
+        logs = [
+            Logging(user_id=users[2].user_id, target_type='user', target_id=users[3].user_id, action='report', reason='Repeated suspicious activity.'),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[2].product_id, action='flag', reason='Mismatch between description and condition.'),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[5].product_id, action='approve', reason='Reviewed and approved by admin.'),
+        ]
+        db.session.add_all(logs)
 
         db.session.commit()
         print("Database seeded successfully.")

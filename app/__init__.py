@@ -1,9 +1,7 @@
 import os
-
 from flask import Flask
-
+from app.extensions import db, socketio
 from app.config import Config
-from app.models import db
 from app.route import main
 
 try:
@@ -32,3 +30,9 @@ if Migrate is not None:
 
 # Register application routes and API endpoints.
 app.register_blueprint(main)
+
+# Register SocketIO for real-time communication.
+socketio.init_app(app, async_mode='threading')
+
+# Import Socket.IO handlers to register them.
+from app.chat import chat

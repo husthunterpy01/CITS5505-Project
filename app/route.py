@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import User, Product
+from app.models import Product, User
 from app.service.auth import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
@@ -75,6 +75,7 @@ def logout():
     AuthService.logout_user()
     flash('You have been logged out', 'success')
     return redirect(url_for('main.home_page'))
+
 
 # User routes
 @main.route('/personalprofile', methods=['POST', 'GET'])
