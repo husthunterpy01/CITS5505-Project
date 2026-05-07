@@ -7,6 +7,7 @@ Create Date: 2026-05-06 16:28:16.149453
 """
 from alembic import op
 import sqlalchemy as sa
+from werkzeug.security import generate_password_hash
 
 
 # revision identifiers, used by Alembic.
@@ -19,9 +20,29 @@ depends_on = None
 FK_CONVENTION = {'fk': 'fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s'}
 
 
+def _backfill_user_passwords_if_missing(bind):
+    """Ensure users.password/password_hash has no NULL before batch rewrite."""
+    inspector = sa.inspect(bind)
+    user_columns = {col['name'] for col in inspector.get_columns('users')}
+
+    fallback_hash = generate_password_hash('password123')
+    if 'password' in user_columns:
+        op.execute(
+            sa.text("UPDATE users SET password = :fallback WHERE password IS NULL"),
+            {'fallback': fallback_hash},
+        )
+    if 'password_hash' in user_columns:
+        op.execute(
+            sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL"),
+            {'fallback': fallback_hash},
+        )
+
+
 def upgrade():
     bind = op.get_bind()
     existing_tables = set(sa.inspect(bind).get_table_names())
+    if 'users' in existing_tables:
+        _backfill_user_passwords_if_missing(bind)
 
     if 'conversation_participants' not in existing_tables:
         op.create_table(

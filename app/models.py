@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from sqlalchemy.orm import synonym
-
 from app.extensions import db
 
 class User(db.Model):
@@ -11,8 +9,7 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    password = synonym('password_hash')
+    password    = db.Column(db.String(255), nullable=False)
     role         = db.Column(db.String(20), nullable=False, default='user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
@@ -66,7 +63,6 @@ class Conversation(db.Model):
 
     conversation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     product_id      = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=True)
-    conv_type       = db.Column(db.String(30), nullable=False, default='direct')
     created_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     message_id      = db.Column(db.Integer, db.ForeignKey('messages.message_id'), nullable=True)

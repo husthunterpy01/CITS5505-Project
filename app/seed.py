@@ -93,11 +93,11 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(images)
 
         conversations = [
-            Conversation(product_id=products[0].product_id, conv_type='direct'),
-            Conversation(product_id=products[1].product_id, conv_type='direct'),
-            Conversation(product_id=products[5].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[0].product_id),
+            Conversation(product_id=products[1].product_id),
+            Conversation(product_id=products[5].product_id),
+            Conversation(product_id=products[9].product_id),
+            Conversation(product_id=products[9].product_id),
         ]
         db.session.add_all(conversations)
         db.session.flush()
@@ -170,7 +170,7 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(messages)
 
         # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
-        admin_conv = Conversation(product_id=None, conv_type='admin')
+        admin_conv = Conversation(product_id=None)
         db.session.add(admin_conv)
         db.session.flush()
 

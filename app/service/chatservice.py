@@ -226,8 +226,7 @@ class ChatService:
             if not product_id:
                 return self._error('No product found to start conversation')
 
-            conv_type = 'admin' if (current_user.role == 'admin' or target_user.role == 'admin') else 'direct'
-            shared_conv = Conversation(product_id=product_id, conv_type=conv_type)
+            shared_conv = Conversation(product_id=product_id)
             db.session.add(shared_conv)
             db.session.flush()
 
