@@ -65,7 +65,7 @@
     </main>
     {% include 'footer.html' %}
     {% if session.get('user_id') %}
-      {% include 'adminchatbox.html' %}
+      {% include 'chatbox.html' %}
     {% endif %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% if session.get('user_id') %}
