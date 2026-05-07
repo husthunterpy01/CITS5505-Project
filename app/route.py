@@ -76,7 +76,6 @@ def logout():
     flash('You have been logged out', 'success')
     return redirect(url_for('main.home_page'))
 
-
 # User routes
 @main.route('/personalprofile', methods=['POST', 'GET'])
 @AuthService.role_accepted(*user_roles.keys())

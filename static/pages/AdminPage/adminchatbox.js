@@ -145,7 +145,7 @@
     card.setAttribute('data-has-history', conv.has_history ? 'true' : 'false');
     const messagePreview = `Last message: ${conv.last_message_preview || '-'}`;
     card.innerHTML = `<p class="font-medium text-sm text-slate-900">${other.first_name} ${other.last_name}</p>
-                      <p class="text-xs text-slate-500">${roleLabel} - ${messagePreview}</p>`;
+                      <p class="text-xs text-slate-500">${messagePreview}</p>`;
     return card;
   }
 
