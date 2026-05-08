@@ -89,7 +89,6 @@ class ConversationParticipant(db.Model):
     conversation_participant_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     conversation_id             = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
     user_id                     = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    participant_role            = db.Column(db.String(30), nullable=False, default='member')
 
 
 class Message(db.Model):
