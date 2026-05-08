@@ -121,7 +121,40 @@ def personal_profile_page():
                 flash('Password updated successfully.', 'success')
                 return redirect(url_for('main.personal_profile_page'))
 
-    return render_template('personalprofile.html', user=user_profile, username=display_name)
+    listing_data = ProductQueryService.get_user_listings(
+        current_user_id,
+        status=request.args.get('status', 'all'),
+        query=request.args.get('q', ''),
+        page=request.args.get('page', 1, type=int),
+        per_page=request.args.get('per_page', 4, type=int),
+        sort_by=request.args.get('sort', 'posted'),
+        direction=request.args.get('direction', 'desc'),
+    )
+
+    return render_template(
+        'personalprofile.html',
+        user=user_profile,
+        username=display_name,
+        user_products=listing_data['products'],
+        total_listed=listing_data['summary']['total_listed'],
+        active_listed=listing_data['summary']['active_listed'],
+        earned_total=listing_data['summary']['earned_total'],
+        total_views=listing_data['summary']['total_views'],
+        filter_status=listing_data['filters']['status'],
+        filter_query=listing_data['filters']['query'],
+        sort_by=listing_data['filters']['sort_by'],
+        sort_direction=listing_data['filters']['direction'],
+        per_page=listing_data['pagination']['per_page'],
+        pagination={
+            'page': listing_data['pagination']['page'],
+            'per_page': listing_data['pagination']['per_page'],
+            'total_pages': listing_data['pagination']['total_pages'],
+            'total_items': listing_data['pagination']['total_items'],
+            'start_item': listing_data['pagination']['start_item'],
+            'end_item': listing_data['pagination']['end_item'],
+        },
+        page_numbers=listing_data['pagination']['page_numbers'],
+    )
 
 
 @main.route('/profile')
