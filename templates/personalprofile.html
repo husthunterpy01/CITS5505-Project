@@ -46,6 +46,7 @@
             >
                 Activity
             </button>
+            {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
                 role="tab"
