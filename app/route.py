@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 
 from app.extensions import db
-from app.models import User
+from app.models import Product, User
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
@@ -129,31 +129,6 @@ def personal_profile_page():
         per_page=request.args.get('per_page', 4, type=int),
         sort_by=request.args.get('sort', 'posted'),
         direction=request.args.get('direction', 'desc'),
-    )
-
-    return render_template(
-        'personalprofile.html',
-        user=user_profile,
-        username=display_name,
-        user_products=listing_data['products'],
-        total_listed=listing_data['summary']['total_listed'],
-        active_listed=listing_data['summary']['active_listed'],
-        earned_total=listing_data['summary']['earned_total'],
-        total_views=listing_data['summary']['total_views'],
-        filter_status=listing_data['filters']['status'],
-        filter_query=listing_data['filters']['query'],
-        sort_by=listing_data['filters']['sort_by'],
-        sort_direction=listing_data['filters']['direction'],
-        per_page=listing_data['pagination']['per_page'],
-        pagination={
-            'page': listing_data['pagination']['page'],
-            'per_page': listing_data['pagination']['per_page'],
-            'total_pages': listing_data['pagination']['total_pages'],
-            'total_items': listing_data['pagination']['total_items'],
-            'start_item': listing_data['pagination']['start_item'],
-            'end_item': listing_data['pagination']['end_item'],
-        },
-        page_numbers=listing_data['pagination']['page_numbers'],
     )
 
     return render_template(

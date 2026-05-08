@@ -1,11 +1,7 @@
 import argparse
-<<<<<<< HEAD
-from werkzeug.security import generate_password_hash
-=======
 
 from werkzeug.security import generate_password_hash
 
->>>>>>> origin/main
 from app import app
 from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
@@ -32,18 +28,6 @@ def seed_database(force_reset: bool = False):
             User.query.delete()
             db.session.commit()
 
-<<<<<<< HEAD
-        users = [
-            User(first_name="Alice",last_name="Nguyen",email="alice@example.com",password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ben",last_name="Lee",email="ben@example.com",password=generate_password_hash("password123"),role="user"),
-            User(first_name="Carol",last_name="Tan",email="carol@example.com",password=generate_password_hash("password123"),role="admin"),
-            User(first_name="Daisy", last_name="Wong", email="daisy@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
-            User(first_name="Ethan", last_name="Smith", email="ethan@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
-            User(first_name="Fiona", last_name="Brown", email="fiona@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="user")
-=======
         user_seed_data = [
             ("Alice", "Nguyen", "alice@example.com", "password123", "normal"),
             ("Ben", "Lee", "ben@example.com", "password123", "normal"),
@@ -55,25 +39,10 @@ def seed_database(force_reset: bool = False):
             ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
             ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
             ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
->>>>>>> origin/main
         ]
         db.session.add_all(users)
         db.session.flush()
 
-<<<<<<< HEAD
-
-        categories = [
-            Category(category_name="Electronics"),
-            Category(category_name="Books"),
-            Category(category_name="Home"),
-            Category(category_name="Clothing"),
-            Category(category_name="Fitness"),
-            Category(category_name="Beauty"),
-            Category(category_name="Toys"),
-            Category(category_name="Automotive"),
-            Category(category_name="Garden"),
-            Category(category_name="Gaming"),
-=======
         users = []
         for first_name, last_name, email, raw_password, role in user_seed_data:
             user = User.query.filter_by(email=email).first()
@@ -100,7 +69,6 @@ def seed_database(force_reset: bool = False):
             "Automotive",
             "Garden",
             "Gaming",
->>>>>>> origin/main
         ]
         db.session.add_all(categories)
         db.session.flush()
@@ -108,16 +76,6 @@ def seed_database(force_reset: bool = False):
         products = [
             Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location="Perth", status="available"),
             Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location="Fremantle", status="available"),
-<<<<<<< HEAD
-            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location="Subiaco", status="sold", is_legit=False),
-            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location="Perth", status="available"),
-            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location="Crawley", status="available"),
-            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location="Nedlands", status="available", is_legit=False),
-            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location="Joondalup", status="available"),
-            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location="Osborne Park", status="available"),
-            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location="Willetton", status="available"),
-            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[6].user_id, category_id=categories[9].category_id, price=70.0, location="Perth", status="available"),
-=======
             Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location="Subiaco", status="sold"),
             Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location="Perth", status="available"),
             Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location="Crawley", status="available"),
@@ -126,7 +84,6 @@ def seed_database(force_reset: bool = False):
             Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location="Osborne Park", status="available"),
             Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location="Willetton", status="available"),
             Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[9].user_id, category_id=categories[9].category_id, price=70.0, location="Perth", status="available"),
->>>>>>> origin/main
             Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location="Perth", status="sold"),
             Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location="Nedlands", status="pending"),
         ]
