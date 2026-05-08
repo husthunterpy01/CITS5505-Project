@@ -179,7 +179,7 @@ def browse_page():
             'title': product.product_name,
             'description': product.description,
             'price': product.price,
-            'location': product.location,
+            'location': product.location.location_name if product.location else 'Unknown Location',
             'status': product.status,
             'seller_name': seller_name,
             'image': primary_image

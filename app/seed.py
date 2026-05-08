@@ -2,7 +2,8 @@ import argparse
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
-from app.models import Category, Conversation, ConversationParticipant, Logging, Message, Product, ProductImage, User
+from app.models import Category, Conversation, ConversationParticipant, Location, Logging, Message, Product, ProductImage, User
+from app.service.geolocationservice import GeoLocationService
 
 
 def seed_database(force_reset: bool = False):
@@ -25,6 +26,7 @@ def seed_database(force_reset: bool = False):
             Logging.query.delete()
             ProductImage.query.delete()
             Product.query.delete()
+            Location.query.delete()
             Category.query.delete()
             User.query.delete()
             db.session.commit()
@@ -59,19 +61,43 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(categories)
         db.session.flush()
 
+        location_names = [
+            "Perth, Western Australia",
+            "Fremantle, Western Australia",
+            "Subiaco, Western Australia",
+            "Crawley, Western Australia",
+            "Nedlands, Western Australia",
+            "Joondalup, Western Australia",
+            "Osborne Park, Western Australia",
+            "Willetton, Western Australia",
+        ]
+        resolved_locations = GeoLocationService.geocode_batch(location_names)
+        locations = []
+        for name in location_names:
+            coords = resolved_locations.get(name, {"longitude": 0.0, "latitude": 0.0})
+            locations.append(
+                Location(
+                    location_name=name,
+                    longitude=coords["longitude"],
+                    latitude=coords["latitude"],
+                )
+            )
+        db.session.add_all(locations)
+        db.session.flush()
+
         products = [
-            Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location="Perth", status="available"),
-            Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location="Fremantle", status="available"),
-            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location="Subiaco", status="sold", is_legit=False),
-            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location="Perth", status="available"),
-            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location="Crawley", status="available"),
-            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location="Nedlands", status="available", is_legit=False),
-            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location="Joondalup", status="available"),
-            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location="Osborne Park", status="available"),
-            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location="Willetton", status="available"),
-            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[6].user_id, category_id=categories[9].category_id, price=70.0, location="Perth", status="available"),
-            Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location="Perth", status="sold"),
-            Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location="Nedlands", status="pending"),
+            Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location_id=locations[0].location_id, status="available"),
+            Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location_id=locations[1].location_id, status="available"),
+            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location_id=locations[2].location_id, status="sold", is_legit=False),
+            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location_id=locations[0].location_id, status="available"),
+            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location_id=locations[3].location_id, status="available"),
+            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location_id=locations[4].location_id, status="available", is_legit=False),
+            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location_id=locations[5].location_id, status="available"),
+            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location_id=locations[6].location_id, status="available"),
+            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location_id=locations[7].location_id, status="available"),
+            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[6].user_id, category_id=categories[9].category_id, price=70.0, location_id=locations[0].location_id, status="available"),
+            Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location_id=locations[0].location_id, status="sold"),
+            Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location_id=locations[4].location_id, status="pending"),
         ]
         db.session.add_all(products)
         db.session.flush()
@@ -93,11 +119,11 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(images)
 
         conversations = [
-            Conversation(product_id=products[0].product_id),
-            Conversation(product_id=products[1].product_id),
-            Conversation(product_id=products[5].product_id),
-            Conversation(product_id=products[9].product_id),
-            Conversation(product_id=products[9].product_id),
+            Conversation(product_id=products[0].product_id, conv_type='direct'),
+            Conversation(product_id=products[1].product_id, conv_type='direct'),
+            Conversation(product_id=products[5].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
         ]
         db.session.add_all(conversations)
         db.session.flush()
@@ -120,49 +146,41 @@ def seed_database(force_reset: bool = False):
         messages = [
             Message(
                 conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[1].user_id,
                 content="Hi, is this still available?",
             ),
             Message(
                 conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[3].user_id,
                 content="Yes, it is available.",
             ),
             Message(
                 conversation_id=conversations[1].conversation_id,
-                product_id=products[1].product_id,
                 sender_id=users[0].user_id,
                 content="Can you do $20?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
                 sender_id=users[4].user_id,
                 content="Is this skincare set unused and sealed?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
                 sender_id=users[3].user_id,
                 content="Yes, still sealed and ready for pickup.",
             ),
             Message(
                 conversation_id=conversations[3].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[7].user_id,
                 content="Could you hold the keyboard until Friday?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[0].user_id,
                 content="Hi George, is the gaming keyboard still available?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[6].user_id,
                 content="Hi Alice, yes it is available and works perfectly.",
             ),
@@ -170,7 +188,7 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(messages)
 
         # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
-        admin_conv = Conversation(product_id=None)
+        admin_conv = Conversation(product_id=None, conv_type='admin')
         db.session.add(admin_conv)
         db.session.flush()
 
@@ -184,13 +202,11 @@ def seed_database(force_reset: bool = False):
         admin_messages = [
             Message(
                 conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[2].user_id,
                 content="Hello Alice, I can help with your issue.",
             ),
             Message(
                 conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[0].user_id,
                 content="Thanks Carol, I have a question about my listing.",
             ),
