@@ -2,7 +2,7 @@ import argparse
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
-from app.models import Category, Conversation, ConversationParticipant, Location, Logging, Message, Product, ProductImage, User
+from app.models import Category, Conversation, ConversationParticipant, Logging, Message, Product, ProductImage, User
 
 
 def seed_database(force_reset: bool = False):
@@ -118,16 +118,16 @@ def seed_database(force_reset: bool = False):
         db.session.flush()
 
         participants = [
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id),
         ]
         db.session.add_all(participants)
         db.session.flush()
@@ -184,8 +184,8 @@ def seed_database(force_reset: bool = False):
         db.session.flush()
 
         admin_participants = [
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id, participant_role='admin'),
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id, participant_role='user'),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id),
         ]
         db.session.add_all(admin_participants)
         db.session.flush()
