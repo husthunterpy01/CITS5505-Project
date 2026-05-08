@@ -9,7 +9,6 @@ class ProductQueryService:
         'item':   Product.product_name,
         'price':  Product.price,
         'status': Product.status,
-        'views':  Product.product_id,
         'posted': Product.created_at,
     }
 
