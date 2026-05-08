@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
-
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import User
+from app.models import Product, User
 from app.service.auth import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
@@ -157,46 +156,24 @@ def personal_profile_page():
     )
 
 
-@main.route('/profile')
-def profile_page():
-    return redirect(url_for('main.personal_profile_page'))
-
-
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    browse_data = ProductQueryService.get_browse_products_with_distance(
+        sort_by=request.args.get('sort', 'posted'),
+        direction=request.args.get('direction', 'desc'),
+        user_location=request.args.get('user_location', ''),
+    )
 
-    products = []
-
-    for product in all_products:
-        primary_image = None
-
-        for image in product.images:
-            if image.is_primary:
-                primary_image = image.image_url
-                break
-
-        if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
-
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
-
-        products.append({
-            'product_id': product.product_id,
-            'title': product.product_name,
-            'description': product.description,
-            'price': product.price,
-            'location': product.location,
-            'status': product.status,
-            'seller_name': seller_name,
-            'image': primary_image
-        })
-
-    return render_template('browse.html', products=products)
+    return render_template(
+        'browse.html',
+        products=browse_data['products'],
+        sort_by=browse_data['filters']['sort_by'],
+        sort_direction=browse_data['filters']['direction'],
+        user_location=browse_data['location_search']['query'],
+        location_resolved=browse_data['location_search']['resolved'],
+        location_error=browse_data['location_search']['error'],
+        distance_summary=browse_data['distance_summary'],
+    )
 
 
 # Admin routes
@@ -230,17 +207,96 @@ def admin_home_page():
     )
 
 
-@main.route('/admin/users')
+@main.route('/admin/users', methods=['GET', 'POST'])
 @AuthService.role_accepted('admin')
 def admin_users_page():
+    if request.method == 'POST':
+        payload = request.get_json(silent=True) or request.form
+        action = (payload.get('action') or '').strip().lower()
+        raw_user_id = payload.get('user_id')
+        reason = (payload.get('reason') or '').strip()
+
+        if not action or not raw_user_id:
+            return jsonify({'ok': False, 'message': 'Missing action or user_id.'}), 400
+
+        try:
+            user_id = int(raw_user_id)
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'message': 'Invalid user_id.'}), 400
+
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+        if target_user.role == 'admin' and action == 'report':
+            return jsonify({'ok': False, 'message': 'Admin users cannot be reported.'}), 400
+
+        if action == 'report':
+            if not reason:
+                return jsonify({'ok': False, 'message': 'Report reason is required.'}), 400
+            target_user.is_report = True
+            target_user.review = reason
+        elif action == 'unreport':
+            target_user.is_report = False
+        else:
+            return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
+
+        db.session.commit()
+        return jsonify({
+            'ok': True,
+            'message': f"{target_user.first_name} {target_user.last_name} updated successfully.",
+            'is_report': target_user.is_report,
+        })
+
     all_users = User.query.all()
-    return render_template('admin_users.html', users=all_users)
+    return render_template('usermanager.html', users=all_users)
 
 
-@main.route('/admin/reports')
+@main.route('/admin/reports', methods=['GET', 'POST'])
 @AuthService.role_accepted('admin')
 def admin_reports_page():
-    suspicious_products = Product.query.filter_by(is_legit=False).all()
-    return render_template('admin_reports.html', products=suspicious_products)
+    if request.method == 'POST':
+        payload = request.get_json(silent=True) or request.form
+        action = (payload.get('action') or '').strip().lower()
+        raw_product_id = payload.get('product_id')
+        reason = (payload.get('reason') or '').strip()
+
+        if not action or not raw_product_id:
+            return jsonify({'ok': False, 'message': 'Missing action or product_id.'}), 400
+
+        try:
+            product_id = int(raw_product_id)
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'message': 'Invalid product_id.'}), 400
+
+        target_product = Product.query.get(product_id)
+        if not target_product:
+            return jsonify({'ok': False, 'message': 'Product not found.'}), 404
+
+        # Do not allow moderation actions on sold products
+        if getattr(target_product, 'status', '') == 'sold':
+            return jsonify({'ok': False, 'message': 'Cannot moderate a sold product.'}), 400
+
+        if action == 'approve':
+            target_product.is_legit = True
+            # clear previous review when approving
+            target_product.review = None
+        elif action == 'flag':
+            if not reason:
+                return jsonify({'ok': False, 'message': 'Reason is required when flagging a post.'}), 400
+            target_product.is_legit = False
+            target_product.review = reason
+        else:
+            return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
+
+        db.session.commit()
+        return jsonify({
+            'ok': True,
+            'message': f"{target_product.product_name} updated successfully.",
+            'is_legit': target_product.is_legit,
+        })
+
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    return render_template('postmanager.html', products=all_products)
 
 
