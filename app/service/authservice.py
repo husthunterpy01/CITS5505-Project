@@ -45,7 +45,7 @@ class AuthService:
             last_name=cleaned_last_name,
             email=normalized_email,
             password=hashed_password,
-            role='normal',
+            role='user',
             is_report=False,
         )
 
