@@ -1,7 +1,9 @@
 import sqlalchemy as sa
 from sqlalchemy import asc, desc, func
+from sqlalchemy.orm import joinedload
 from app.models import Product
 from app.extensions import db
+from app.service.geolocationservice import GeoLocationService
 
 
 class ProductQueryService:
@@ -13,7 +15,6 @@ class ProductQueryService:
         'item':   Product.product_name,
         'price':  Product.price,
         'status': Product.status,
-        'views':  Product.product_id,
         'posted': Product.created_at,
     }
 
@@ -121,3 +122,122 @@ class ProductQueryService:
                 'total_views':   0,
             },
         }
+
+    @classmethod
+    def get_browse_products(cls, sort_by='posted', direction='desc'):
+        sort_by = (sort_by or 'posted').strip().lower()
+        direction = (direction or 'desc').strip().lower()
+
+        sort_col = cls._sortable_column(sort_by)
+        order_dir = asc if direction == 'asc' else desc
+
+        products = Product.query.options(
+            joinedload(Product.images),
+            joinedload(Product.seller),
+            joinedload(Product.location),
+        ).order_by(order_dir(sort_col), desc(Product.created_at)).all()
+
+        product_cards = []
+        for product in products:
+            primary_image = next((img.image_url for img in product.images if img.is_primary), 'assets/logo/UWA_logo.webp')
+
+            seller = getattr(product, 'seller', None)
+            seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
+
+            product_cards.append({
+                'product_id': product.product_id,
+                'title': product.product_name,
+                'description': product.description,
+                'price': product.price,
+                'location': product.location.location_name if product.location else 'Unknown Location',
+                'location_latitude': product.location.latitude if product.location else None,
+                'location_longitude': product.location.longitude if product.location else None,
+                'status': product.status,
+                'seller_name': seller_name,
+                'image': primary_image,
+                'distance_km': None,
+                'distance_band': None,
+            })
+
+        return {
+            'products': product_cards,
+            'filters': {
+                'sort_by': sort_by,
+                'direction': direction,
+            },
+            'location_search': {
+                'query': '',
+                'resolved': False,
+                'latitude': None,
+                'longitude': None,
+                'error': None,
+            },
+            'distance_summary': {
+                'within_5_km': 0,
+                'within_10_km': 0,
+                'over_15_km': 0,
+            },
+        }
+
+    @classmethod
+    def get_browse_products_with_distance(cls, sort_by='posted', direction='desc', user_location=''):
+        data = cls.get_browse_products(sort_by=sort_by, direction=direction)
+
+        query = (user_location or '').strip()
+        data['location_search']['query'] = query
+        if not query:
+            return data
+
+        geocode_map = GeoLocationService.geocode_batch([query])
+        coords = geocode_map.get(query)
+        if not coords and geocode_map:
+            coords = next(iter(geocode_map.values()))
+
+        if not coords:
+            data['location_search']['error'] = 'Could not resolve your location. Try suburb/city with state.'
+            return data
+
+        user_lon = coords['longitude']
+        user_lat = coords['latitude']
+        data['location_search'].update({
+            'resolved': True,
+            'latitude': user_lat,
+            'longitude': user_lon,
+        })
+
+        within_5 = 0
+        within_10 = 0
+        over_15 = 0
+
+        for card in data['products']:
+            location_lon = card.get('location_longitude')
+            location_lat = card.get('location_latitude')
+            if location_lon is None or location_lat is None:
+                continue
+
+            distance_km = GeoLocationService.calculate_distance(
+                user_lon,
+                user_lat,
+                location_lon,
+                location_lat,
+            )
+            card['distance_km'] = round(distance_km, 2)
+
+            if distance_km <= 5:
+                card['distance_band'] = '5 km'
+                within_5 += 1
+            elif distance_km <= 10:
+                card['distance_band'] = '10 km'
+                within_10 += 1
+            elif distance_km > 15:
+                card['distance_band'] = '15+ km'
+                over_15 += 1
+            else:
+                card['distance_band'] = '10-15 km'
+
+        data['distance_summary'] = {
+            'within_5_km': within_5,
+            'within_10_km': within_10,
+            'over_15_km': over_15,
+        }
+        return data

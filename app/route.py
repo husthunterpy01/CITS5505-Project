@@ -153,39 +153,22 @@ def personal_profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    browse_data = ProductQueryService.get_browse_products_with_distance(
+        sort_by=request.args.get('sort', 'posted'),
+        direction=request.args.get('direction', 'desc'),
+        user_location=request.args.get('user_location', ''),
+    )
 
-    products = []
-
-    for product in all_products:
-        primary_image = None
-
-        for image in product.images:
-            if image.is_primary:
-                primary_image = image.image_url
-                break
-
-        if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
-
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
-
-        products.append({
-            'product_id': product.product_id,
-            'title': product.product_name,
-            'description': product.description,
-            'price': product.price,
-            'location': product.location.location_name if product.location else 'Unknown Location',
-            'status': product.status,
-            'seller_name': seller_name,
-            'image': primary_image
-        })
-
-    return render_template('browse.html', products=products)
+    return render_template(
+        'browse.html',
+        products=browse_data['products'],
+        sort_by=browse_data['filters']['sort_by'],
+        sort_direction=browse_data['filters']['direction'],
+        user_location=browse_data['location_search']['query'],
+        location_resolved=browse_data['location_search']['resolved'],
+        location_error=browse_data['location_search']['error'],
+        distance_summary=browse_data['distance_summary'],
+    )
 
 
 # Admin routes

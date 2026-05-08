@@ -5,6 +5,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from app.models import Location, Product
+
 
 class GeoLocationService:
     """Resolve location names to coordinates using Geapify batch geocoding."""
@@ -12,7 +14,9 @@ class GeoLocationService:
     BASE_URL = "https://api.geoapify.com/v1/batch/geocode/search"
     MAX_POLL_ATTEMPTS = 10
     POLL_INTERVAL_SECONDS = 1
-
+    def __init__(self):
+        pass
+    
     @classmethod
     def _api_key(cls):
         return os.getenv("GEOAPIFY_API_KEY", "").strip()
@@ -126,3 +130,29 @@ class GeoLocationService:
                 resolved[raw_query] = coordinates
 
         return resolved
+
+    @classmethod
+    def calculate_distance(cls, lon1, lat1, lon2, lat2):
+        """
+        Haversine formula to calculate distance between two points in kilometers.
+        """
+        from math import radians, cos, sin, asin, sqrt
+
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+        c = 2 * asin(sqrt(a))
+        r = 6371  
+        return c * r
+    
+    @classmethod
+    def nearest_products(cls, user_lat, user_lon, limit=10):
+        """Return products sorted by distance from the user's location."""
+        products = Product.query.join(Location).filter(Product.status == 'available').all()
+        with_dist = [
+            (p, cls.calculate_distance(user_lon, user_lat, p.location.longitude, p.location.latitude))
+            for p in products
+        ]
+        with_dist.sort(key=lambda x: x[1])
+        return with_dist[:limit]

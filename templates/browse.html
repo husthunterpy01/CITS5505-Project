@@ -10,6 +10,44 @@
       </p>
     </div>
 
+    <form method="GET" action="{{ url_for('main.browse_page') }}" class="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_auto_auto]">
+      <input
+        type="text"
+        name="user_location"
+        value="{{ user_location or '' }}"
+        placeholder="Enter your location (e.g., Subiaco, Western Australia)"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+      />
+      <input type="hidden" name="sort" value="{{ sort_by or 'posted' }}" />
+      <input type="hidden" name="direction" value="{{ sort_direction or 'desc' }}" />
+      <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">
+        Calculate Distance
+      </button>
+    </form>
+
+    {% if location_error %}
+    <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      {{ location_error }}
+    </div>
+    {% endif %}
+
+    {% if location_resolved %}
+    <div class="mb-6 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Within 5 km</p>
+        <p class="mt-1 text-2xl font-bold text-emerald-900">{{ distance_summary.within_5_km }}</p>
+      </div>
+      <div class="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">Within 10 km</p>
+        <p class="mt-1 text-2xl font-bold text-sky-900">{{ distance_summary.within_10_km }}</p>
+      </div>
+      <div class="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">15+ km</p>
+        <p class="mt-1 text-2xl font-bold text-violet-900">{{ distance_summary.over_15_km }}</p>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="flex flex-wrap gap-6">
       {% for product in products %} {% set is_sold = product.status == 'sold' %}
 
@@ -39,6 +77,16 @@
               {{product.status|capitalize}}
             </span>
           </div>
+
+          {% if product.distance_km is not none %}
+          <div class="mt-2 flex items-center gap-2">
+            <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+              {{ '%.2f'|format(product.distance_km) }} km
+            </span>
+            <span class="text-xs font-medium text-slate-500">Bucket: {{ product.distance_band }}</span>
+          </div>
+          {% endif %}
+
           <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
             {{product.description}}
           </p>
