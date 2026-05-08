@@ -34,14 +34,16 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='pages/AdminPage/adminchatbox.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='pages/AdminPage/adminchatbox.css') }}"
+    />
     {% block page_css %}{% endblock %}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   </head>
 
   <body class="h-screen flex flex-col font-sans">
@@ -66,11 +68,11 @@
       {% block content %}{% endblock %}
     </main>
     {% include 'footer.html' %}
-    {% if session.get('user_role') == 'admin' %}
-      {% include 'adminchatbox.html' %}
+    {% if session.get('user_id') %}
+      {% include 'chatbox.html' %}
     {% endif %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% if session.get('user_role') == 'admin' %}
+    {% if session.get('user_id') %}
       <script src="{{ url_for('static', filename='pages/AdminPage/adminchatbox.js') }}"></script>
     {% endif %}
   </body>
