@@ -5,8 +5,4 @@ from app.models import Product
 user_roles = {
     'admin':0,
     'user':1,
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/main

@@ -17,8 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
     script.defer = true;
     document.body.appendChild(script);
   }
-<<<<<<< HEAD
-=======
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -121,5 +119,4 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeLegalModal();
   });
->>>>>>> origin/main
 });
