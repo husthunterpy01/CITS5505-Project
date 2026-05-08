@@ -2,10 +2,6 @@ from datetime import datetime
 
 from app.extensions import db
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -13,27 +9,16 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-<<<<<<< HEAD
     password    = db.Column(db.String(255), nullable=False)
-=======
-    password     = db.Column(db.String(255), nullable=False)
->>>>>>> origin/main
     role         = db.Column(db.String(20), nullable=False, default='user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-<<<<<<< HEAD
-    products          = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
-    conversations     = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
-    loggings          = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
-    sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
-=======
 
     products      = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
     conversations = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
     loggings      = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
     sent_messages = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
->>>>>>> origin/main
 
 
 class Category(db.Model):
