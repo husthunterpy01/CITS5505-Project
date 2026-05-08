@@ -30,6 +30,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='components/footer.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='pages/AdminPage/adminchatbox.css') }}"
+    />
     {% block page_css %}{% endblock %}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -62,6 +66,12 @@
       {% block content %}{% endblock %}
     </main>
     {% include 'footer.html' %}
+    {% if session.get('user_role') == 'admin' %}
+      {% include 'adminchatbox.html' %}
+    {% endif %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% if session.get('user_role') == 'admin' %}
+      <script src="{{ url_for('static', filename='pages/AdminPage/adminchatbox.js') }}"></script>
+    {% endif %}
   </body>
 </html>

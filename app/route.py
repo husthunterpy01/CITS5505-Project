@@ -3,12 +3,8 @@ from flask import Blueprint, render_template, flash, request, redirect, url_for,
 from app.extensions import db
 from app.models import User
 from app.service.auth import AuthService
-from app.utils import (
-    user_roles,
-    products_listing_query,
-    serialize_product_for_listing,
-    search_products_for_listing,
-)
+from app.service.productqueryservice import ProductQueryService
+from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 

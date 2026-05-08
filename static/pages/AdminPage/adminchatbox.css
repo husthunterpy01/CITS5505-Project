@@ -1,0 +1,46 @@
+.chatbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chatbox-popup {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+}
+
+.chatbox-popup.hidden {
+  display: none;
+}
+
+.chatbox-tab-btn {
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.chatbox-tab-btn.active {
+  color: #1e40af; /* blue-700 */
+  border-bottom-color: #1e40af;
+}
+
+.chatbox-tab-panel {
+  display: none;
+}
+
+.chatbox-tab-panel.active {
+  display: block;
+}
+
+.chatbox-popup .space-y-2 > div:hover {
+  background-color: #f1f5f9; 
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .chatbox-popup {
+    width: 90vw;
+    max-width: 350px;
+  }
+}

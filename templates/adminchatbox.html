@@ -1,0 +1,92 @@
+<!-- Admin Chatbox Popup -->
+<div id="admin-chatbox" class="fixed bottom-20 right-6 z-50">
+  <!-- Floating Chat Icon -->
+  <button id="chatbox-toggle" class="chatbox-icon rounded-full bg-blue-700 text-white p-4 shadow-lg hover:bg-blue-800 transition" title="Open Chat">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  </button>
+
+  <!-- Chatbox Popup -->
+  <div id="chatbox-popup" class="chatbox-popup hidden absolute bottom-20 right-0 w-96 bg-white rounded-lg shadow-2xl flex flex-col" style="height: 600px;">
+    <!-- Header -->
+    <div class="bg-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between">
+      <h3 class="font-semibold text-lg">Admin Chat</h3>
+      <button id="chatbox-close" class="hover:bg-blue-600 rounded p-1 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-slate-200 px-4 pt-3 flex gap-0">
+      <button class="chatbox-tab-btn mr-2 pb-3 px-3 text-sm font-semibold border-b-2 border-blue-700 text-blue-700 transition" data-tab="admins">
+        Admins
+      </button>
+      <button class="chatbox-tab-btn pb-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition" data-tab="users">
+        Users
+      </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="p-4 border-b border-slate-200">
+      <input
+        type="text"
+        id="chatbox-search"
+        placeholder="Search users/admins..."
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+      >
+    </div>
+
+    <!-- Tab Panels -->
+    <div class="flex-1 overflow-y-auto">
+      <!-- Admins Tab -->
+      <div id="admins-panel" class="chatbox-tab-panel">
+        <div class="p-4 space-y-2">
+          <p class="text-xs text-slate-500 mb-3">Recent conversations</p>
+          <div class="space-y-2" id="admins-list">
+            <!-- Dynamically populated -->
+            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
+              <p class="font-medium text-sm text-slate-900">Carol Tan</p>
+              <p class="text-xs text-slate-500">admin • Last message: today</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="users-panel" class="chatbox-tab-panel hidden">
+        <div class="p-4 space-y-2">
+          <p class="text-xs text-slate-500 mb-3">Recent conversations</p>
+          <div class="space-y-2" id="users-list">
+            <!-- Dynamically populated -->
+            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
+              <p class="font-medium text-sm text-slate-900">Alice Nguyen</p>
+              <p class="text-xs text-slate-500">user • Last message: today</p>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200">
+              <p class="font-medium text-sm text-slate-900">Ben Lee</p>
+              <p class="text-xs text-slate-500">user • Last message: yesterday</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Input -->
+    <div class="border-t border-slate-200 p-4 bg-slate-50 rounded-b-lg">
+      <div class="flex gap-2">
+        <input
+          type="text"
+          id="chatbox-message-input"
+          placeholder="Type a message..."
+          class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+        >
+        <button class="bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-800 transition">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
