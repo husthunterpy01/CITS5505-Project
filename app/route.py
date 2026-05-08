@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
-
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session
 from app.extensions import db
 from app.models import Product, User
 from app.service.authservice import AuthService
+from app.service.productqueryservice import ProductQueryService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
 
@@ -11,6 +11,8 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def home_page():
+    if session.get('user_role') == 'admin':
+        return redirect(url_for('main.admin_home_page'))
     if session.get('user_role') == 'admin':
         return redirect(url_for('main.admin_home_page'))
     return render_template('index.html')
@@ -173,6 +175,12 @@ def browse_page():
 
         if not primary_image:
             primary_image = 'assets/logo/UWA_logo.webp'
+
+        seller = getattr(product, 'seller', None)
+        if seller:
+            seller_name = f"{seller.first_name} {seller.last_name}".strip()
+        else:
+            seller_name = 'Unknown Seller'
 
         seller = getattr(product, 'seller', None)
         if seller:
