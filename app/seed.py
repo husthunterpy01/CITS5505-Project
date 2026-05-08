@@ -1,5 +1,7 @@
 import argparse
+
 from werkzeug.security import generate_password_hash
+
 from app import app
 from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
@@ -26,33 +28,47 @@ def seed_database(force_reset: bool = False) -> None:
             User.query.delete()
             db.session.commit()
 
-        users = [
-            User(first_name="Alice",last_name="Nguyen",email="alice@example.com",password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Ben",last_name="Lee",email="ben@example.com",password=generate_password_hash("password123"),role="normal"),
-            User(first_name="Carol",last_name="Tan",email="carol@example.com",password=generate_password_hash("password123"),role="admin"),
-            User(first_name="Hiden", last_name="Aruto", email="hiden.aruto@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Daisy", last_name="Wong", email="daisy@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Ethan", last_name="Smith", email="ethan@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Fiona", last_name="Brown", email="fiona@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="normal"),
-            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="normal")
+        user_seed_data = [
+            ("Alice", "Nguyen", "alice@example.com", "password123", "normal"),
+            ("Ben", "Lee", "ben@example.com", "password123", "normal"),
+            ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
+            ("David", "Wong", "david@example.com", "password123", "normal"),
+            ("Eva", "Lim", "eva@example.com", "password123", "normal"),
+            ("Farah", "Hassan", "farah@example.com", "password123", "normal"),
+            ("George", "Tan", "george@example.com", "password123", "normal"),
+            ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
+            ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
+            ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
         ]
         db.session.add_all(users)
         db.session.flush()
 
+        users = []
+        for first_name, last_name, email, raw_password, role in user_seed_data:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=generate_password_hash(raw_password),
+                    role=role,
+                )
+                db.session.add(user)
+                db.session.flush()
+            users.append(user)
 
-        categories = [
-            Category(category_name="Electronics"),
-            Category(category_name="Books"),
-            Category(category_name="Home"),
-            Category(category_name="Clothing"),
-            Category(category_name="Fitness"),
-            Category(category_name="Beauty"),
-            Category(category_name="Toys"),
-            Category(category_name="Automotive"),
-            Category(category_name="Garden"),
-            Category(category_name="Gaming"),
+        category_seed_names = [
+            "Electronics",
+            "Books",
+            "Home",
+            "Fashion",
+            "Sports",
+            "Beauty",
+            "Toys",
+            "Automotive",
+            "Garden",
+            "Gaming",
         ]
         db.session.add_all(categories)
         db.session.flush()

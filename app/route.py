@@ -1,9 +1,14 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
+
 from app.extensions import db
-from app.models import User, Product
-from app.service.authservice import AuthService
-from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles
+from app.models import User
+from app.service.auth import AuthService
+from app.utils import (
+    user_roles,
+    products_listing_query,
+    serialize_product_for_listing,
+    search_products_for_listing,
+)
 
 main = Blueprint('main', __name__)
 
@@ -52,6 +57,11 @@ def signup_page():
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        terms_accepted = request.form.get('terms_accepted') == 'on'
+
+        if not terms_accepted:
+            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
+            return render_template('signuppage.html')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
@@ -154,35 +164,27 @@ def profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
-
-    products = []
-
-    for product in all_products:
-        primary_image = None
-
-        for image in product.images:
-            if image.is_primary:
-                primary_image = image.image_url
-                break
-
-        if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
-
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
-
-        products.append({
-            'product_id': product.product_id,
-            'title': product.product_name,
-            'description': product.description,
-            'price': product.price,
-            'location': product.location,
-            'status': product.status,
-            'seller_name': seller_name,
-            'image': primary_image
-        })
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
+    all_products = products_listing_query().all()
+    products = [serialize_product_for_listing(p, default_image) for p in all_products]
     return render_template('browse.html', products=products)
+
+
+@main.route('/api/products/search', methods=['GET'])
+def api_products_search():
+    """Full-text style search on title and description; bounded for responsiveness."""
+    raw_q = request.args.get('q', '') or ''
+    q = raw_q.strip()
+
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
+    search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
+    rows = search_products_for_listing(q, search_limit)
+    items = [serialize_product_for_listing(p, default_image) for p in rows]
+    payload = {
+        'success': True,
+        'query': q,
+        'products': items,
+    }
+    if q and not items:
+        payload['message'] = 'No products matched your search.'
+    return jsonify(payload)
