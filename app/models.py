@@ -39,8 +39,6 @@ class Product(db.Model):
     is_legit     = db.Column(db.Boolean, nullable=False, default=True)
     status       = db.Column(db.String(20), nullable=False, default='available')
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    review       = db.Column(db.Text, nullable=True)
-
     images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
 
