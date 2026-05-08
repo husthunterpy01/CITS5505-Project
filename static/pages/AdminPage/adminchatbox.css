@@ -9,7 +9,14 @@
   display: flex;
   flex-direction: column;
   border: 1px solid #e2e8f0;
+<<<<<<< HEAD
   background: #ffffff;
+=======
+<<<<<<< HEAD
+  background: #ffffff;
+=======
+>>>>>>> origin/main
+>>>>>>> origin/main
 }
 
 .chatbox-popup.hidden {
@@ -34,6 +41,10 @@
   display: block;
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> origin/main
 .chat-contact-card:hover {
   background-color: #f1f5f9 !important;
 }
@@ -226,6 +237,13 @@
 #admins-panel .text-slate-500,
 #users-panel .text-slate-500 {
   color: #64748b !important;
+<<<<<<< HEAD
+=======
+=======
+.chatbox-popup .space-y-2 > div:hover {
+  background-color: #f1f5f9; 
+>>>>>>> origin/main
+>>>>>>> origin/main
 }
 
 /* Responsive adjustments */
@@ -234,6 +252,10 @@
     width: 90vw;
     max-width: 350px;
   }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> origin/main
 
   #admins-list,
   #users-list {
@@ -343,4 +365,9 @@
 #chatbox-popup .right-msg .msg-info-time,
 #chatbox-popup .right-msg .msg-text {
   color: #ffffff;
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> origin/main
+>>>>>>> origin/main
 }

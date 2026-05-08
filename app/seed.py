@@ -2,7 +2,11 @@ import argparse
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
+<<<<<<< HEAD
 from app.models import Category, Conversation, ConversationParticipant, Logging, Message, Product, ProductImage, User
+=======
+from app.models import Category, Conversation, ConversationParticipant, Location, Logging, Message, Product, ProductImage, User
+>>>>>>> origin/main
 
 
 def seed_database(force_reset: bool = False):
@@ -29,6 +33,7 @@ def seed_database(force_reset: bool = False):
             User.query.delete()
             db.session.commit()
 
+<<<<<<< HEAD
         users = [
             User(first_name="Alice", last_name="Nguyen", email="alice@example.com", password=generate_password_hash("password123"), role="user"),
             User(first_name="Ben", last_name="Lee", email="ben@example.com", password=generate_password_hash("password123"), role="user"),
@@ -39,10 +44,24 @@ def seed_database(force_reset: bool = False):
             User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="user"),
             User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="user"),
             User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="user"),
+=======
+        user_seed_data = [
+            ("Alice", "Nguyen", "alice@example.com", "password123", "normal"),
+            ("Ben", "Lee", "ben@example.com", "password123", "normal"),
+            ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
+            ("David", "Wong", "david@example.com", "password123", "normal"),
+            ("Eva", "Lim", "eva@example.com", "password123", "normal"),
+            ("Farah", "Hassan", "farah@example.com", "password123", "normal"),
+            ("George", "Tan", "george@example.com", "password123", "normal"),
+            ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
+            ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
+            ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
+>>>>>>> origin/main
         ]
         db.session.add_all(users)
         db.session.flush()
 
+<<<<<<< HEAD
 
         categories = [
             Category(category_name="Electronics"),
@@ -56,12 +75,43 @@ def seed_database(force_reset: bool = False):
             Category(category_name="Garden"),
             Category(category_name="Gaming"),
         ]
+=======
+        users = []
+        for first_name, last_name, email, raw_password, role in user_seed_data:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=generate_password_hash(raw_password),
+                    role=role,
+                )
+                db.session.add(user)
+                db.session.flush()
+            users.append(user)
+
+        category_seed_names = [
+            "Electronics",
+            "Books",
+            "Home",
+            "Fashion",
+            "Sports",
+            "Beauty",
+            "Toys",
+            "Automotive",
+            "Garden",
+            "Gaming",
+        ]
+        categories = [Category(category_name=name) for name in category_seed_names]
+>>>>>>> origin/main
         db.session.add_all(categories)
         db.session.flush()
 
         products = [
             Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location="Perth", status="available"),
             Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location="Fremantle", status="available"),
+<<<<<<< HEAD
             Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location="Subiaco", status="sold", is_legit=False),
             Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location="Perth", status="available"),
             Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location="Crawley", status="available"),
@@ -70,6 +120,16 @@ def seed_database(force_reset: bool = False):
             Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location="Osborne Park", status="available"),
             Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location="Willetton", status="available"),
             Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[6].user_id, category_id=categories[9].category_id, price=70.0, location="Perth", status="available"),
+=======
+            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location="Subiaco", status="sold"),
+            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location="Perth", status="available"),
+            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location="Crawley", status="available"),
+            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location="Nedlands", status="available"),
+            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location="Joondalup", status="available"),
+            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location="Osborne Park", status="available"),
+            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location="Willetton", status="available"),
+            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[9].user_id, category_id=categories[9].category_id, price=70.0, location="Perth", status="available"),
+>>>>>>> origin/main
             Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location="Perth", status="sold"),
             Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location="Nedlands", status="pending"),
         ]
@@ -93,11 +153,19 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(images)
 
         conversations = [
+<<<<<<< HEAD
             Conversation(product_id=products[0].product_id),
             Conversation(product_id=products[1].product_id),
             Conversation(product_id=products[5].product_id),
             Conversation(product_id=products[9].product_id),
             Conversation(product_id=products[9].product_id),
+=======
+            Conversation(product_id=products[0].product_id, conv_type='direct'),
+            Conversation(product_id=products[1].product_id, conv_type='direct'),
+            Conversation(product_id=products[5].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[9].product_id, conv_type='direct'),
+>>>>>>> origin/main
         ]
         db.session.add_all(conversations)
         db.session.flush()
@@ -120,49 +188,77 @@ def seed_database(force_reset: bool = False):
         messages = [
             Message(
                 conversation_id=conversations[0].conversation_id,
+<<<<<<< HEAD
                 product_id=products[0].product_id,
                 sender_id=users[1].user_id,
+=======
+                sender_id=users[1].user_id,
+                receiver_id=users[3].user_id,
+>>>>>>> origin/main
                 content="Hi, is this still available?",
             ),
             Message(
                 conversation_id=conversations[0].conversation_id,
+<<<<<<< HEAD
                 product_id=products[0].product_id,
                 sender_id=users[3].user_id,
+=======
+                sender_id=users[3].user_id,
+                receiver_id=users[1].user_id,
+>>>>>>> origin/main
                 content="Yes, it is available.",
             ),
             Message(
                 conversation_id=conversations[1].conversation_id,
+<<<<<<< HEAD
                 product_id=products[1].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[0].user_id,
                 content="Can you do $20?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
+<<<<<<< HEAD
                 product_id=products[5].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[4].user_id,
                 content="Is this skincare set unused and sealed?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
+<<<<<<< HEAD
                 product_id=products[5].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[3].user_id,
                 content="Yes, still sealed and ready for pickup.",
             ),
             Message(
                 conversation_id=conversations[3].conversation_id,
+<<<<<<< HEAD
                 product_id=products[9].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[7].user_id,
                 content="Could you hold the keyboard until Friday?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
+<<<<<<< HEAD
                 product_id=products[9].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[0].user_id,
                 content="Hi George, is the gaming keyboard still available?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
+<<<<<<< HEAD
                 product_id=products[9].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[6].user_id,
                 content="Hi Alice, yes it is available and works perfectly.",
             ),
@@ -170,7 +266,11 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(messages)
 
         # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
+<<<<<<< HEAD
         admin_conv = Conversation(product_id=None)
+=======
+        admin_conv = Conversation(product_id=None, conv_type='admin')
+>>>>>>> origin/main
         db.session.add(admin_conv)
         db.session.flush()
 
@@ -184,13 +284,19 @@ def seed_database(force_reset: bool = False):
         admin_messages = [
             Message(
                 conversation_id=admin_conv.conversation_id,
+<<<<<<< HEAD
                 product_id=products[0].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[2].user_id,
                 content="Hello Alice, I can help with your issue.",
             ),
             Message(
                 conversation_id=admin_conv.conversation_id,
+<<<<<<< HEAD
                 product_id=products[0].product_id,
+=======
+>>>>>>> origin/main
                 sender_id=users[0].user_id,
                 content="Thanks Carol, I have a question about my listing.",
             ),

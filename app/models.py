@@ -2,6 +2,10 @@ from datetime import datetime
 
 from app.extensions import db
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -9,15 +13,27 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
+<<<<<<< HEAD
     password    = db.Column(db.String(255), nullable=False)
+=======
+    password     = db.Column(db.String(255), nullable=False)
+>>>>>>> origin/main
     role         = db.Column(db.String(20), nullable=False, default='user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+<<<<<<< HEAD
     products          = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
     conversations     = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
     loggings          = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
     sent_messages     = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
+=======
+
+    products      = db.relationship('Product', backref='seller', lazy=True, foreign_keys='Product.seller_id')
+    conversations = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
+    loggings      = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
+    sent_messages = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
+>>>>>>> origin/main
 
 
 class Category(db.Model):
@@ -25,7 +41,19 @@ class Category(db.Model):
 
     category_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_name = db.Column(db.String(100), nullable=False, unique=True)
+
     products = db.relationship('Product', backref='category', lazy=True, foreign_keys='Product.category_id')
+
+
+class Location(db.Model):
+    __tablename__ = 'locations'
+
+    location_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    location_name = db.Column(db.String(200), nullable=False)
+    longitude     = db.Column(db.Float, nullable=False)
+    latitude      = db.Column(db.Float, nullable=False)
+
+    products = db.relationship('Product', backref='location', lazy=True, foreign_keys='Product.location_id')
 
 
 class Product(db.Model):
@@ -37,12 +65,10 @@ class Product(db.Model):
     seller_id    = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     category_id  = db.Column(db.Integer, db.ForeignKey('categories.category_id'), nullable=False)
     price        = db.Column(db.Float, nullable=False, default=0.0)
-    location     = db.Column(db.String(200), nullable=False)
+    location_id  = db.Column(db.Integer, db.ForeignKey('locations.location_id'), nullable=False)
     is_legit     = db.Column(db.Boolean, nullable=False, default=True)
     status       = db.Column(db.String(20), nullable=False, default='available')
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    review       = db.Column(db.Text, nullable=True)
-
     images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
     conversations = db.relationship('Conversation', backref='product', lazy=True, foreign_keys='Conversation.product_id')

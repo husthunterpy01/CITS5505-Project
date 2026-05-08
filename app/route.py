@@ -1,7 +1,12 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
 from app.models import Product, User
+<<<<<<< HEAD
 from app.service.auth import AuthService
+=======
+from app.service.authservice import AuthService
+from app.service.productqueryservice import ProductQueryService
+>>>>>>> origin/main
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
 
@@ -12,6 +17,11 @@ main = Blueprint('main', __name__)
 def home_page():
     if session.get('user_role') == 'admin':
         return redirect(url_for('main.admin_home_page'))
+<<<<<<< HEAD
+=======
+    if session.get('user_role') == 'admin':
+        return redirect(url_for('main.admin_home_page'))
+>>>>>>> origin/main
     return render_template('index.html')
 
 
@@ -56,6 +66,11 @@ def signup_page():
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        terms_accepted = request.form.get('terms_accepted') == 'on'
+
+        if not terms_accepted:
+            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
+            return render_template('signuppage.html')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
@@ -174,6 +189,15 @@ def browse_page():
         else:
             seller_name = 'Unknown Seller'
 
+<<<<<<< HEAD
+=======
+        seller = getattr(product, 'seller', None)
+        if seller:
+            seller_name = f"{seller.first_name} {seller.last_name}".strip()
+        else:
+            seller_name = 'Unknown Seller'
+
+>>>>>>> origin/main
         products.append({
             'product_id': product.product_id,
             'title': product.product_name,
