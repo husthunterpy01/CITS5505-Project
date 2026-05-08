@@ -66,6 +66,19 @@
             >
                 Security
             </button>
+<<<<<<< HEAD
+            {% if session.get('user_role') != 'admin' %}
+            <button
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-tab-target="dashboard-tab"
+                class="profile-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+            >
+                Dashboard
+            </button>
+=======
+>>>>>>> origin/main
             {% endif %}
         </div>
 
