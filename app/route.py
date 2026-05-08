@@ -1,9 +1,14 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
+
 from app.extensions import db
-from app.models import User, Product
+from app.models import User
 from app.service.auth import AuthService
-from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles
+from app.utils import (
+    user_roles,
+    products_listing_query,
+    serialize_product_for_listing,
+    search_products_for_listing,
+)
 
 main = Blueprint('main', __name__)
 
@@ -56,6 +61,11 @@ def signup_page():
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        terms_accepted = request.form.get('terms_accepted') == 'on'
+
+        if not terms_accepted:
+            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
+            return render_template('signuppage.html')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
@@ -149,6 +159,11 @@ def personal_profile_page():
         },
         page_numbers=listing_data['pagination']['page_numbers'],
     )
+
+
+@main.route('/profile')
+def profile_page():
+    return redirect(url_for('main.personal_profile_page'))
 
 
 @main.route('/browse', methods=['POST', 'GET'])
