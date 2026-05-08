@@ -55,6 +55,7 @@
             >
                 Edit Personal Profile
             </button>
+            {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
                 role="tab"
@@ -64,6 +65,7 @@
             >
                 Security
             </button>
+            {% endif %}
         </div>
 
         <!-- My listings section -->
@@ -275,8 +277,9 @@
             </div>
         </div>
 
-        <!-- Activity section -->
-        <div id="activity-tab" class="profile-tab-panel hidden" role="tabpanel">
+        <!-- Dashboard section -->
+        {% if session.get('user_role') != 'admin' %}
+        <div id="dashboard-tab" class="profile-tab-panel hidden" role="tabpanel">
             <div class="overflow-hidden rounded-lg border border-slate-200">
                 <table class="w-full border-collapse text-left text-sm">
                     <thead class="bg-slate-100 text-slate-700">
@@ -342,6 +345,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Profile section -->
         <div id="profile-tab" class="profile-tab-panel hidden" role="tabpanel">

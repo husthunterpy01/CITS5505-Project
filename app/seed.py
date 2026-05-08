@@ -7,7 +7,7 @@ from app.extensions import db
 from app.models import Category, Message, Product, ProductImage, User
 
 
-def seed_database(force_reset: bool = False) -> None:
+def seed_database(force_reset: bool = False):
     """
     Insert starter data into all database tables.
     Use force_reset=True to clear existing rows first.

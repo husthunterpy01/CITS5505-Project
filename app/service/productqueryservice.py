@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy import asc, desc, func
 from app.models import Product
-from app import db
+from app.extensions import db
 
 class ProductQueryService:
 
@@ -67,9 +67,9 @@ class ProductQueryService:
 
         stats = db.session.query(
             func.count(Product.product_id).label('total_listed'),  
-            func.sum(sa.case((Product.status == 'available', 1), else_=0)).label('active_listed'),  # type: ignore[misc]
+            func.sum(sa.case((Product.status == 'available', 1), else_=0)).label('active_listed'),  
             func.coalesce(
-                func.sum(sa.case((Product.status == 'sold', Product.price), else_=None)), 0  # type: ignore[misc]
+                func.sum(sa.case((Product.status == 'sold', Product.price), else_=None)), 0 
             ).label('earned_total'),
         ).filter(Product.seller_id == user_id).one()
 

@@ -15,6 +15,8 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def home_page():
+    if session.get('user_role') == 'admin':
+        return redirect(url_for('main.admin_home_page'))
     return render_template('index.html')
 
 
@@ -41,6 +43,8 @@ def signin_page():
         AuthService.login_user(existing_user)
 
         flash("Login Successful", 'success')
+        if existing_user.role == 'admin':
+            return redirect(url_for('main.admin_home_page'))
         return redirect(url_for('main.home_page'))
 
     return render_template('signinpage.html')
@@ -82,7 +86,7 @@ def logout():
     flash('You have been logged out', 'success')
     return redirect(url_for('main.home_page'))
 
-
+# User routes
 @main.route('/personalprofile', methods=['POST', 'GET'])
 @AuthService.role_accepted(*user_roles.keys())
 def personal_profile_page():
@@ -164,27 +168,83 @@ def profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
-    all_products = products_listing_query().all()
-    products = [serialize_product_for_listing(p, default_image) for p in all_products]
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
+
+    products = []
+
+    for product in all_products:
+        primary_image = None
+
+        for image in product.images:
+            if image.is_primary:
+                primary_image = image.image_url
+                break
+
+        if not primary_image:
+            primary_image = 'assets/logo/UWA_logo.webp'
+
+        seller = getattr(product, 'seller', None)
+        if seller:
+            seller_name = f"{seller.first_name} {seller.last_name}".strip()
+        else:
+            seller_name = 'Unknown Seller'
+
+        products.append({
+            'product_id': product.product_id,
+            'title': product.product_name,
+            'description': product.description,
+            'price': product.price,
+            'location': product.location,
+            'status': product.status,
+            'seller_name': seller_name,
+            'image': primary_image
+        })
+
     return render_template('browse.html', products=products)
 
 
-@main.route('/api/products/search', methods=['GET'])
-def api_products_search():
-    """Full-text style search on title and description; bounded for responsiveness."""
-    raw_q = request.args.get('q', '') or ''
-    q = raw_q.strip()
+# Admin routes
+@main.route('/admin')
+@AuthService.role_accepted('admin')
+def admin_home_page():
+    admin_username = User.query.get(session.get('user_id')).first_name if session.get('user_id') else 'Swanflip'
+    total_users = User.query.count()
+    total_products = Product.query.count()
+    reported_users = User.query.filter_by(is_report=True).count()
+    pending_products = Product.query.filter_by(status='pending').count()
 
-    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
-    search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
-    rows = search_products_for_listing(q, search_limit)
-    items = [serialize_product_for_listing(p, default_image) for p in rows]
-    payload = {
-        'success': True,
-        'query': q,
-        'products': items,
-    }
-    if q and not items:
-        payload['message'] = 'No products matched your search.'
-    return jsonify(payload)
+    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    recent_products = Product.query.order_by(Product.created_at.desc()).limit(5).all()
+
+    # Fetch reported users and suspicious products separately
+    reported_users_list = User.query.filter_by(is_report=True).all()
+    suspicious_products_list = Product.query.filter_by(is_legit=False).all()
+
+    return render_template(
+        'adminhomepage.html',
+        admin_username=admin_username,
+        total_users=total_users,
+        total_products=total_products,
+        reported_users=reported_users,
+        pending_products=pending_products,
+        recent_users=recent_users,
+        recent_products=recent_products,
+        reported_users_list=reported_users_list,
+        suspicious_products_list=suspicious_products_list,
+    )
+
+
+@main.route('/admin/users')
+@AuthService.role_accepted('admin')
+def admin_users_page():
+    all_users = User.query.all()
+    return render_template('admin_users.html', users=all_users)
+
+
+@main.route('/admin/reports')
+@AuthService.role_accepted('admin')
+def admin_reports_page():
+    suspicious_products = Product.query.filter_by(is_legit=False).all()
+    return render_template('admin_reports.html', products=suspicious_products)
+
+
