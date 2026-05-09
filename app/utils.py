@@ -31,6 +31,7 @@ def serialize_product_for_listing(product, default_image):
     return {
         'product_id': product.product_id,
         'title': product.product_name,
+        'category': product.category.category_name if product.category else '',
         'description': product.description or '',
         'price': product.price,
         'location': product.location,
@@ -40,19 +41,25 @@ def serialize_product_for_listing(product, default_image):
     }
 
 
-def search_products_for_listing(query, limit):
+def search_products_for_listing(query, limit, category_id=None, min_price=None, max_price=None):
     base = products_listing_query()
-    if not query:
-        return base.limit(limit).all()
 
-    pattern = f'%{query}%'
-    return (
-        base.filter(
+    if query:
+        pattern = f'%{query}%'
+        base = base.filter(
             or_(
                 Product.product_name.ilike(pattern),
                 Product.description.ilike(pattern),
             )
         )
-        .limit(limit)
-        .all()
-    )
+
+    if category_id is not None:
+        base = base.filter(Product.category_id == category_id)
+
+    if min_price is not None:
+        base = base.filter(Product.price >= min_price)
+
+    if max_price is not None:
+        base = base.filter(Product.price <= max_price)
+
+    return base.limit(limit).all()
