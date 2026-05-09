@@ -41,8 +41,7 @@ def seed_database(force_reset: bool = False):
             ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
             ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
         ]
-        db.session.add_all(users)
-        db.session.flush()
+        
 
         users = []
         for first_name, last_name, email, raw_password, role in user_seed_data:
@@ -136,77 +135,43 @@ def seed_database(force_reset: bool = False):
         messages = [
             Message(
                 conversation_id=conversations[0].conversation_id,
-<<<<<<< HEAD
-                product_id=products[0].product_id,
-                sender_id=users[1].user_id,
-=======
                 sender_id=users[1].user_id,
                 receiver_id=users[3].user_id,
->>>>>>> origin/main
                 content="Hi, is this still available?",
             ),
             Message(
                 conversation_id=conversations[0].conversation_id,
-<<<<<<< HEAD
-                product_id=products[0].product_id,
-                sender_id=users[3].user_id,
-=======
                 sender_id=users[3].user_id,
                 receiver_id=users[1].user_id,
->>>>>>> origin/main
                 content="Yes, it is available.",
             ),
             Message(
                 conversation_id=conversations[1].conversation_id,
-<<<<<<< HEAD
-                product_id=products[1].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[0].user_id,
                 content="Can you do $20?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-<<<<<<< HEAD
-                product_id=products[5].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[4].user_id,
                 content="Is this skincare set unused and sealed?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-<<<<<<< HEAD
-                product_id=products[5].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[3].user_id,
                 content="Yes, still sealed and ready for pickup.",
             ),
             Message(
                 conversation_id=conversations[3].conversation_id,
-<<<<<<< HEAD
-                product_id=products[9].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[7].user_id,
                 content="Could you hold the keyboard until Friday?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-<<<<<<< HEAD
-                product_id=products[9].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[0].user_id,
                 content="Hi George, is the gaming keyboard still available?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-<<<<<<< HEAD
-                product_id=products[9].product_id,
-=======
->>>>>>> origin/main
                 sender_id=users[6].user_id,
                 content="Hi Alice, yes it is available and works perfectly.",
             ),
