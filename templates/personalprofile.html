@@ -66,6 +66,7 @@
             >
                 Security
             </button>
+            {% if session.get('user_role') != 'admin' %}
 <<<<<<< HEAD
             {% if session.get('user_role') != 'admin' %}
             <button
