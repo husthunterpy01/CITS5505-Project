@@ -234,12 +234,10 @@ class ChatService:
                 ConversationParticipant(
                     conversation_id=shared_conv.conversation_id,
                     user_id=user_id,
-                    participant_role='admin' if current_user.role == 'admin' else 'user'
                 ),
                 ConversationParticipant(
                     conversation_id=shared_conv.conversation_id,
                     user_id=target_user.user_id,
-                    participant_role='admin' if target_user.role == 'admin' else 'user'
                 ),
             ])
             db.session.commit()

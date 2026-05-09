@@ -1,8 +1,7 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
 from app.models import Product, User
 from app.service.authservice import AuthService
-from app.service.productqueryservice import ProductQueryService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
 
