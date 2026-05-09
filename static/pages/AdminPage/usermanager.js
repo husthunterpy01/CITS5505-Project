@@ -8,7 +8,7 @@ function loadUsersFromDom() {
     firstName: row.getAttribute('data-first-name') || '',
     lastName: row.getAttribute('data-last-name') || '',
     email: row.getAttribute('data-email') || '',
-    role: row.getAttribute('data-role') || 'user',
+    role: row.getAttribute('data-role') || 'normal',
     isReport: row.getAttribute('data-reported') === 'true',
     review: row.getAttribute('data-review') || 'No notes',
     createdAt: row.getAttribute('data-created-at') || 'N/A',
@@ -48,28 +48,30 @@ function updateUserReportStatus(userId, action, reason) {
       reject(new Error('Network request failed'));
     };
 
-    xhr.send(JSON.stringify({
-      user_id: userId,
-      action: action,
-      reason: reason || ''
-    }));
+    xhr.send(
+      JSON.stringify({
+        user_id: userId,
+        action: action,
+        reason: reason || '',
+      }),
+    );
   });
 }
 
 function setupEventListeners() {
   // Filter functionality
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+  document.querySelectorAll('.filter-btn').forEach((btn) => {
+    btn.addEventListener('click', function () {
       const filter = this.getAttribute('data-filter');
-      
+
       // Update button states
-      document.querySelectorAll('.filter-btn').forEach(b => {
+      document.querySelectorAll('.filter-btn').forEach((b) => {
         b.classList.remove('bg-blue-700', 'border-blue-700', 'text-white');
         b.classList.add('border-slate-300', 'bg-white', 'text-slate-700');
       });
       this.classList.remove('border-slate-300', 'bg-white', 'text-slate-700');
       this.classList.add('bg-blue-700', 'border-blue-700', 'text-white');
-      
+
       // Filter rows
       filterUsers(filter);
     });
@@ -78,14 +80,14 @@ function setupEventListeners() {
   // Search functionality
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
-    searchInput.addEventListener('keyup', function() {
+    searchInput.addEventListener('keyup', function () {
       const searchTerm = this.value.toLowerCase();
       const rows = document.querySelectorAll('.user-row');
-      
-      rows.forEach(row => {
+
+      rows.forEach((row) => {
         const name = row.getAttribute('data-name');
         const email = row.getAttribute('data-email-search') || '';
-        
+
         if (name.includes(searchTerm) || email.includes(searchTerm)) {
           row.style.display = '';
         } else {
@@ -98,7 +100,7 @@ function setupEventListeners() {
   // Close modal when clicking outside
   const modal = document.getElementById('user-modal');
   if (modal) {
-    modal.addEventListener('click', function(e) {
+    modal.addEventListener('click', function (e) {
       if (e.target === this) {
         closeModal();
       }
@@ -107,7 +109,7 @@ function setupEventListeners() {
 
   const reportModal = document.getElementById('report-modal');
   if (reportModal) {
-    reportModal.addEventListener('click', function(e) {
+    reportModal.addEventListener('click', function (e) {
       if (e.target === this) {
         closeReportReasonModal();
       }
@@ -116,14 +118,14 @@ function setupEventListeners() {
 
   const reportCancelBtn = document.getElementById('report-cancel');
   if (reportCancelBtn) {
-    reportCancelBtn.addEventListener('click', function() {
+    reportCancelBtn.addEventListener('click', function () {
       closeReportReasonModal();
     });
   }
 
   const reportForm = document.getElementById('report-form');
   if (reportForm) {
-    reportForm.addEventListener('submit', function(e) {
+    reportForm.addEventListener('submit', function (e) {
       e.preventDefault();
 
       if (!pendingReportUserId) {
@@ -146,21 +148,25 @@ function setupEventListeners() {
         errorLabel.classList.add('hidden');
       }
 
-      updateUserReportStatus(pendingReportUserId, 'report', reason).then(result => {
-        if (!result.ok) {
+      updateUserReportStatus(pendingReportUserId, 'report', reason)
+        .then((result) => {
+          if (!result.ok) {
+            if (errorLabel) {
+              errorLabel.textContent =
+                result.message || 'Unable to update user status.';
+              errorLabel.classList.remove('hidden');
+            }
+            return;
+          }
+          window.location.reload();
+        })
+        .catch(() => {
           if (errorLabel) {
-            errorLabel.textContent = result.message || 'Unable to update user status.';
+            errorLabel.textContent =
+              'Unable to update user status. Please try again.';
             errorLabel.classList.remove('hidden');
           }
-          return;
-        }
-        window.location.reload();
-      }).catch(() => {
-        if (errorLabel) {
-          errorLabel.textContent = 'Unable to update user status. Please try again.';
-          errorLabel.classList.remove('hidden');
-        }
-      });
+        });
     });
   }
 }
@@ -195,11 +201,11 @@ function closeReportReasonModal() {
 
 function filterUsers(filter) {
   const rows = document.querySelectorAll('.user-row');
-  
-  rows.forEach(row => {
+
+  rows.forEach((row) => {
     const isReported = row.getAttribute('data-reported') === 'true';
     const isAdmin = row.getAttribute('data-role') === 'admin';
-    
+
     if (filter === 'all') {
       row.style.display = '';
     } else if (filter === 'reported') {
@@ -213,7 +219,7 @@ function filterUsers(filter) {
 }
 
 function viewUserDetails(userId) {
-  const user = usersData.find(u => u.id === userId);
+  const user = usersData.find((u) => u.id === userId);
   if (!user) return;
 
   const modal = document.getElementById('user-modal');
@@ -269,7 +275,7 @@ function closeModal() {
 }
 
 function reportUser(userId) {
-  const user = usersData.find(u => u.id === userId);
+  const user = usersData.find((u) => u.id === userId);
   if (!user) return;
 
   // Prevent reporting admins
@@ -283,21 +289,23 @@ function reportUser(userId) {
 
 function unreportUser(userId) {
   if (confirm('Are you sure you want to unreport this user?')) {
-    updateUserReportStatus(userId, 'unreport', '').then(result => {
-      if (!result.ok) {
-        alert(result.message || 'Unable to update user status.');
-        return;
-      }
-      window.location.reload();
-    }).catch(() => {
-      alert('Unable to update user status. Please try again.');
-    });
+    updateUserReportStatus(userId, 'unreport', '')
+      .then((result) => {
+        if (!result.ok) {
+          alert(result.message || 'Unable to update user status.');
+          return;
+        }
+        window.location.reload();
+      })
+      .catch(() => {
+        alert('Unable to update user status. Please try again.');
+      });
   }
 }
 
 // Initialize safely for both static and dynamically injected script loading.
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     initializeUserManager(loadUsersFromDom());
   });
 } else {

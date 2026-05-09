@@ -10,7 +10,7 @@ class User(db.Model):
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
     password    = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='user')
+    role         = db.Column(db.String(20), nullable=False, default='normal')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -87,8 +87,8 @@ class ConversationParticipant(db.Model):
     __tablename__ = 'conversation_participants'
 
     conversation_participant_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    conversation_id             = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
-    user_id                     = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
 
 class Message(db.Model):

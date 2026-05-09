@@ -1,17 +1,15 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import Product, User
+from app.models import Product, User, Category, Location, ProductImage
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
+from app.forms import CreateProductForm
 
 main = Blueprint('main', __name__)
 
-
 @main.route('/')
 def home_page():
-    if session.get('user_role') == 'admin':
-        return redirect(url_for('main.admin_home_page'))
     if session.get('user_role') == 'admin':
         return redirect(url_for('main.admin_home_page'))
     return render_template('index.html')
@@ -20,7 +18,6 @@ def home_page():
 @main.route('/about')
 def about_page():
     return render_template('about.html')
-
 
 @main.route('/signin', methods=['POST', 'GET'])
 def signin_page():
@@ -192,7 +189,7 @@ def browse_page():
             'title': product.product_name,
             'description': product.description,
             'price': product.price,
-            'location': product.location,
+            'location': product.location.location_name if product.location else 'Unknown Location',
             'status': product.status,
             'seller_name': seller_name,
             'image': primary_image
@@ -324,4 +321,48 @@ def admin_reports_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
 
+@main.route('/createProduct', methods=['GET', 'POST'])
+@AuthService.role_accepted('normal')
+def create_product_page():
+    form = CreateProductForm()
 
+    form.category_id.choices = [
+        (category.category_id, category.category_name)
+        for category in Category.query.order_by(Category.category_name.asc()).all()
+    ]
+
+    form.location_id.choices = [
+        (location.location_id, location.location_name)
+        for location in Location.query.order_by(Location.location_name.asc()).all()
+    ]
+
+    if form.validate_on_submit():
+        new_product = Product(
+            product_name=form.product_name.data.strip(),
+            description=form.description.data.strip() if form.description.data else None,
+            seller_id=session.get('user_id'),
+            category_id=form.category_id.data,
+            price=float(form.price.data),
+            location_id=form.location_id.data,
+            status='available',
+            is_legit=True,
+        )
+
+        db.session.add(new_product)
+        db.session.flush()
+
+        image_url = form.image_url.data.strip() if form.image_url.data else None
+        if image_url:
+            product_image = ProductImage(
+                product_id=new_product.product_id,
+                image_url=image_url,
+                is_primary=True,
+            )
+            db.session.add(product_image)
+
+        db.session.commit()
+
+        flash('Your listing has been created.', 'success')
+        return redirect(url_for('main.browse_page'))
+
+    return render_template('createproduct.html', form=form)
