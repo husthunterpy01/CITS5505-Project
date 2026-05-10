@@ -3,7 +3,8 @@ from app.extensions import db
 from app.models import Product, User, Category
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles, serialize_product_for_listing, search_products_for_listing
+from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
+from app.utils import user_roles
 
 main = Blueprint('main', __name__)
 
