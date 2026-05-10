@@ -1,10 +1,6 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-<<<<<<< HEAD
-from app.models import Product, User, Category
-=======
 from app.models import Product, User, Category, Location, ProductImage
->>>>>>> fddc1ba (create-product-page (#96))
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
@@ -204,14 +200,9 @@ def browse_page():
             'title': product.product_name,
             'description': product.description,
             'price': product.price,
-<<<<<<< HEAD
-            'category_id': product.category_id,
-            'category_name': category_name,
-            'location': location_label,
-=======
             'location': product.location.location_name if product.location else 'Unknown Location',
->>>>>>> fddc1ba (create-product-page (#96))
             'status': product.status,
+            'seller_id': product.seller_id,
             'seller_name': seller_name,
             'image': image_src,
         })

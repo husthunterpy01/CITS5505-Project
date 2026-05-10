@@ -41,14 +41,27 @@ document.addEventListener("DOMContentLoaded", function () {
       const sellerName = button.dataset.sellerName;
       const productTitle = button.dataset.productTitle;
       const productId = button.dataset.productId;
-      alert(
-        `Chat feature coming soon.\n\nSeller: ${sellerName}\nProduct: ${productTitle}\nProduct ID: ${productId}`,
+      const sellerId = Number(button.dataset.sellerId || 0);
+      if (!sellerId) {
+        alert("Unable to open chat for this seller.");
+        return;
+      }
+
+      document.dispatchEvent(
+        new CustomEvent("swanflip:chat-start", {
+          detail: {
+            targetUserId: sellerId,
+            productId: Number(productId || 0) || null,
+            displayName: sellerName || productTitle || "Seller",
+            role: "standard_user",
+          },
+        }),
       );
     });
   }
 
-  if (grid) {
-    bindChatDelegation(grid);
+  if (grid || root) {
+    bindChatDelegation(grid || root);
   }
 
   if (!root || !grid) {

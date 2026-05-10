@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from app.extensions import db
 
 class User(db.Model):
@@ -54,10 +53,9 @@ class Product(db.Model):
     is_legit     = db.Column(db.Boolean, nullable=False, default=True)
     status       = db.Column(db.String(20), nullable=False, default='available')
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    images   = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
-    messages = db.relationship('Message', backref='product', lazy=True, foreign_keys='Message.product_id')
-    conversations = db.relationship('Conversation', backref='product', lazy=True, foreign_keys='Conversation.product_id')
 
+    images        = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
+    conversations = db.relationship('Conversation', backref='product', lazy=True, foreign_keys='Conversation.product_id')
 
 
 class ProductImage(db.Model):
@@ -96,7 +94,6 @@ class Message(db.Model):
 
     message_id     = db.Column(db.Integer, primary_key=True, autoincrement=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
-    product_id     = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False)
     sender_id      = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     content        = db.Column(db.Text, nullable=False)
     is_read        = db.Column(db.Boolean, nullable=False, default=False)

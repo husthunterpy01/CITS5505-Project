@@ -17,10 +17,22 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table('conversation_participants', schema=None) as batch_op:
-        batch_op.drop_column('participant_role')
+    # Check if column exists before dropping to avoid KeyError on tables that don't have it yet
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    cp_columns = {col['name'] for col in inspector.get_columns('conversation_participants')}
+    
+    if 'participant_role' in cp_columns:
+        with op.batch_alter_table('conversation_participants', schema=None) as batch_op:
+            batch_op.drop_column('participant_role')
 
 
 def downgrade():
-    with op.batch_alter_table('conversation_participants', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('participant_role', sa.String(length=30), nullable=False, server_default='user'))
+    # Check if column already exists before adding it
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    cp_columns = {col['name'] for col in inspector.get_columns('conversation_participants')}
+    
+    if 'participant_role' not in cp_columns:
+        with op.batch_alter_table('conversation_participants', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('participant_role', sa.String(length=30), nullable=False, server_default='user'))

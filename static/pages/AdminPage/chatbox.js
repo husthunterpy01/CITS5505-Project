@@ -16,6 +16,63 @@
   let allContacts = [];
   let pendingConversationStart = null;
 
+  function openChatboxPopup() {
+    const chatboxPopup = document.getElementById('chatbox-popup');
+    const tabButtons = document.querySelectorAll('.chatbox-tab-btn');
+    const tabPanels = document.querySelectorAll('.chatbox-tab-panel');
+    const searchInput = document.getElementById('chatbox-search');
+    if (!chatboxPopup) return;
+    if (!chatboxPopup.classList.contains('hidden')) return;
+    chatboxPopup.classList.remove('hidden');
+    resetToMenuMode();
+    setActiveTab('admins', tabButtons, tabPanels);
+    if (searchInput) searchInput.value = '';
+    updateSearchSuggestions('');
+    setListStatus('Loading...');
+    requestConversations();
+  }
+
+  function startConversationWithUser(targetUserId, options = {}) {
+    const normalizedTargetUserId = Number(targetUserId);
+    if (!normalizedTargetUserId) return;
+
+    const requestedProductId = options.productId ? Number(options.productId) : null;
+    const displayName = options.displayName || '';
+    const fallbackRole = options.role || 'standard_user';
+    const matched = allContacts.find(
+      (item) => Number(item.other_participant.user_id) === normalizedTargetUserId,
+    );
+    const panelPrefix = matched
+      ? getPanelPrefixFromRole(matched.other_participant.role)
+      : getPanelPrefixFromRole(fallbackRole);
+
+    const chatboxTitle = document.getElementById('chatbox-title');
+    if (chatboxTitle && displayName) {
+      chatboxTitle.textContent = displayName;
+    }
+
+    if (matched && matched.conversation_id) {
+      openConversation(
+        Number(matched.conversation_id),
+        requestedProductId || (matched.product_id ? Number(matched.product_id) : null),
+        panelPrefix,
+      );
+      return;
+    }
+
+    if (!socket) return;
+    pendingConversationStart = {
+      targetUserId: normalizedTargetUserId,
+      panelPrefix,
+      displayName,
+    };
+    showThreadPanel(panelPrefix, 'Creating conversation...');
+    socket.emit('start_conversation', {
+      target_user_id: normalizedTargetUserId,
+      product_id: requestedProductId,
+    });
+  }
+
   function setListStatus(message) {
     const adminList = document.getElementById('admins-list');
     const userList = document.getElementById('users-list');
@@ -391,7 +448,15 @@
     updateSearchSuggestions('');
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function runWhenDomReady(callback) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+      return;
+    }
+    callback();
+  }
+
+  runWhenDomReady(function () {
     const chatboxToggle = document.getElementById('chatbox-toggle');
     const chatboxPopup = document.getElementById('chatbox-popup');
     const chatboxClose = document.getElementById('chatbox-close');
@@ -413,14 +478,13 @@
       chatboxToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         const isHidden = chatboxPopup.classList.toggle('hidden');
-        if (!isHidden) {
-          resetToMenuMode();
-          setActiveTab('admins', tabButtons, tabPanels);
-          if (searchInput) searchInput.value = '';
-          updateSearchSuggestions('');
-          setListStatus('Loading...');
-          requestConversations();
-        }
+        if (isHidden) return;
+        resetToMenuMode();
+        setActiveTab('admins', tabButtons, tabPanels);
+        if (searchInput) searchInput.value = '';
+        updateSearchSuggestions('');
+        setListStatus('Loading...');
+        requestConversations();
       });
     }
 
@@ -501,6 +565,16 @@
       );
       return;
     }
+  });
+
+  document.addEventListener('swanflip:chat-start', function (e) {
+    const detail = (e && e.detail) || {};
+    openChatboxPopup();
+    startConversationWithUser(detail.targetUserId, {
+      productId: detail.productId,
+      displayName: detail.displayName,
+      role: detail.role,
+    });
   });
 
   document.addEventListener('click', function (e) {
