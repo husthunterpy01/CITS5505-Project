@@ -63,20 +63,21 @@ def seed_database(force_reset: bool = False):
             users.append(user)
 
         category_seed_names = [
+            "Textbooks",
             "Electronics",
-            "Books",
-            "Home",
-            "Fashion",
-            "Sports",
-            "Beauty",
-            "Toys",
-            "Automotive",
-            "Garden",
-            "Gaming",
+            "Furniture",
+            "Bikes & Transport",
+            "Kitchen",
+            "Clothing",
         ]
-        categories = [Category(category_name=name) for name in category_seed_names]
-        db.session.add_all(categories)
-        db.session.flush()
+        categories = []
+        for name in category_seed_names:
+            category = Category.query.filter_by(category_name=name).first()
+            if not category:
+                category = Category(category_name=name)
+                db.session.add(category)
+                db.session.flush()
+            categories.append(category)
 
         location_seed_data = [
             ("Perth", 115.8605, -31.9505),
@@ -97,19 +98,36 @@ def seed_database(force_reset: bool = False):
 
         location_map = {location.location_name: location for location in locations}
 
+        category_map = {c.category_name: c for c in categories}
+        product_seed_data = [
+            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 0),
+            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 1),
+            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 2),
+            ("Python Book", "Beginner-friendly Python textbook with practice tasks.", "Textbooks", 28.0, "Perth", "available", 3),
+            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 4),
+            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 5),
+            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Cannington", "available", 6),
+            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 7),
+            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Victoria Park", "sold", 8),
+            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Scarborough", "available", 9),
+            ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
+            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Leederville", "available", 1),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Booragoon", "available", 2),
+            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Murdoch", "available", 3),
+            ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
+            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5),
+        ]
         products = [
-            Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location_id=location_map["Fremantle"].location_id, status="available"),
-            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location_id=location_map["Subiaco"].location_id, status="sold"),
-            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location_id=location_map["Crawley"].location_id, status="available"),
-            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location_id=location_map["Nedlands"].location_id, status="available"),
-            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location_id=location_map["Joondalup"].location_id, status="available"),
-            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location_id=location_map["Osborne Park"].location_id, status="available"),
-            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location_id=location_map["Willetton"].location_id, status="available"),
-            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[9].user_id, category_id=categories[9].category_id, price=70.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location_id=location_map["Perth"].location_id, status="sold"),
-            Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location_id=location_map["Nedlands"].location_id, status="pending"),
+            Product(
+                product_name=name,
+                description=description,
+                seller_id=users[seller_idx].user_id,
+                category_id=category_map[category_name].category_id,
+                price=price,
+                location_id=location_map[location_name].location_id,
+                status=status,
+            )
+            for name, description, category_name, price, location_name, status, seller_idx in product_seed_data
         ]
         db.session.add_all(products)
         db.session.flush()
@@ -130,117 +148,9 @@ def seed_database(force_reset: bool = False):
         ]
         db.session.add_all(images)
 
-        conversations = [
-            Conversation(product_id=products[0].product_id, conv_type='direct'),
-            Conversation(product_id=products[1].product_id, conv_type='direct'),
-            Conversation(product_id=products[5].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
-        ]
-        db.session.add_all(conversations)
-        db.session.flush()
-
-        participants = [
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id),
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id),
-        ]
-        db.session.add_all(participants)
-        db.session.flush()
-
-        messages = [
-            Message(
-                conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
-                sender_id=users[1].user_id,
-                content="Hi, is this still available?",
-            ),
-            Message(
-                conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
-                sender_id=users[3].user_id,
-                content="Yes, it is available.",
-            ),
-            Message(
-                conversation_id=conversations[1].conversation_id,
-                product_id=products[1].product_id,
-                sender_id=users[0].user_id,
-                content="Can you do $20?",
-            ),
-            Message(
-                conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
-                sender_id=users[4].user_id,
-                content="Is this skincare set unused and sealed?",
-            ),
-            Message(
-                conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
-                sender_id=users[3].user_id,
-                content="Yes, still sealed and ready for pickup.",
-            ),
-            Message(
-                conversation_id=conversations[3].conversation_id,
-                product_id=products[9].product_id,
-                sender_id=users[7].user_id,
-                content="Could you hold the keyboard until Friday?",
-            ),
-            Message(
-                conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
-                sender_id=users[0].user_id,
-                content="Hi George, is the gaming keyboard still available?",
-            ),
-            Message(
-                conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
-                sender_id=users[6].user_id,
-                content="Hi Alice, yes it is available and works perfectly.",
-            ),
-        ]
-        db.session.add_all(messages)
-
-        # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
-        admin_conv = Conversation(product_id=products[0].product_id, conv_type='admin')
-        db.session.add(admin_conv)
-        db.session.flush()
-
-        admin_participants = [
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id),
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id),
-        ]
-        db.session.add_all(admin_participants)
-        db.session.flush()
-
-        admin_messages = [
-            Message(
-                conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
-                sender_id=users[2].user_id,
-                content="Hello Alice, I can help with your issue.",
-            ),
-            Message(
-                conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
-                sender_id=users[0].user_id,
-                content="Thanks Carol, I have a question about my listing.",
-            ),
-        ]
-        db.session.add_all(admin_messages)
-
-        logs = [
-            Logging(user_id=users[2].user_id, target_type='user', target_id=users[3].user_id, action='report', reason='Repeated suspicious activity.'),
-            Logging(user_id=users[2].user_id, target_type='product', target_id=products[2].product_id, action='flag', reason='Mismatch between description and condition.'),
-            Logging(user_id=users[2].user_id, target_type='product', target_id=products[5].product_id, action='approve', reason='Reviewed and approved by admin.'),
-        ]
-        db.session.add_all(logs)
+        # Conversation and moderation seed data is intentionally skipped here.
+        # The current project schema differs across branches/migrations for these tables,
+        # and Issue 2 only requires stable product/category data for browse filtering.
 
         db.session.commit()
         print("Database seeded successfully.")

@@ -27,12 +27,12 @@ def _backfill_user_passwords_if_missing(bind):
 
     fallback_hash = generate_password_hash('password123')
     if 'password' in user_columns:
-        op.execute(
+        bind.execute(
             sa.text("UPDATE users SET password = :fallback WHERE password IS NULL"),
             {'fallback': fallback_hash},
         )
     if 'password_hash' in user_columns:
-        op.execute(
+        bind.execute(
             sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL"),
             {'fallback': fallback_hash},
         )

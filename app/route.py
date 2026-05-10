@@ -1,17 +1,15 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import Product, User
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles
+from app.utils import user_roles, serialize_product_for_listing, search_products_for_listing
 
 main = Blueprint('main', __name__)
 
 
 @main.route('/')
 def home_page():
-    if session.get('user_role') == 'admin':
-        return redirect(url_for('main.admin_home_page'))
     if session.get('user_role') == 'admin':
         return redirect(url_for('main.admin_home_page'))
     return render_template('index.html')
@@ -181,24 +179,78 @@ def browse_page():
         else:
             seller_name = 'Unknown Seller'
 
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
-
         products.append({
             'product_id': product.product_id,
             'title': product.product_name,
             'description': product.description,
+            'category': product.category.category_name if product.category else '',
             'price': product.price,
-            'location': product.location,
+            'location': product.location.location_name if product.location else '',
             'status': product.status,
             'seller_name': seller_name,
             'image': primary_image
         })
 
     return render_template('browse.html', products=products)
+
+
+@main.route('/api/products/search', methods=['GET'])
+def api_products_search():
+    """Search products by text with optional category and price filters."""
+    raw_q = request.args.get('q', '') or ''
+    q = raw_q.strip()
+    raw_category_id = (request.args.get('category_id') or '').strip()
+    raw_min_price = (request.args.get('min_price') or '').strip()
+    raw_max_price = (request.args.get('max_price') or '').strip()
+
+    category_id = None
+    min_price = None
+    max_price = None
+
+    if raw_category_id:
+        try:
+            category_id = int(raw_category_id)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'category_id must be an integer.'}), 400
+
+    if raw_min_price:
+        try:
+            min_price = float(raw_min_price)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'min_price must be a number.'}), 400
+
+    if raw_max_price:
+        try:
+            max_price = float(raw_max_price)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'max_price must be a number.'}), 400
+
+    if min_price is not None and max_price is not None and min_price > max_price:
+        return jsonify({'success': False, 'message': 'min_price cannot be greater than max_price.'}), 400
+
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
+    search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
+    rows = search_products_for_listing(
+        q,
+        search_limit,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+    )
+    items = [serialize_product_for_listing(p, default_image) for p in rows]
+    payload = {
+        'success': True,
+        'query': q,
+        'applied_filters': {
+            'category_id': category_id,
+            'min_price': min_price,
+            'max_price': max_price,
+        },
+        'products': items,
+    }
+    if (q or category_id is not None or min_price is not None or max_price is not None) and not items:
+        payload['message'] = 'No products matched your search.'
+    return jsonify(payload)
 
 
 # Admin routes
