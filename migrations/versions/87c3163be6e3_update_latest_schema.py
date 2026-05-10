@@ -27,21 +27,14 @@ def _backfill_user_passwords_if_missing(bind):
 
     fallback_hash = generate_password_hash('password123')
     if 'password' in user_columns:
-<<<<<<< HEAD
-        bind.execute(
-            sa.text("UPDATE users SET password = :fallback WHERE password IS NULL"),
-            {'fallback': fallback_hash},
-        )
+        op.execute(sa.text("UPDATE users SET password = :fallback WHERE password IS NULL").bindparams(fallback=fallback_hash))
     if 'password_hash' in user_columns:
-        bind.execute(
-            sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL"),
-            {'fallback': fallback_hash},
-        )
+        op.execute(sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL").bindparams(fallback=fallback_hash))
 =======
         op.execute(sa.text("UPDATE users SET password = :fallback WHERE password IS NULL").bindparams(fallback=fallback_hash))
     if 'password_hash' in user_columns:
         op.execute(sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL").bindparams(fallback=fallback_hash))
->>>>>>> cba79dc (Feature/martin/implement calculate nearest distance (#100))
+
 
 
 def upgrade():
