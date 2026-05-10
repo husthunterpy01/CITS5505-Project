@@ -200,7 +200,6 @@
                         </table>
                     </div>
 
-                    {% if pagination.total_pages > 1 %}
                     <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-3">
                             <p class="text-sm text-slate-500">Page {{ pagination.page }} of {{ pagination.total_pages }}</p>
@@ -226,6 +225,7 @@
                                 </form>
                             </div>
                         </div>
+                        {% if pagination.total_pages > 1 %}
                         <div class="flex flex-wrap gap-2">
                             {% if pagination.page > 1 %}
                             <a
@@ -255,8 +255,8 @@
                             </a>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
                 {% else %}
                 <div class="mt-8 text-center py-8">
