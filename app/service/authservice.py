@@ -45,7 +45,7 @@ class AuthService:
             last_name=cleaned_last_name,
             email=normalized_email,
             password=hashed_password,
-            role='user',
+            role='standard_user',
             is_report=False,
         )
 
@@ -102,7 +102,7 @@ class RoleAcceptedView:
             return self
 
         if 'user_id' not in session:
-            flash('Please sign in to view your profile.', 'error')
+            flash('Please sign in first', 'error')
             return redirect(url_for('main.signin_page'))
 
         if self.allowed_roles and session.get('user_role') not in self.allowed_roles:

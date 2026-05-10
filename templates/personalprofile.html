@@ -56,6 +56,7 @@
             >
                 Edit Personal Profile
             </button>
+            {% endif %}
             {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
@@ -66,8 +67,7 @@
             >
                 Security
             </button>
-            {% if session.get('user_role') != 'admin' %}
-<<<<<<< HEAD
+            {% endif %}
             {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
@@ -78,8 +78,6 @@
             >
                 Dashboard
             </button>
-=======
->>>>>>> origin/main
             {% endif %}
         </div>
 

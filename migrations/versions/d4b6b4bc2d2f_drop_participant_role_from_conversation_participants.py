@@ -1,7 +1,7 @@
 """Drop participant role from conversation participants
 
 Revision ID: d4b6b4bc2d2f
-Revises: 87c3163be6e3
+Revises: 343b9d9441dd
 Create Date: 2026-05-09 00:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'd4b6b4bc2d2f'
-down_revision = '87c3163be6e3'
+down_revision = '343b9d9441dd'
 branch_labels = None
 depends_on = None
 

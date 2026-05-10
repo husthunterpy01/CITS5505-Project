@@ -217,7 +217,7 @@ class ChatService:
             return self._error('User not found')
 
         requested_product_id = (payload or {}).get('product_id')
-        if current_user.role == 'user' and target_user.role == 'user' and not requested_product_id:
+        if current_user.role == 'standard_user' and target_user.role == 'standard_user' and not requested_product_id:
             return self._error('User-to-user chat must be started from a product page')
 
         shared_conv = self._find_shared_conversation(user_id, target_user_id)
