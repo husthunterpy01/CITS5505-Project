@@ -122,13 +122,8 @@ class ChatService:
         if not any(p.user_id == user_id for p in related_participants):
             return self._error('User not a participant of this conversation')
 
-        product_id = (payload or {}).get('product_id') or conversation.product_id or self._default_product_id()
-        if not product_id:
-            return self._error('No product context available for this message')
-
         message = Message(
             conversation_id=conversation_id,
-            product_id=product_id,
             sender_id=user_id,
             content=content,
             sent_at=datetime.utcnow(),

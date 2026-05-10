@@ -198,6 +198,7 @@ def browse_page():
             'price': product.price,
             'location': product.location.location_name if product.location else 'Unknown Location',
             'status': product.status,
+            'seller_id': product.seller_id,
             'seller_name': seller_name,
             'image': primary_image
         })

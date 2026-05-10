@@ -112,37 +112,26 @@ def seed_database(force_reset: bool = False):
             ("Python Book", "Beginner-friendly Python textbook with practice tasks.", "Textbooks", 28.0, "Perth", "available", 3),
             ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 4),
             ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 5),
-            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Cannington", "available", 6),
-            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 7),
-            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Victoria Park", "sold", 8),
-            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Scarborough", "available", 9),
+            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Perth", "available", 0),
+            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 1),
+            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Subiaco", "sold", 2),
+            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 3),
             ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
-            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Leederville", "available", 1),
-            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Booragoon", "available", 2),
-            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Murdoch", "available", 3),
+            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Nedlands", "available", 1),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Joondalup", "available", 2),
+            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Crawley", "available", 3),
             ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
-            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5),
-        ]
-        products = [
-            Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location_id=location_map["Fremantle"].location_id, status="available"),
-            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location_id=location_map["Subiaco"].location_id, status="sold"),
-            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location_id=location_map["Crawley"].location_id, status="available"),
-            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location_id=location_map["Nedlands"].location_id, status="available"),
-            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location_id=location_map["Joondalup"].location_id, status="available"),
-            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location_id=location_map["Osborne Park"].location_id, status="available"),
-            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location_id=location_map["Willetton"].location_id, status="available"),
-            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[9].user_id, category_id=categories[9].category_id, price=70.0, location_id=location_map["Perth"].location_id, status="available"),
-            Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location_id=location_map["Perth"].location_id, status="sold"),
-            Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location_id=location_map["Nedlands"].location_id, status="pending"),
+            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5)
         ]
 
         products = []
-        for name, description, category_name, price, location, status, seller_idx in product_seed_data:
+        for name, description, category_name, price, location_name, status, seller_idx in product_seed_data:
             category = category_by_name.get(category_name)
             if not category:
                 raise ValueError(f"Missing category '{category_name}' while seeding products.")
+            location = location_map.get(location_name)
+            if not location:
+                raise ValueError(f"Missing location '{location_name}' while seeding products.")
             products.append(
                 Product(
                     product_name=name,
@@ -150,7 +139,7 @@ def seed_database(force_reset: bool = False):
                     seller_id=users[seller_idx].user_id,
                     category_id=category.category_id,
                     price=price,
-                    location=location,
+                    location_id=location.location_id,
                     status=status,
                 )
             )
@@ -190,11 +179,11 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(images)
 
         conversations = [
-            Conversation(product_id=products[0].product_id, conv_type='direct'),
-            Conversation(product_id=products[1].product_id, conv_type='direct'),
-            Conversation(product_id=products[5].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[0].product_id),
+            Conversation(product_id=products[1].product_id),
+            Conversation(product_id=products[5].product_id),
+            Conversation(product_id=products[9].product_id),
+            Conversation(product_id=products[9].product_id),
         ]
         db.session.add_all(conversations)
         db.session.flush()
@@ -217,49 +206,41 @@ def seed_database(force_reset: bool = False):
         messages = [
             Message(
                 conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[1].user_id,
                 content="Hi, is this still available?",
             ),
             Message(
                 conversation_id=conversations[0].conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[3].user_id,
                 content="Yes, it is available.",
             ),
             Message(
                 conversation_id=conversations[1].conversation_id,
-                product_id=products[1].product_id,
                 sender_id=users[0].user_id,
                 content="Can you do $20?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
                 sender_id=users[4].user_id,
                 content="Is this skincare set unused and sealed?",
             ),
             Message(
                 conversation_id=conversations[2].conversation_id,
-                product_id=products[5].product_id,
                 sender_id=users[3].user_id,
                 content="Yes, still sealed and ready for pickup.",
             ),
             Message(
                 conversation_id=conversations[3].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[7].user_id,
                 content="Could you hold the keyboard until Friday?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[0].user_id,
                 content="Hi George, is the gaming keyboard still available?",
             ),
             Message(
                 conversation_id=conversations[4].conversation_id,
-                product_id=products[9].product_id,
                 sender_id=users[6].user_id,
                 content="Hi Alice, yes it is available and works perfectly.",
             ),
@@ -267,7 +248,7 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(messages)
 
         # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
-        admin_conv = Conversation(product_id=products[0].product_id, conv_type='admin')
+        admin_conv = Conversation(product_id=products[0].product_id)
         db.session.add(admin_conv)
         db.session.flush()
 
@@ -281,13 +262,11 @@ def seed_database(force_reset: bool = False):
         admin_messages = [
             Message(
                 conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[2].user_id,
                 content="Hello Alice, I can help with your issue.",
             ),
             Message(
                 conversation_id=admin_conv.conversation_id,
-                product_id=products[0].product_id,
                 sender_id=users[0].user_id,
                 content="Thanks Carol, I have a question about my listing.",
             ),

@@ -71,7 +71,6 @@ function setupEventListeners() {
       });
       this.classList.remove('border-slate-300', 'bg-white', 'text-slate-700');
       this.classList.add('bg-blue-700', 'border-blue-700', 'text-white');
-
       // Filter rows
       filterUsers(filter);
     });
