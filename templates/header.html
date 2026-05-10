@@ -1,5 +1,6 @@
 <header class="site-header bg-blue-600 text-white p-4 shadow">
     <div class="header-container">
+<<<<<<< HEAD
         <nav class="mt-2">
             <ul class="nav-list flex flex-row items-center gap-6">
                 <li>
@@ -57,4 +58,95 @@
             </ul>
         </nav>
     </div>
+=======
+    <nav class="mt-2">
+      <ul class="nav-list flex flex-row items-center gap-6">
+        <li>
+          {% if session.get('user_role') == 'admin' %}
+          <a
+            class="navlink logo-link"
+            href="{{ url_for('main.admin_home_page') }}"
+          >
+            <img
+              src="{{ url_for('static', filename='assets/logo/swanflip_logo.png') }}"
+              alt="SwanFlip Logo"
+              class="logo"
+            />
+          </a>
+          {% else %}
+          <a class="navlink logo-link" href="{{ url_for('main.home_page') }}">
+            <img
+              src="{{ url_for('static', filename='assets/logo/swanflip_logo.png') }}"
+              alt="SwanFlip Logo"
+              class="logo"
+            />
+          </a>
+          {% endif %}
+        </li>
+
+        {% if session.get('user_role') == 'admin' %}
+        <!-- Admin Navbar -->
+        <li class="ml-auto">
+          <a
+            class="hover:underline nav-link"
+            href="{{ url_for('main.admin_users_page') }}"
+            >Users</a
+          >
+        </li>
+        <li>
+          <a
+            class="hover:underline nav-link"
+            href="{{ url_for('main.admin_reports_page') }}"
+            >Listing</a
+          >
+        </li>
+
+        {% else %}
+        <!-- User Navbar -->
+        <li class="ml-auto">
+          <a
+            class="hover:underline nav-link"
+            href="{{ url_for('main.browse_page') }}"
+            >Browse</a
+          >
+        </li>
+        <li>
+          <a
+            class="hover:underline nav-link"
+            href="{{ url_for('main.about_page') }}"
+            >About</a
+          >
+        </li>
+        {% endif %} {% if session.get('user_id') %}
+        <li>
+          <details class="profile-menu">
+            <summary class="profile-trigger">
+              <span class="profile-avatar"
+                >{{ session.get('user_initials', 'U') }}</span
+              >
+              <span class="profile-name"
+                >{{ session.get('user_name', 'User') }}</span
+              >
+            </summary>
+            <div class="profile-dropdown">
+              <a class="dropdown-link" href="{{url_for('main.personal_profile_page')}}">My Profile</a>
+              <a class="dropdown-link" href="{{ url_for('main.logout') }}"
+                >Log out</a
+              >
+            </div>
+          </details>
+        </li>
+        {% else %}
+        <li>
+          <a
+            class="hover:underline nav-link"
+            href="{{ url_for('main.signin_page') }}"
+            >Sign In</a
+          >
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+>>>>>>> fddc1ba (create-product-page (#96))
 </header>
