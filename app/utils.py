@@ -40,6 +40,13 @@ def serialize_product_for_listing(product, default_image):
         'category_id': product.category_id,
         'category_name': cat.category_name if cat else None,
         'location': loc.location_name if loc else None,
+    return {
+        'product_id': product.product_id,
+        'title': product.product_name,
+        'category': product.category.category_name if product.category else '',
+        'description': product.description or '',
+        'price': product.price,
+        'location': product.location,
         'status': product.status,
         'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
         'image': primary_image_for_product(product, default_image),
