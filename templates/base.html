@@ -32,7 +32,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='pages/AdminPage/adminchatbox.css') }}"
+      href="{{ url_for('static', filename='pages/AdminPage/chatbox.css') }}"
     />
     {% block page_css %}{% endblock %}
 
@@ -64,12 +64,12 @@
       {% block content %}{% endblock %}
     </main>
     {% include 'footer.html' %}
-    {% if session.get('user_role') == 'admin' %}
-      {% include 'adminchatbox.html' %}
+    {% if session.get('user_id') %}
+      {% include 'chatbox.html' %}
     {% endif %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% if session.get('user_role') == 'admin' %}
-      <script src="{{ url_for('static', filename='pages/AdminPage/adminchatbox.js') }}"></script>
+    {% if session.get('user_id') %}
+      <script src="{{ url_for('static', filename='pages/AdminPage/chatbox.js') }}"></script>
     {% endif %}
   </body>
 </html>

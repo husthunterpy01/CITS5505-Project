@@ -37,15 +37,6 @@
                 class="profile-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition"
             > My listings
             </button>
-            <button
-                type="button"
-                role="tab"
-                aria-selected="false"
-                data-tab-target="activity-tab"
-                class="profile-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-            >
-                Activity
-            </button>
             {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
@@ -56,6 +47,7 @@
             >
                 Edit Personal Profile
             </button>
+            {% endif %}
             {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
@@ -66,20 +58,6 @@
             >
                 Security
             </button>
-            {% if session.get('user_role') != 'admin' %}
-<<<<<<< HEAD
-            {% if session.get('user_role') != 'admin' %}
-            <button
-                type="button"
-                role="tab"
-                aria-selected="false"
-                data-tab-target="dashboard-tab"
-                class="profile-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-            >
-                Dashboard
-            </button>
-=======
->>>>>>> origin/main
             {% endif %}
         </div>
 
@@ -292,76 +270,6 @@
             </div>
         </div>
 
-        <!-- Dashboard section -->
-        {% if session.get('user_role') != 'admin' %}
-        <div id="dashboard-tab" class="profile-tab-panel hidden" role="tabpanel">
-            <div class="overflow-hidden rounded-lg border border-slate-200">
-                <table class="w-full border-collapse text-left text-sm">
-                    <thead class="bg-slate-100 text-slate-700">
-                        <tr>
-                            <th class="px-4 py-3 font-semibold">Metric</th>
-                            <th class="px-4 py-3 font-semibold">Value</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-slate-700">
-                        <tr class="border-t border-slate-200">
-                            <td class="px-4 py-3 font-medium">Total Transactions</td>
-                            <td class="px-4 py-3"><span id="stat-total-transactions">25</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200 bg-slate-50/60">
-                            <td class="px-4 py-3 font-medium">Successful Transactions</td>
-                            <td class="px-4 py-3"><span id="stat-successful-transactions">23</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200">
-                            <td class="px-4 py-3 font-medium">Failed Transactions</td>
-                            <td class="px-4 py-3"><span id="stat-failed-transactions">2</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200 bg-slate-50/60">
-                            <td class="px-4 py-3 font-medium">Number of Posts</td>
-                            <td class="px-4 py-3"><span id="stat-posts">10</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200">
-                            <td class="px-4 py-3 font-medium">Number of Comments</td>
-                            <td class="px-4 py-3"><span id="stat-comments">15</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200 bg-slate-50/60">
-                            <td class="px-4 py-3 font-medium">Last Login</td>
-                            <td class="px-4 py-3"><span id="stat-last-login">2024-06-01 14:30</span></td>
-                        </tr>
-                        <tr class="border-t border-slate-200">
-                            <td class="px-4 py-3 font-medium">Member Since</td>
-                            <td class="px-4 py-3"><span id="stat-member-since">2023-01-15</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-6 grid gap-6 md:grid-cols-2">
-                <div class="h-64 rounded-lg border border-slate-200 p-3">
-                    <p class="mb-2 text-sm font-semibold text-slate-700">Posts vs Comments</p>
-                    <div id="placeholder-posts-comments" class="hidden h-[calc(100%-2rem)] items-center justify-center rounded-md bg-slate-50 text-sm text-slate-500">
-                        No post/comment activity yet.
-                    </div>
-                    <canvas id="postsCommentsBarChart"></canvas>
-                </div>
-                <div class="h-64 rounded-lg border border-slate-200 p-3">
-                    <p class="mb-2 text-sm font-semibold text-slate-700">Success vs Failed Transactions</p>
-                    <div id="placeholder-outcome" class="hidden h-[calc(100%-2rem)] items-center justify-center rounded-md bg-slate-50 text-sm text-slate-500">
-                        No transaction outcomes yet.
-                    </div>
-                    <canvas id="transactionOutcomePieChart"></canvas>
-                </div>
-                <div class="h-72 rounded-lg border border-slate-200 p-3 md:col-span-2">
-                    <p class="mb-2 text-sm font-semibold text-slate-700">Total Buying by Month</p>
-                    <div id="placeholder-total-buying" class="hidden h-[calc(100%-2rem)] items-center justify-center rounded-md bg-slate-50 text-sm text-slate-500">
-                        No monthly buying data yet.
-                    </div>
-                    <canvas id="totalBuyingLineChart"></canvas>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Profile section -->
         <div id="profile-tab" class="profile-tab-panel hidden" role="tabpanel">
             <form id="profileEditForm" method="POST" class="space-y-4">
@@ -414,7 +322,6 @@
     </div>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='pages/ProfilePage/profilepage.js') }}"></script>
 
 {% endblock %}

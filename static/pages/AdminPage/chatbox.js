@@ -16,6 +16,63 @@
   let allContacts = [];
   let pendingConversationStart = null;
 
+  function openChatboxPopup() {
+    const chatboxPopup = document.getElementById('chatbox-popup');
+    const tabButtons = document.querySelectorAll('.chatbox-tab-btn');
+    const tabPanels = document.querySelectorAll('.chatbox-tab-panel');
+    const searchInput = document.getElementById('chatbox-search');
+    if (!chatboxPopup) return;
+    if (!chatboxPopup.classList.contains('hidden')) return;
+    chatboxPopup.classList.remove('hidden');
+    resetToMenuMode();
+    setActiveTab('admins', tabButtons, tabPanels);
+    if (searchInput) searchInput.value = '';
+    updateSearchSuggestions('');
+    setListStatus('Loading...');
+    requestConversations();
+  }
+
+  function startConversationWithUser(targetUserId, options = {}) {
+    const normalizedTargetUserId = Number(targetUserId);
+    if (!normalizedTargetUserId) return;
+
+    const requestedProductId = options.productId ? Number(options.productId) : null;
+    const displayName = options.displayName || '';
+    const fallbackRole = options.role || 'standard_user';
+    const matched = allContacts.find(
+      (item) => Number(item.other_participant.user_id) === normalizedTargetUserId,
+    );
+    const panelPrefix = matched
+      ? getPanelPrefixFromRole(matched.other_participant.role)
+      : getPanelPrefixFromRole(fallbackRole);
+
+    const chatboxTitle = document.getElementById('chatbox-title');
+    if (chatboxTitle && displayName) {
+      chatboxTitle.textContent = displayName;
+    }
+
+    if (matched && matched.conversation_id) {
+      openConversation(
+        Number(matched.conversation_id),
+        requestedProductId || (matched.product_id ? Number(matched.product_id) : null),
+        panelPrefix,
+      );
+      return;
+    }
+
+    if (!socket) return;
+    pendingConversationStart = {
+      targetUserId: normalizedTargetUserId,
+      panelPrefix,
+      displayName,
+    };
+    showThreadPanel(panelPrefix, 'Creating conversation...');
+    socket.emit('start_conversation', {
+      target_user_id: normalizedTargetUserId,
+      product_id: requestedProductId,
+    });
+  }
+
   function setListStatus(message) {
     const adminList = document.getElementById('admins-list');
     const userList = document.getElementById('users-list');
@@ -37,13 +94,19 @@
   }
 
   function getPanelPrefix(panelElement) {
-    return panelElement && panelElement.id && panelElement.id.startsWith('admins') ? 'admins' : 'users';
+    return panelElement &&
+      panelElement.id &&
+      panelElement.id.startsWith('admins')
+      ? 'admins'
+      : 'users';
   }
 
   function getActiveTabName() {
     const activeBtn = document.querySelector('.chatbox-tab-btn.active');
     if (activeBtn) {
-      return activeBtn.getAttribute('data-tab') === 'admins' ? 'admins' : 'users';
+      return activeBtn.getAttribute('data-tab') === 'admins'
+        ? 'admins'
+        : 'users';
     }
     const usersPanel = document.getElementById('users-panel');
     if (usersPanel && usersPanel.classList.contains('active')) return 'users';
@@ -57,7 +120,7 @@
   }
 
   function isRestrictedUser() {
-    return getCurrentUserRole() === 'user';
+    return getCurrentUserRole() === 'standard_user';
   }
 
   function setActiveTab(targetTab, tabButtons, tabPanels) {
@@ -77,7 +140,9 @@
       targetPanel.classList.add('active');
     }
 
-    const targetBtn = Array.from(tabButtons).find((btn) => btn.getAttribute('data-tab') === targetTab);
+    const targetBtn = Array.from(tabButtons).find(
+      (btn) => btn.getAttribute('data-tab') === targetTab,
+    );
     if (targetBtn) {
       targetBtn.classList.add('active', 'text-blue-700', 'border-blue-700');
       targetBtn.classList.remove('text-slate-500');
@@ -121,9 +186,13 @@
     if (chatboxBack) chatboxBack.classList.remove('hidden');
 
     messagesList = document.getElementById(`${panelPrefix}-messages-list`);
-    const targetContainer = document.getElementById(`${panelPrefix}-messages-container`);
+    const targetContainer = document.getElementById(
+      `${panelPrefix}-messages-container`,
+    );
     const otherPrefix = panelPrefix === 'admins' ? 'users' : 'admins';
-    const otherContainer = document.getElementById(`${otherPrefix}-messages-container`);
+    const otherContainer = document.getElementById(
+      `${otherPrefix}-messages-container`,
+    );
     if (targetContainer) targetContainer.classList.remove('hidden');
     if (otherContainer) otherContainer.classList.add('hidden');
 
@@ -135,7 +204,8 @@
   function createContactCard(conv, roleLabel) {
     const other = conv.other_participant;
     const card = document.createElement('div');
-    card.className = 'chat-contact-card p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200';
+    card.className =
+      'chat-contact-card p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200';
     card.setAttribute('data-contact-id', other.user_id);
     card.setAttribute('data-name', `${other.first_name} ${other.last_name}`);
     if (conv.conversation_id) {
@@ -158,20 +228,32 @@
     usersList.innerHTML = '';
 
     allContacts = conversations.filter((c) => c && c.other_participant);
-    const historyContacts = allContacts.filter((c) => c.has_history && c.conversation_id);
-    const adminContacts = historyContacts.filter((c) => c.other_participant.role === 'admin');
-    const userContacts = historyContacts.filter((c) => c.other_participant.role === 'user');
+    const historyContacts = allContacts.filter(
+      (c) => c.has_history && c.conversation_id,
+    );
+    const adminContacts = historyContacts.filter(
+      (c) => c.other_participant.role === 'admin',
+    );
+    const userContacts = historyContacts.filter(
+      (c) => c.other_participant.role === 'standard_user',
+    );
 
     if (adminContacts.length === 0) {
-      adminsList.innerHTML = '<div class="p-3 text-xs text-slate-400">No admin conversation history</div>';
+      adminsList.innerHTML =
+        '<div class="p-3 text-xs text-slate-400">No admin conversation history</div>';
     } else {
-      adminContacts.forEach((conv) => adminsList.appendChild(createContactCard(conv, 'admin')));
+      adminContacts.forEach((conv) =>
+        adminsList.appendChild(createContactCard(conv, 'admin')),
+      );
     }
 
     if (userContacts.length === 0) {
-      usersList.innerHTML = '<div class="p-3 text-xs text-slate-400">No user conversation history</div>';
+      usersList.innerHTML =
+        '<div class="p-3 text-xs text-slate-400">No user conversation history</div>';
     } else {
-      userContacts.forEach((conv) => usersList.appendChild(createContactCard(conv, 'user')));
+      userContacts.forEach((conv) =>
+        usersList.appendChild(createContactCard(conv, 'standard_user')),
+      );
     }
 
     const searchInput = document.getElementById('chatbox-search');
@@ -200,14 +282,28 @@
       .filter((c) => {
         const other = c.other_participant || {};
         if (activeTab === 'admins' && other.role !== 'admin') return false;
-        if (activeTab === 'users' && other.role !== 'user') return false;
-        if (restrictedUser && activeTab === 'users' && !(c.has_history && c.conversation_id)) return false;
-        const fullName = `${other.first_name || ''} ${other.last_name || ''}`.trim().toLowerCase();
+        if (activeTab === 'users' && other.role !== 'standard_user')
+          return false;
+        if (
+          restrictedUser &&
+          activeTab === 'users' &&
+          !(c.has_history && c.conversation_id)
+        )
+          return false;
+        const fullName = `${other.first_name || ''} ${other.last_name || ''}`
+          .trim()
+          .toLowerCase();
         return fullName.includes(query);
       })
       .sort((a, b) => {
-        const nameA = `${a.other_participant.first_name || ''} ${a.other_participant.last_name || ''}`.trim().toLowerCase();
-        const nameB = `${b.other_participant.first_name || ''} ${b.other_participant.last_name || ''}`.trim().toLowerCase();
+        const nameA =
+          `${a.other_participant.first_name || ''} ${a.other_participant.last_name || ''}`
+            .trim()
+            .toLowerCase();
+        const nameB =
+          `${b.other_participant.first_name || ''} ${b.other_participant.last_name || ''}`
+            .trim()
+            .toLowerCase();
         const idxA = nameA.indexOf(query);
         const idxB = nameB.indexOf(query);
         if (idxA !== idxB) return idxA - idxB;
@@ -217,26 +313,31 @@
 
     if (!matched.length) {
       suggestions.classList.remove('hidden');
-      suggestions.innerHTML = activeTab === 'users' && restrictedUser
-        ? '<div class="chatbox-search-empty">No matching past conversations. New user chats must start from a product page.</div>'
-        : '<div class="chatbox-search-empty">No matching users/admins</div>';
+      suggestions.innerHTML =
+        activeTab === 'users' && restrictedUser
+          ? '<div class="chatbox-search-empty">No matching past conversations. New user chats must start from a product page.</div>'
+          : '<div class="chatbox-search-empty">No matching users/admins</div>';
       return;
     }
 
-    const rows = matched.map((conv) => {
-      const other = conv.other_participant;
-      const role = other.role || 'user';
-      const actionText = conv.conversation_id ? 'Open chat' : 'Start new chat';
-      const name = `${other.first_name} ${other.last_name}`.trim();
-      const initials = name
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0].toUpperCase())
-        .join('') || 'U';
-      const highlightedName = getHighlightedName(name, query);
-      const roleLabel = role === 'admin' ? 'Admin' : 'User';
-      return `<button type="button"
+    const rows = matched
+      .map((conv) => {
+        const other = conv.other_participant;
+        const role = other.role || 'standard_user';
+        const actionText = conv.conversation_id
+          ? 'Open chat'
+          : 'Start new chat';
+        const name = `${other.first_name} ${other.last_name}`.trim();
+        const initials =
+          name
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0].toUpperCase())
+            .join('') || 'U';
+        const highlightedName = getHighlightedName(name, query);
+        const roleLabel = role === 'admin' ? 'Admin' : 'Standard User';
+        return `<button type="button"
                       class="chatbox-search-item"
                       data-search-contact-id="${other.user_id}">
                 <span class="chatbox-search-avatar">${initials}</span>
@@ -246,7 +347,8 @@
                 </span>
                 <span class="chatbox-search-action">${actionText}</span>
               </button>`;
-    }).join('');
+      })
+      .join('');
 
     suggestions.innerHTML = `<div class="chatbox-search-header">${matched.length} suggestion${matched.length > 1 ? 's' : ''}</div>${rows}`;
     suggestions.classList.remove('hidden');
@@ -267,10 +369,12 @@
       if (messageLoadTimeout) clearTimeout(messageLoadTimeout);
       messageLoadTimeout = setTimeout(() => {
         if (!messagesList) return;
-        messagesList.innerHTML = '<div class="text-xs text-red-500 p-2">Socket not connected or no response yet.</div>';
+        messagesList.innerHTML =
+          '<div class="text-xs text-red-500 p-2">Socket not connected or no response yet.</div>';
       }, 7000);
     } else if (messagesList) {
-      messagesList.innerHTML = '<div class="text-xs text-red-500 p-2">Socket library missing. Check base template socket.io script.</div>';
+      messagesList.innerHTML =
+        '<div class="text-xs text-red-500 p-2">Socket library missing. Check base template socket.io script.</div>';
     }
   }
 
@@ -278,13 +382,28 @@
     if (!messagesList) return;
 
     const root = document.getElementById('admin-chatbox');
-    const currentUserId = Number(root && root.dataset ? root.dataset.currentUserId : 0);
+    const currentUserId = Number(
+      root && root.dataset ? root.dataset.currentUserId : 0,
+    );
     const senderId = Number(message.sender_id || 0);
-    const senderName = (message.sender_username || String(message.sender_id || 'User')).trim();
-    const initials = senderName.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'U';
+    const senderName = (
+      message.sender_username || String(message.sender_id || 'User')
+    ).trim();
+    const initials =
+      senderName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join('') || 'U';
     const isOwn = currentUserId > 0 && senderId === currentUserId;
     const sideClass = isOwn ? 'right-msg' : 'left-msg';
-    const time = message.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const time = message.sent_at
+      ? new Date(message.sent_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
     const safeText = String(message.content || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -308,7 +427,9 @@
     const chatboxPopup = document.getElementById('chatbox-popup');
     const chatboxBack = document.getElementById('chatbox-back');
     const title = document.getElementById('chatbox-title');
-    const adminsContainer = document.getElementById('admins-messages-container');
+    const adminsContainer = document.getElementById(
+      'admins-messages-container',
+    );
     const usersContainer = document.getElementById('users-messages-container');
 
     if (chatboxPopup) chatboxPopup.classList.remove('chat-in-thread');
@@ -327,7 +448,15 @@
     updateSearchSuggestions('');
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function runWhenDomReady(callback) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+      return;
+    }
+    callback();
+  }
+
+  runWhenDomReady(function () {
     const chatboxToggle = document.getElementById('chatbox-toggle');
     const chatboxPopup = document.getElementById('chatbox-popup');
     const chatboxClose = document.getElementById('chatbox-close');
@@ -340,7 +469,8 @@
     if (searchWrap && !document.getElementById('chatbox-search-suggestions')) {
       const suggestions = document.createElement('div');
       suggestions.id = 'chatbox-search-suggestions';
-      suggestions.className = 'hidden mt-2 max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm';
+      suggestions.className =
+        'hidden mt-2 max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm';
       searchWrap.appendChild(suggestions);
     }
 
@@ -348,14 +478,13 @@
       chatboxToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         const isHidden = chatboxPopup.classList.toggle('hidden');
-        if (!isHidden) {
-          resetToMenuMode();
-          setActiveTab('admins', tabButtons, tabPanels);
-          if (searchInput) searchInput.value = '';
-          updateSearchSuggestions('');
-          setListStatus('Loading...');
-          requestConversations();
-        }
+        if (isHidden) return;
+        resetToMenuMode();
+        setActiveTab('admins', tabButtons, tabPanels);
+        if (searchInput) searchInput.value = '';
+        updateSearchSuggestions('');
+        setListStatus('Loading...');
+        requestConversations();
       });
     }
 
@@ -405,7 +534,12 @@
         suggestions.classList.add('hidden');
         searchWrapEl.classList.remove('is-searching');
       }
-      if (chatboxToggle && chatboxPopup && !chatboxToggle.contains(e.target) && !chatboxPopup.contains(e.target)) {
+      if (
+        chatboxToggle &&
+        chatboxPopup &&
+        !chatboxToggle.contains(e.target) &&
+        !chatboxPopup.contains(e.target)
+      ) {
         chatboxPopup.classList.add('hidden');
         resetToMenuMode();
       }
@@ -424,9 +558,23 @@
       chatboxTitle.textContent = displayName;
     }
     if (conversationId) {
-      openConversation(Number(conversationId), productId ? Number(productId) : null, panelPrefix);
+      openConversation(
+        Number(conversationId),
+        productId ? Number(productId) : null,
+        panelPrefix,
+      );
       return;
     }
+  });
+
+  document.addEventListener('swanflip:chat-start', function (e) {
+    const detail = (e && e.detail) || {};
+    openChatboxPopup();
+    startConversationWithUser(detail.targetUserId, {
+      productId: detail.productId,
+      displayName: detail.displayName,
+      role: detail.role,
+    });
   });
 
   document.addEventListener('click', function (e) {
@@ -434,10 +582,19 @@
     if (!suggestion) return;
     e.stopImmediatePropagation();
 
-    const targetUserId = Number(suggestion.getAttribute('data-search-contact-id'));
-    const conv = allContacts.find((item) => Number(item.other_participant.user_id) === targetUserId);
+    const targetUserId = Number(
+      suggestion.getAttribute('data-search-contact-id'),
+    );
+    const conv = allContacts.find(
+      (item) => Number(item.other_participant.user_id) === targetUserId,
+    );
     if (!conv) return;
-    if (isRestrictedUser() && conv.other_participant.role === 'user' && !conv.conversation_id) return;
+    if (
+      isRestrictedUser() &&
+      conv.other_participant.role === 'standard_user' &&
+      !conv.conversation_id
+    )
+      return;
 
     const displayName = `${conv.other_participant.first_name} ${conv.other_participant.last_name}`;
     const panelPrefix = getPanelPrefixFromRole(conv.other_participant.role);
@@ -450,7 +607,11 @@
     if (suggestions) updateSearchSuggestions('');
 
     if (conv.conversation_id) {
-      openConversation(Number(conv.conversation_id), conv.product_id ? Number(conv.product_id) : null, panelPrefix);
+      openConversation(
+        Number(conv.conversation_id),
+        conv.product_id ? Number(conv.product_id) : null,
+        panelPrefix,
+      );
       return;
     }
 
@@ -465,8 +626,14 @@
   });
 
   document.addEventListener('click', function (e) {
-    if (!e.target.matches('.admins-send-btn') && !e.target.matches('.users-send-btn')) return;
-    const input = e.target.matches('.admins-send-btn') ? document.getElementById('admins-message-input') : document.getElementById('users-message-input');
+    if (
+      !e.target.matches('.admins-send-btn') &&
+      !e.target.matches('.users-send-btn')
+    )
+      return;
+    const input = e.target.matches('.admins-send-btn')
+      ? document.getElementById('admins-message-input')
+      : document.getElementById('users-message-input');
     if (!input || !socket) return;
     const content = input.value.trim();
     if (!content || !currentConversationId) return;
@@ -482,7 +649,13 @@
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     const target = e.target;
-    if (!target || target.tagName !== 'INPUT' || !target.id || !target.id.endsWith('-message-input')) return;
+    if (
+      !target ||
+      target.tagName !== 'INPUT' ||
+      !target.id ||
+      !target.id.endsWith('-message-input')
+    )
+      return;
     e.preventDefault();
     const panelPrefix = target.id.startsWith('admins') ? 'admins' : 'users';
     const sendBtn = document.querySelector(`.${panelPrefix}-send-btn`);
@@ -493,7 +666,9 @@
     socket.on('connect', () => {
       console.log('Chat socket connected:', socket.id);
       if (currentConversationId) {
-        socket.emit('join_conversation', { conversation_id: currentConversationId });
+        socket.emit('join_conversation', {
+          conversation_id: currentConversationId,
+        });
         socket.emit('load_message', { conversation_id: currentConversationId });
       } else {
         socket.emit('list_conversations');
@@ -513,14 +688,19 @@
       const messages = data.messages || [];
       messagesList.innerHTML = '';
       if (!messages.length) {
-        messagesList.innerHTML = '<div class="text-xs text-slate-400 p-2">No messages yet</div>';
+        messagesList.innerHTML =
+          '<div class="text-xs text-slate-400 p-2">No messages yet</div>';
         return;
       }
       messages.forEach((m) => appendMessageToList(m));
     });
 
     socket.on('message_received', (data) => {
-      if (!messagesList || String(data.conversation_id) !== String(currentConversationId)) return;
+      if (
+        !messagesList ||
+        String(data.conversation_id) !== String(currentConversationId)
+      )
+        return;
       appendMessageToList(data);
       requestConversations();
     });
@@ -531,10 +711,18 @@
 
     socket.on('conversation_started', (data) => {
       const targetUserId = Number(data.target_user_id);
-      const matched = allContacts.find((c) => Number(c.other_participant.user_id) === targetUserId);
-      const panelPrefix = pendingConversationStart && pendingConversationStart.targetUserId === targetUserId
-        ? pendingConversationStart.panelPrefix
-        : getPanelPrefixFromRole(matched && matched.other_participant ? matched.other_participant.role : 'user');
+      const matched = allContacts.find(
+        (c) => Number(c.other_participant.user_id) === targetUserId,
+      );
+      const panelPrefix =
+        pendingConversationStart &&
+        pendingConversationStart.targetUserId === targetUserId
+          ? pendingConversationStart.panelPrefix
+          : getPanelPrefixFromRole(
+              matched && matched.other_participant
+                ? matched.other_participant.role
+                : 'standard_user',
+            );
 
       if (matched) {
         matched.conversation_id = data.conversation_id;
@@ -542,7 +730,11 @@
         matched.has_history = true;
       }
 
-      openConversation(Number(data.conversation_id), data.product_id ? Number(data.product_id) : null, panelPrefix);
+      openConversation(
+        Number(data.conversation_id),
+        data.product_id ? Number(data.product_id) : null,
+        panelPrefix,
+      );
       pendingConversationStart = null;
       requestConversations();
     });
@@ -550,7 +742,8 @@
     socket.on('error', (err) => {
       console.error('Chat socket error:', err);
       if (messagesList) {
-        messagesList.innerHTML += '<div class="text-xs text-red-500 p-2">Realtime error</div>';
+        messagesList.innerHTML +=
+          '<div class="text-xs text-red-500 p-2">Realtime error</div>';
       }
     });
 
