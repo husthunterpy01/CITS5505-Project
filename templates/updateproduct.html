@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Listing - SwanFlip{% endblock %}
+
+{% block content %}
+<section class="w-full px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto w-full max-w-3xl">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-800">Update Listing</h1>
+      <p class="mt-2 text-sm text-slate-600">
+        Update your existing listing.
+      </p>
+    </div>
+
+    <form id="update-product-form" method="POST" enctype="multipart/form-data" class="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" data-image-count="{{ product.images|length }}">
+      {{ form.hidden_tag() }}
+
+      <div>
+        {{ form.product_name.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.product_name(class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200") }}
+        {% for error in form.product_name.errors %}
+          <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+
+      </div>
+
+      <div>
+        {{ form.description.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.description(rows="5", class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200") }}
+        {% for error in form.description.errors %}
+          <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="grid gap-6 sm:grid-cols-2">
+        <div>
+          {{ form.price.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+          {{ form.price(class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200") }}
+          {% for error in form.price.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div>
+          {{ form.category_id.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+          {{ form.category_id(class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200") }}
+          {% for error in form.category_id.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="relative">
+        {{ form.location_name.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.location_name(
+          id="location-name",
+          autocomplete="off",
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200",
+          placeholder="Start typing a WA suburb"
+        ) }}
+
+        {{ form.latitude(id="location-latitude", type="hidden") }}
+        {{ form.longitude(id="location-longitude", type="hidden") }}
+
+        <div id="location-suggestions" class="absolute z-20 mt-1 hidden w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"></div>
+        <p id="location-client-error" class="mt-1 hidden text-sm text-red-600"></p>
+
+        {% for error in form.location_name.errors %}
+          <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+        {% for error in form.latitude.errors %}
+          <p class="mt-1 text-sm text-red-600">Please select a location from the suggestions.</p>
+        {% endfor %}
+        {% for error in form.longitude.errors %}
+          <p class="mt-1 text-sm text-red-600">Please select a location from the suggestions.</p>
+        {% endfor %}
+      </div>
+      
+      {% if product.images %}
+      <div>
+        <p class="mb-2 block text-sm font-medium text-slate-700">Current Images</p>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {% for image in product.images %}
+          <div class="rounded-lg border border-slate-200 p-3">
+            <img
+              src="{{ image.image_url }}"
+              alt="{{ product.product_name }}"
+              class="h-32 w-full rounded-md object-cover"
+            >
+            {% if product.images|length > 1 %}
+            <label class="mt-3 flex items-center gap-2 text-sm text-red-600">
+              <input
+                type="checkbox"
+                name="delete_image_ids"
+                value="{{ image.image_id }}"
+                class="rounded border-slate-300"
+              >
+              Delete image
+            </label>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>      
+        <p id="image-delete-error" class="mt-2 hidden text-sm text-red-600"></p>
+      </div>
+      {% endif %}
+
+      <div>
+        {{ form.images.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.images(multiple=True, class="block w-full cursor-pointer file:cursor-pointer rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-blue-700 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800") }}
+
+        <p class="mt-1 text-xs text-slate-500">
+          Upload up to 10 images. JPG, PNG, or WEBP only.
+        </p>
+
+        {% for error in form.images.errors %}
+          <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <a href="{{ url_for('main.browse_page') }}" class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+          Cancel
+        </a>
+
+        {{ form.submit(class="cursor-pointer rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800") }}
+      </div>
+    </form>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='pages/UpdateProductPage/updateProduct.js') }}"></script>
+
+{% endblock %}

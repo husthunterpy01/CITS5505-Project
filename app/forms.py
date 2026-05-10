@@ -15,7 +15,7 @@ class CreateProductForm(FlaskForm):
   submit = SubmitField('Create Listing')
 
   def validate_images(self, field):
-    uploaded_images = [file for file in field.data if file and file.filename]
+    uploaded_images = [file for file in (field.data or []) if file and file.filename]
 
     if len(uploaded_images) > 10:
       raise ValidationError('You can upload a maximum of 10 images per product.')
