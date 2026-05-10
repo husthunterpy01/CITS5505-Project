@@ -32,7 +32,7 @@ def serialize_product_for_listing(product, default_image):
         'category': product.category.category_name if product.category else '',
         'description': product.description or '',
         'price': product.price,
-        'location': product.location,
+        'location': product.location.location_name if product.location else 'Unknown Location',
         'status': product.status,
         'seller_name': f'{product.seller.first_name} {product.seller.last_name}',
         'image': primary_image_for_product(product, default_image),

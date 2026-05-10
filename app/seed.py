@@ -122,6 +122,7 @@ def seed_database(force_reset: bool = False):
             ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Murdoch", "available", 3),
             ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
             ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5),
+        ]
         products = [
             Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location_id=location_map["Perth"].location_id, status="available"),
             Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location_id=location_map["Fremantle"].location_id, status="available"),

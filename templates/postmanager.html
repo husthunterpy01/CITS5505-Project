@@ -63,7 +63,7 @@
 							data-legit="{{ product.is_legit|lower }}"
 							data-name="{{ product.product_name|e }}"
 							data-description="{{ (product.description or 'No description')|e }}"
-							data-location="{{ product.location|e }}"
+							data-location="{{ (product.location.location_name if product.location else 'Unknown Location')|e }}"
 							data-status="{{ product.status|e }}"
 							data-price="{{ '%.2f'|format(product.price) }}"
 							data-category="{{ product.category.category_name if product.category else 'N/A' }}"
