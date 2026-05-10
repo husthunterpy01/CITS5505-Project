@@ -1,12 +1,19 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import Product, User
-from app.service.auth import AuthService
+from app.models import Product, User, Category, Location, ProductImage
+from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
+from app.forms import CreateProductForm
+import os
+from uuid import uuid4
+from werkzeug.utils import secure_filename
+from flask import current_app
+import json
+import urllib.parse
+import urllib.request
 
 main = Blueprint('main', __name__)
-
 
 @main.route('/')
 def home_page():
@@ -18,7 +25,6 @@ def home_page():
 @main.route('/about')
 def about_page():
     return render_template('about.html')
-
 
 @main.route('/signin', methods=['POST', 'GET'])
 def signin_page():
@@ -56,6 +62,11 @@ def signup_page():
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        terms_accepted = request.form.get('terms_accepted') == 'on'
+
+        if not terms_accepted:
+            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
+            return render_template('signuppage.html')
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
@@ -153,24 +164,105 @@ def personal_profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    browse_data = ProductQueryService.get_browse_products_with_distance(
-        sort_by=request.args.get('sort', 'posted'),
-        direction=request.args.get('direction', 'desc'),
-        user_location=request.args.get('user_location', ''),
+    all_products = Product.query.order_by(Product.created_at.desc()).all()
+
+    products = []
+
+    for product in all_products:
+        primary_image = None
+
+        for image in product.images:
+            if image.is_primary:
+                primary_image = image.image_url
+                break
+
+        if not primary_image:
+            primary_image = 'assets/logo/UWA_logo.webp'
+
+        seller = getattr(product, 'seller', None)
+        if seller:
+            seller_name = f"{seller.first_name} {seller.last_name}".strip()
+        else:
+            seller_name = 'Unknown Seller'
+
+        seller = getattr(product, 'seller', None)
+        if seller:
+            seller_name = f"{seller.first_name} {seller.last_name}".strip()
+        else:
+            seller_name = 'Unknown Seller'
+
+        products.append({
+            'product_id': product.product_id,
+            'title': product.product_name,
+            'description': product.description,
+            'price': product.price,
+            'location': product.location.location_name if product.location else 'Unknown Location',
+            'status': product.status,
+            'seller_id': product.seller_id,
+            'seller_name': seller_name,
+            'image': primary_image
+        })
+
+    return render_template('browse.html', products=products)
+
+
+@main.route('/api/products/search', methods=['GET'])
+def api_products_search():
+    """Search products by text with optional category and price filters."""
+    raw_q = request.args.get('q', '') or ''
+    q = raw_q.strip()
+    raw_category_id = (request.args.get('category_id') or '').strip()
+    raw_min_price = (request.args.get('min_price') or '').strip()
+    raw_max_price = (request.args.get('max_price') or '').strip()
+
+    category_id = None
+    min_price = None
+    max_price = None
+
+    if raw_category_id:
+        try:
+            category_id = int(raw_category_id)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'category_id must be an integer.'}), 400
+
+    if raw_min_price:
+        try:
+            min_price = float(raw_min_price)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'min_price must be a number.'}), 400
+
+    if raw_max_price:
+        try:
+            max_price = float(raw_max_price)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'max_price must be a number.'}), 400
+
+    if min_price is not None and max_price is not None and min_price > max_price:
+        return jsonify({'success': False, 'message': 'min_price cannot be greater than max_price.'}), 400
+
+    default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
+    search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
+    rows = search_products_for_listing(
+        q,
+        search_limit,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
     )
-
-    return render_template(
-        'browse.html',
-        products=browse_data['products'],
-        sort_by=browse_data['filters']['sort_by'],
-        sort_direction=browse_data['filters']['direction'],
-        user_location=browse_data['location_search']['query'],
-        location_resolved=browse_data['location_search']['resolved'],
-        location_error=browse_data['location_search']['error'],
-        distance_summary=browse_data['distance_summary'],
-    )
-
-
+    items = [serialize_product_for_listing(p, default_image) for p in rows]
+    payload = {
+        'success': True,
+        'query': q,
+        'applied_filters': {
+            'category_id': category_id,
+            'min_price': min_price,
+            'max_price': max_price,
+        },
+        'products': items,
+    }
+    if (q or category_id is not None or min_price is not None or max_price is not None) and not items:
+        payload['message'] = 'No products matched your search.'
+    return jsonify(payload)
 # Admin routes
 @main.route('/admin')
 @AuthService.role_accepted('admin')
@@ -294,4 +386,128 @@ def admin_reports_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
 
+@main.route('/createProduct', methods=['GET', 'POST'])
+@AuthService.role_accepted('standard_user')
+def create_product_page():
+    form = CreateProductForm()
 
+    form.category_id.choices = [
+        (category.category_id, category.category_name)
+        for category in Category.query.order_by(Category.category_name.asc()).all()
+    ]
+
+    if form.validate_on_submit():  
+        uploaded_images = [file for file in form.images.data if file and file.filename]
+
+        location_name = form.location_name.data.strip()
+        latitude = float(form.latitude.data)
+        longitude = float(form.longitude.data)
+
+        location = Location.query.filter(Location.location_name.ilike(location_name)).first()
+
+        if not location: 
+            location = Location(
+                location_name = location_name,
+                latitude = latitude,
+                longitude = longitude,
+            )
+            db.session.add(location)
+            db.session.flush()
+
+        new_product = Product(
+            product_name=form.product_name.data.strip(),
+            description=form.description.data.strip() if form.description.data else None,
+            seller_id=session.get('user_id'),
+            category_id=form.category_id.data,
+            price=float(form.price.data),
+            location_id=location.location_id,
+            status='available',
+            is_legit=True,
+        )
+
+        db.session.add(new_product)
+        db.session.flush()
+        
+        upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        for index, image_file in enumerate(uploaded_images):
+            filename = secure_filename(image_file.filename)
+            unique_filename = f"{uuid4().hex}_{filename}"
+            file_path = os.path.join(upload_dir, unique_filename)
+            image_file.save(file_path)
+
+            image_url = url_for('static', filename=f'uploads/products/{unique_filename}')
+
+            product_image = ProductImage(
+                product_id=new_product.product_id,
+                image_url=image_url,
+                is_primary=(index == 0),
+            )
+            db.session.add(product_image)
+
+        db.session.commit()
+
+        flash('Your listing has been created.', 'success')
+        return redirect(url_for('main.browse_page'))
+
+    return render_template('createproduct.html', form=form)
+
+@main.route('/api/locations/suggest')
+def suggest_locations():
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 3:
+        return jsonify({'ok': True, 'locations': []})
+    
+    api_key = current_app.config.get('GEOAPIFY_API_KEY')
+    if not api_key:
+        return jsonify({'ok': False, 'message': 'Geoapify API key is missing'}), 500
+    
+    params = {
+        'text': query,
+        'type': 'locality',
+        'filter': 'rect:112.8,-35.2,129.1,-13.4',
+        'limit': 5,
+        'format': 'json',
+        'apiKey': api_key
+    }
+
+    url = 'https://api.geoapify.com/v1/geocode/autocomplete?' + urllib.parse.urlencode(params)
+
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return jsonify({'ok': False, 'message': 'Location lookup failed'}), 502
+    
+    locations = []
+    seen = set()
+
+    for result in payload.get('results', []):
+        suburb = result.get('suburb') or result.get('city') or result.get('name')
+        state = result.get('state')
+        country = result.get('country_code')
+        lat = result.get('lat')
+        lon = result.get('lon')
+
+        if not suburb or lat is None or lon is None:
+            continue
+
+        if country and country.lower() != 'au':
+            continue
+
+        key = suburb.strip().lower()
+        if key in seen:
+            continue
+
+        seen.add(key)
+        locations.append({
+            'name': suburb,
+            'state': state,
+            'latitude': lat,
+            'longitude': lon,
+            'label': f"{suburb}, {state}" if state else suburb,
+        })
+
+    return jsonify({'ok': True, 'locations': locations})

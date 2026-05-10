@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
 from app.models import Category, Conversation, ConversationParticipant, Location, Logging, Message, Product, ProductImage, User
-from app.service.geolocationservice import GeoLocationService
+from flask_migrate import upgrade
 
 
 def seed_database(force_reset: bool = False):
@@ -12,6 +12,8 @@ def seed_database(force_reset: bool = False):
     Use force_reset=True to clear existing rows first.
     """
     with app.app_context():
+        if upgrade is not None:
+            upgrade()
         db.create_all()
 
         if User.query.first() and not force_reset:
@@ -20,6 +22,7 @@ def seed_database(force_reset: bool = False):
             return
 
         if force_reset:
+            # Full reset including users.
             Message.query.delete()
             ConversationParticipant.query.delete()
             Conversation.query.delete()
@@ -30,115 +33,172 @@ def seed_database(force_reset: bool = False):
             Category.query.delete()
             User.query.delete()
             db.session.commit()
+        else:
+            # Keep users but reset listing data for idempotent seeds.
+            Message.query.delete()
+            ProductImage.query.delete()
+            Product.query.delete()
+            Category.query.delete()
+            db.session.commit()
 
-        users = [
-            User(first_name="Alice", last_name="Nguyen", email="alice@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ben", last_name="Lee", email="ben@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Carol", last_name="Tan", email="carol@example.com", password=generate_password_hash("password123"), role="admin"),
-            User(first_name="Daisy", last_name="Wong", email="daisy@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
-            User(first_name="Ethan", last_name="Smith", email="ethan@example.com", password=generate_password_hash("password123"), role="user", is_report=True),
-            User(first_name="Fiona", last_name="Brown", email="fiona@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="George", last_name="Wilson", email="george@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Hannah", last_name="Kim", email="hannah@example.com", password=generate_password_hash("password123"), role="user"),
-            User(first_name="Ivan", last_name="Petrov", email="ivan@example.com", password=generate_password_hash("password123"), role="user"),
+        user_seed_data = [
+            ("Alice", "Nguyen", "alice@example.com", "password123", "standard_user"),
+            ("Ben", "Lee", "ben@example.com", "password123", "standard_user"),
+            ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
+            ("David", "Wong", "david@example.com", "password123", "standard_user"),
+            ("Eva", "Lim", "eva@example.com", "password123", "standard_user"),
+            ("Farah", "Hassan", "farah@example.com", "password123", "standard_user"),
+            ("George", "Tan", "george@example.com", "password123", "standard_user"),
+            ("Hannah", "Yeo", "hannah@example.com", "password123", "standard_user"),
+            ("Ivan", "Koh", "ivan@example.com", "password123", "standard_user"),
+            ("Jasmine", "Teo", "jasmine@example.com", "password123", "standard_user"),
         ]
-        db.session.add_all(users)
-        db.session.flush()
+        
 
+        users = []
+        for first_name, last_name, email, raw_password, role in user_seed_data:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=generate_password_hash(raw_password),
+                    role=role,
+                )
+                db.session.add(user)
+                db.session.flush()
+            users.append(user)
 
-        categories = [
-            Category(category_name="Electronics"),
-            Category(category_name="Books"),
-            Category(category_name="Home"),
-            Category(category_name="Clothing"),
-            Category(category_name="Fitness"),
-            Category(category_name="Beauty"),
-            Category(category_name="Toys"),
-            Category(category_name="Automotive"),
-            Category(category_name="Garden"),
-            Category(category_name="Gaming"),
+        category_seed_names = [
+            "Textbooks",
+            "Electronics",
+            "Furniture",
+            "Bikes & Transport",
+            "Kitchen",
+            "Clothing",
         ]
+        categories = [Category(category_name=name) for name in category_seed_names]
         db.session.add_all(categories)
         db.session.flush()
 
-        location_names = [
-            "Perth, Western Australia",
-            "Fremantle, Western Australia",
-            "Subiaco, Western Australia",
-            "Crawley, Western Australia",
-            "Nedlands, Western Australia",
-            "Joondalup, Western Australia",
-            "Osborne Park, Western Australia",
-            "Willetton, Western Australia",
+        location_seed_data = [
+            ("Perth", 115.8605, -31.9505),
+            ("Fremantle", 115.7439, -32.0569),
+            ("Subiaco", 115.8233, -31.9489),
+            ("Crawley", 115.8210, -31.9780),
+            ("Nedlands", 115.8040, -31.9800),
+            ("Joondalup", 115.7660, -31.7440),
+            ("Osborne Park", 115.8270, -31.9000),
+            ("Willetton", 115.8810, -32.0520),
         ]
-        resolved_locations = GeoLocationService.geocode_batch(location_names)
-        locations = []
-        for name in location_names:
-            coords = resolved_locations.get(name, {"longitude": 0.0, "latitude": 0.0})
-            locations.append(
-                Location(
-                    location_name=name,
-                    longitude=coords["longitude"],
-                    latitude=coords["latitude"],
-                )
-            )
+        locations = [
+            Location(location_name=name, longitude=longitude, latitude=latitude)
+            for name, longitude, latitude in location_seed_data
+        ]
         db.session.add_all(locations)
         db.session.flush()
 
-        products = [
-            Product(product_name="iPhone 12", description="Good condition, 128GB.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=650.0, location_id=locations[0].location_id, status="available"),
-            Product(product_name="Python Crash Course", description="Like new programming book.", seller_id=users[1].user_id, category_id=categories[1].category_id, price=25.0, location_id=locations[1].location_id, status="available"),
-            Product(product_name="Desk Lamp", description="Warm light, minimal design.", seller_id=users[2].user_id, category_id=categories[2].category_id, price=30.0, location_id=locations[2].location_id, status="sold", is_legit=False),
-            Product(product_name="Vintage Jacket", description="Leather jacket in great condition.", seller_id=users[3].user_id, category_id=categories[3].category_id, price=80.0, location_id=locations[0].location_id, status="available"),
-            Product(product_name="Yoga Mat", description="Non-slip mat, barely used.", seller_id=users[4].user_id, category_id=categories[4].category_id, price=20.0, location_id=locations[3].location_id, status="available"),
-            Product(product_name="Skincare Set", description="3-piece skincare routine set.", seller_id=users[3].user_id, category_id=categories[5].category_id, price=40.0, location_id=locations[4].location_id, status="available", is_legit=False),
-            Product(product_name="LEGO Classic Box", description="Includes over 500 pieces.", seller_id=users[6].user_id, category_id=categories[6].category_id, price=45.0, location_id=locations[5].location_id, status="available"),
-            Product(product_name="Car Phone Holder", description="Universal dashboard mount.", seller_id=users[3].user_id, category_id=categories[7].category_id, price=15.0, location_id=locations[6].location_id, status="available"),
-            Product(product_name="Garden Hose 20m", description="Durable hose for backyard use.", seller_id=users[8].user_id, category_id=categories[8].category_id, price=28.0, location_id=locations[7].location_id, status="available"),
-            Product(product_name="Gaming Keyboard", description="Mechanical RGB keyboard.", seller_id=users[6].user_id, category_id=categories[9].category_id, price=70.0, location_id=locations[0].location_id, status="available"),
-            Product(product_name="Wireless Earbuds", description="Compact earbuds with charging case.", seller_id=users[3].user_id, category_id=categories[0].category_id, price=120.0, location_id=locations[0].location_id, status="sold"),
-            Product(product_name="Desk Organizer", description="Wooden organizer for study desk.", seller_id=users[3].user_id, category_id=categories[2].category_id, price=18.0, location_id=locations[4].location_id, status="pending"),
+        location_map = {location.location_name: location for location in locations}
+
+        category_by_name = {
+            category.category_name: category for category in Category.query.all()
+        }
+
+        product_seed_data = [
+            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 0),
+            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 1),
+            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 2),
+            ("Python Book", "Beginner-friendly Python textbook with practice tasks.", "Textbooks", 28.0, "Perth", "available", 3),
+            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 4),
+            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 5),
+            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Perth", "available", 0),
+            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 1),
+            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Subiaco", "sold", 2),
+            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 3),
+            ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
+            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Nedlands", "available", 1),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Joondalup", "available", 2),
+            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Crawley", "available", 3),
+            ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
+            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5)
         ]
+
+        products = []
+        for name, description, category_name, price, location_name, status, seller_idx in product_seed_data:
+            category = category_by_name.get(category_name)
+            if not category:
+                raise ValueError(f"Missing category '{category_name}' while seeding products.")
+            location = location_map.get(location_name)
+            if not location:
+                raise ValueError(f"Missing location '{location_name}' while seeding products.")
+            products.append(
+                Product(
+                    product_name=name,
+                    description=description,
+                    seller_id=users[seller_idx].user_id,
+                    category_id=category.category_id,
+                    price=price,
+                    location_id=location.location_id,
+                    status=status,
+                )
+            )
         db.session.add_all(products)
         db.session.flush()
 
-        images = [
-            ProductImage(product_id=products[0].product_id, image_url="https://d2e6ccujb3mkqf.cloudfront.net/df8d5f51-6de8-49df-92a5-059d278430a0-1_d1ccd919-3b3d-4bc1-b88f-a163a7422b33.jpg", is_primary=True),
-            ProductImage(product_id=products[1].product_id, image_url="https://miro.medium.com/1*7N2toTOHbJELw-i1GFT-oA.jpeg", is_primary=True),
-            ProductImage(product_id=products[2].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYTWvXWPjPHNS8e4iEhtxLyJuD4NGvQDVacA&s", is_primary=True),
-            ProductImage(product_id=products[3].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2vhUCN1DPc6Eo42kGpEzHz8PRTWsLpJGPcg&s", is_primary=True),
-            ProductImage(product_id=products[4].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwl7gWVfjDYVvGgz8s5WKbtjG60C6SHl39hQ&s", is_primary=True),
-            ProductImage(product_id=products[5].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyBDdyc5vniAoZMdQA9RNU2EqBlgNfQngFYQ&s", is_primary=True),
-            ProductImage(product_id=products[6].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSu7coXy-_70nfm-pm-iyHxQ6FrLNp9Sdw8A&s", is_primary=True),
-            ProductImage(product_id=products[7].product_id, image_url="https://m.media-amazon.com/images/I/81D75XKZHiL.jpg", is_primary=True),
-            ProductImage(product_id=products[8].product_id, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZKcFgjIg1ei6J16_VupczcpOtfJRxni4a7g&s", is_primary=True),
-            ProductImage(product_id=products[9].product_id, image_url="https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/peripherals/keyboard/aw-pro-wireless-keyboard/media-galleries/ll/accessories-aw-pro-cp-keyboard-wh-gallery-1.psd?fmt=pjpg&pscan=auto&scl=1&wid=4717&hei=1631&qlt=100,1&resMode=sharp2&size=4717,1631&chrss=full&imwidth=5000", is_primary=True),
-            ProductImage(product_id=products[10].product_id, image_url="https://m.media-amazon.com/images/I/61ZeYix5cbL._AC_SL1500_.jpg", is_primary=True),
-            ProductImage(product_id=products[11].product_id, image_url="https://www.ikea.com/au/en/images/products/elloven-monitor-stand-with-drawer-white__1124027_pe874979_s5.jpg?f=xxs", is_primary=True),
-        ]
+        image_url_by_product = {
+            "iPhone 12": "https://www.apple.com/newsroom/images/product/iphone/geo/apple_iphone-12_2-up_geo_10132020_inline.jpg.large_2x.jpg",
+            "Dell XPS 13": "https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/xps-notebooks/xps-13-9350/media-gallery/graphite/notebook-xps-13-9350-t-oled-gy-gallery-4.psd?fmt=png-alpha&pscan=auto&scl=1&wid=3509&hei=2072&qlt=100,1&resMode=sharp2&size=3509,2072&chrss=full&imwidth=5000",
+            "Sony WH-1000XM4": "https://i.ebayimg.com/images/g/-5MAAeSwg3Npyveh/s-l1600.webp",
+            "Python Book": "https://i.etsystatic.com/59802327/r/il/c49d16/7885352408/il_1588xN.7885352408_gevf.jpg",
+            "Data Structures Notes": "https://pictures.abebooks.com/isbn/9780914894209-us.jpg",
+            "Calculus Workbook": "https://learnwell.co.nz/cdn/shop/files/9781988586618.gif?v=1694998219&width=823",
+            "Study Desk": "https://i.ebayimg.com/images/g/BGsAAOSwPgNmQ36Y/s-l1600.webp",
+            "Ergonomic Chair": "https://cloudofficestudio.com.au/cdn/shop/files/OCHAIR-H-FZ20-BK-150724-00.jpg?v=1774881247&width=832",
+            "Bedside Table": "https://m.media-amazon.com/images/I/81rpKYnGBQL._AC_SX679_.jpg",
+            "Road Bike": "https://www.canyon.com/dw/image/v2/BCML_PRD/on/demandware.static/-/Library-Sites-canyon-shared/default/dwe45b0c7a/images/blog/Road/01-blog-what-is-allroad-bike.jpg?sw=1145&sfrm=jpg&q=80",
+            "Electric Scooter": "https://eozzie.com.au/cdn/shop/files/MiniWalker_Tiger_8_Electric_Scooter_6_Months_Free_Service_1800x1800.png?v=1751611108",
+            "Skateboard": "https://skatesupplyaustralia.com.au/cdn/shop/files/imgi_87_zoo-york-logo-block-complete-skateboard-p9.png?v=1777474680",
+            "Air Fryer": "https://img.lb.wbmdstatic.com/vim/live/webmd/consumer_assets/site_images/article_thumbnails/SEEDs/1800x1200-do-air-fryers-have-health-benefits-seed.jpg",
+            "Rice Cooker": "https://assets.epicurious.com/photos/5e83af6772d6ca0008d69123/1:1/w_2945,h_2945,c_limit/RiceCooker_HERO_032720_5770_VOG.jpg",
+            "Jacket": "https://m.media-amazon.com/images/I/81echJ4rAiL._AC_SX679_.jpg",
+            "Denim Jeans": "https://www.tods.com/fashion/tods/X3M8249407LJDEU612/X3M8249407LJDEU612-30.jpg?imwidth=1620",
+        }
+        images = []
+        for product in products:
+            images.append(
+                ProductImage(
+                    product_id=product.product_id,
+                    image_url=image_url_by_product.get(
+                        product.product_name,
+                        "https://images.pexels.com/photos/356056/pexels-photo-356056.jpeg?auto=compress&cs=tinysrgb&w=1200",
+                    ),
+                    is_primary=True,
+                )
+            )
         db.session.add_all(images)
 
         conversations = [
-            Conversation(product_id=products[0].product_id, conv_type='direct'),
-            Conversation(product_id=products[1].product_id, conv_type='direct'),
-            Conversation(product_id=products[5].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
-            Conversation(product_id=products[9].product_id, conv_type='direct'),
+            Conversation(product_id=products[0].product_id),
+            Conversation(product_id=products[1].product_id),
+            Conversation(product_id=products[5].product_id),
+            Conversation(product_id=products[9].product_id),
+            Conversation(product_id=products[9].product_id),
         ]
         db.session.add_all(conversations)
         db.session.flush()
 
         participants = [
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id, participant_role='seller'),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id, participant_role='buyer'),
-            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id, participant_role='seller'),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id),
         ]
         db.session.add_all(participants)
         db.session.flush()
@@ -188,13 +248,13 @@ def seed_database(force_reset: bool = False):
         db.session.add_all(messages)
 
         # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
-        admin_conv = Conversation(product_id=None, conv_type='admin')
+        admin_conv = Conversation(product_id=products[0].product_id)
         db.session.add(admin_conv)
         db.session.flush()
 
         admin_participants = [
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id, participant_role='admin'),
-            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id, participant_role='user'),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id),
         ]
         db.session.add_all(admin_participants)
         db.session.flush()

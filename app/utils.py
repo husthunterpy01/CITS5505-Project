@@ -1,4 +1,5 @@
 user_roles = {
-    'admin':0,
-    'user':1,
+    'admin': 0,
+    'standard_user': 1,
 }
+

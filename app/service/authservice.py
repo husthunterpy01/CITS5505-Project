@@ -9,6 +9,12 @@ from app.models import User
 
 class AuthService:
     @staticmethod
+    def normalize_role(role):
+        if role == 'normal':
+            return 'standard_user'
+        return role
+
+    @staticmethod
     def signin_user(email, password):
         """Validate credentials and return (user, error_message)."""
         normalized_email = email.strip().lower()
@@ -45,7 +51,7 @@ class AuthService:
             last_name=cleaned_last_name,
             email=normalized_email,
             password=hashed_password,
-            role='user',
+            role='standard_user',
             is_report=False,
         )
 
@@ -56,9 +62,14 @@ class AuthService:
     @staticmethod
     def login_user(user):
         """Persist current user identity in session."""
+        canonical_role = AuthService.normalize_role(user.role)
+        if canonical_role != user.role:
+            user.role = canonical_role
+            db.session.commit()
+
         session['user_id'] = user.user_id
         session['user_name'] = user.first_name
-        session['user_role'] = user.role
+        session['user_role'] = canonical_role
         first_initial = (user.first_name or "")[:1]
         last_initial = (user.last_name or "")[:1]
         session['user_initials'] = f"{first_initial}{last_initial}".upper() or "U"
@@ -102,10 +113,17 @@ class RoleAcceptedView:
             return self
 
         if 'user_id' not in session:
-            flash('Please sign in to view your profile.', 'error')
+            flash('Please sign in first', 'error')
             return redirect(url_for('main.signin_page'))
 
-        if self.allowed_roles and session.get('user_role') not in self.allowed_roles:
+        current_role = AuthService.normalize_role(session.get('user_role'))
+        if session.get('user_role') != current_role:
+            session['user_role'] = current_role
+
+        normalized_allowed_roles = {
+            AuthService.normalize_role(role) for role in self.allowed_roles
+        }
+        if normalized_allowed_roles and current_role not in normalized_allowed_roles:
             flash('You do not have permission to access this page.', 'error')
             return redirect(url_for('main.home_page'))
 

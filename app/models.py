@@ -1,7 +1,5 @@
 from datetime import datetime
-
 from app.extensions import db
-
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -10,8 +8,8 @@ class User(db.Model):
     first_name   = db.Column(db.String(100), nullable=False)
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
-    password     = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='user')
+    password    = db.Column(db.String(255), nullable=False)
+    role         = db.Column(db.String(20), nullable=False, default='standard_user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -74,13 +72,12 @@ class Conversation(db.Model):
 
     conversation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     product_id      = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=True)
-    conv_type       = db.Column(db.String(30), nullable=False, default='direct')
     created_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    message_id      = db.Column(db.Integer, db.ForeignKey('messages.message_id', use_alter=True, name='fk_conversation_last_message'), nullable=True)
-    participant_id  = db.Column(db.Integer, db.ForeignKey('conversation_participants.conversation_participant_id', use_alter=True, name='fk_conversation_participant'), nullable=True)
+    message_id      = db.Column(db.Integer, db.ForeignKey('messages.message_id'), nullable=True)
+    participant_id  = db.Column(db.Integer, db.ForeignKey('conversation_participants.conversation_participant_id'), nullable=True)
 
-    messages     = db.relationship('Message', backref='conversation', lazy=True, foreign_keys='Message.conversation_id')
+    messages = db.relationship('Message', backref='conversation', lazy=True, foreign_keys='Message.conversation_id')
     participants = db.relationship('ConversationParticipant', backref='conversation', lazy=True, foreign_keys='ConversationParticipant.conversation_id')
 
 
@@ -88,22 +85,21 @@ class ConversationParticipant(db.Model):
     __tablename__ = 'conversation_participants'
 
     conversation_participant_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    conversation_id             = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
-    user_id                     = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    participant_role            = db.Column(db.String(30), nullable=False, default='member')
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
 
 class Message(db.Model):
     __tablename__ = 'messages'
 
-    message_id      = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    message_id     = db.Column(db.Integer, primary_key=True, autoincrement=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.conversation_id'), nullable=False)
-    sender_id       = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    content         = db.Column(db.Text, nullable=False)
-    is_read         = db.Column(db.Boolean, nullable=False, default=False)
-    read_at         = db.Column(db.DateTime, nullable=True)
-    sent_at         = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    created_at      = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    sender_id      = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    content        = db.Column(db.Text, nullable=False)
+    is_read        = db.Column(db.Boolean, nullable=False, default=False)
+    read_at        = db.Column(db.DateTime, nullable=True)
+    sent_at        = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at     = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
 class Logging(db.Model):

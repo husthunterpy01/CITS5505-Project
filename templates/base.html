@@ -32,7 +32,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='pages/AdminPage/adminchatbox.css') }}"
+      href="{{ url_for('static', filename='pages/AdminPage/chatbox.css') }}"
     />
     {% block page_css %}{% endblock %}
 
@@ -69,7 +69,7 @@
     {% endif %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% if session.get('user_id') %}
-      <script src="{{ url_for('static', filename='pages/AdminPage/adminchatbox.js') }}"></script>
+      <script src="{{ url_for('static', filename='pages/AdminPage/chatbox.js') }}"></script>
     {% endif %}
   </body>
 </html>
