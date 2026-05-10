@@ -440,6 +440,28 @@ def admin_reports_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
 
+def save_product_images(product, uploaded_images):
+    upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    has_primary = any(image.is_primary for image in product.images)
+
+    for index, image_file in enumerate(uploaded_images):
+        filename = secure_filename(image_file.filename)
+        unique_filename = f"{uuid4().hex}_{filename}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        image_file.save(file_path)
+
+        image_url = url_for('static', filename=f'uploads/products/{unique_filename}')
+
+        product_image = ProductImage(
+            product_id=product.product_id,
+            image_url=image_url,
+            is_primary=(not has_primary and index == 0),
+        )
+        db.session.add(product_image)
+
+
 @main.route('/createProduct', methods=['GET', 'POST'])
 @AuthService.role_accepted('standard_user')
 def create_product_page():
@@ -451,7 +473,7 @@ def create_product_page():
     ]
 
     if form.validate_on_submit():  
-        uploaded_images = [file for file in form.images.data if file and file.filename]
+        uploaded_images = [file for file in (form.images.data or []) if file and file.filename]
 
         location_name = form.location_name.data.strip()
         latitude = float(form.latitude.data)
@@ -482,23 +504,7 @@ def create_product_page():
         db.session.add(new_product)
         db.session.flush()
         
-        upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
-        os.makedirs(upload_dir, exist_ok=True)
-
-        for index, image_file in enumerate(uploaded_images):
-            filename = secure_filename(image_file.filename)
-            unique_filename = f"{uuid4().hex}_{filename}"
-            file_path = os.path.join(upload_dir, unique_filename)
-            image_file.save(file_path)
-
-            image_url = url_for('static', filename=f'uploads/products/{unique_filename}')
-
-            product_image = ProductImage(
-                product_id=new_product.product_id,
-                image_url=image_url,
-                is_primary=(index == 0),
-            )
-            db.session.add(product_image)
+        save_product_images(new_product, uploaded_images)
 
         db.session.commit()
 
@@ -506,6 +512,95 @@ def create_product_page():
         return redirect(url_for('main.browse_page'))
 
     return render_template('createproduct.html', form=form)
+
+@main.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
+@AuthService.role_accepted('standard_user')
+def edit_product_page(product_id):
+    product = Product.query.get_or_404(product_id)
+
+    if product.seller_id != session.get('user_id'):
+        flash('You do not have permission to edit this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    form = CreateProductForm()
+    form.submit.label.text = 'Update Listing'
+
+    form.category_id.choices = [
+        (category.category_id, category.category_name)
+        for category in Category.query.order_by(Category.category_name.asc()).all()
+    ]
+
+    if request.method == 'GET':
+        form.product_name.data = product.product_name
+        form.description.data = product.description
+        form.price.data = product.price
+        form.category_id.data = product.category_id
+
+        if product.location:
+            form.location_name.data = product.location.location_name
+            form.latitude.data = str(product.location.latitude)
+            form.longitude.data = str(product.location.longitude)
+
+    if form.validate_on_submit():
+        delete_image_ids = request.form.getlist('delete_image_ids')
+        delete_image_ids = [int(image_id) for image_id in delete_image_ids if image_id.isdigit()]
+
+        existing_images_after_delete = [
+            image for image in product.images
+            if image.image_id not in delete_image_ids
+        ]
+
+        uploaded_images = [file for file in (form.images.data or []) if file and file.filename]
+
+        if len(existing_images_after_delete) + len(uploaded_images) == 0:
+            flash('A product must have at least one image.', 'error')
+            return render_template('updateproduct.html', form=form, product=product)
+
+        if len(existing_images_after_delete) + len(uploaded_images) > 10:
+            flash('A product can have a maximum of 10 images.', 'error')
+            return render_template('updateproduct.html', form=form, product=product)
+
+        location_name = form.location_name.data.strip()
+        latitude = float(form.latitude.data)
+        longitude = float(form.longitude.data)
+
+        location = Location.query.filter(Location.location_name.ilike(location_name)).first()
+
+        if not location:
+            location = Location(
+                location_name=location_name,
+                latitude=latitude,
+                longitude=longitude,
+            )
+            db.session.add(location)
+            db.session.flush()
+
+        product.product_name = form.product_name.data.strip()
+        product.description = form.description.data.strip() if form.description.data else None
+        product.category_id = form.category_id.data
+        product.price = float(form.price.data)
+        product.location_id = location.location_id
+
+        if delete_image_ids:
+            ProductImage.query.filter(
+                ProductImage.product_id == product.product_id,
+                ProductImage.image_id.in_(delete_image_ids),
+            ).delete(synchronize_session=False)
+
+        db.session.flush()
+        save_product_images(product, uploaded_images)
+
+        remaining_images = ProductImage.query.filter_by(product_id=product.product_id).all()
+        if remaining_images and not any(image.is_primary for image in remaining_images):
+            remaining_images[0].is_primary = True
+
+        db.session.commit()
+
+        flash('Your listing has been updated.', 'success')
+        return redirect(url_for('main.personal_profile_page'))
+
+    return render_template('updateproduct.html', form=form, product=product)
+
 
 @main.route('/api/locations/suggest')
 def suggest_locations():
