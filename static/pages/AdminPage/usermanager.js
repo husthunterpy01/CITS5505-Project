@@ -8,7 +8,7 @@ function loadUsersFromDom() {
     firstName: row.getAttribute('data-first-name') || '',
     lastName: row.getAttribute('data-last-name') || '',
     email: row.getAttribute('data-email') || '',
-    role: row.getAttribute('data-role') || 'normal',
+    role: row.getAttribute('data-role') || 'standard_user',
     isReport: row.getAttribute('data-reported') === 'true',
     review: row.getAttribute('data-review') || 'No notes',
     createdAt: row.getAttribute('data-created-at') || 'N/A',

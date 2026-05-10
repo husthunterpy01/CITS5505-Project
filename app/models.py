@@ -10,7 +10,7 @@ class User(db.Model):
     last_name    = db.Column(db.String(100), nullable=False)
     email        = db.Column(db.String(120), unique=True, nullable=False)
     password    = db.Column(db.String(255), nullable=False)
-    role         = db.Column(db.String(20), nullable=False, default='normal')
+    role         = db.Column(db.String(20), nullable=False, default='standard_user')
     is_report    = db.Column(db.Boolean, nullable=False, default=False)
     review       = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

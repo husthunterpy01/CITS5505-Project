@@ -12,7 +12,7 @@
       </p>
     </div>
 
-    <form method="POST" class="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form method="POST" enctype="multipart/form-data" class="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       {{ form.hidden_tag() }}
 
       <div>
@@ -50,18 +50,41 @@
         </div>
       </div>
 
-      <div>
-        {{ form.location_id.label(class="mb-1 block text-sm font-medium text-slate-700") }}
-        {{ form.location_id(class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200") }}
-        {% for error in form.location_id.errors %}
+      <div class="relative">
+        {{ form.location_name.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.location_name(
+          id="location-name",
+          autocomplete="off",
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200",
+          placeholder="Start typing a WA suburb"
+        ) }}
+
+        {{ form.latitude(id="location-latitude", type="hidden") }}
+        {{ form.longitude(id="location-longitude", type="hidden") }}
+
+        <div id="location-suggestions" class="absolute z-20 mt-1 hidden w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"></div>
+        <p id="location-client-error" class="mt-1 hidden text-sm text-red-600"></p>
+
+        {% for error in form.location_name.errors %}
           <p class="mt-1 text-sm text-red-600">{{ error }}</p>
         {% endfor %}
+        {% for error in form.latitude.errors %}
+          <p class="mt-1 text-sm text-red-600">Please select a location from the suggestions.</p>
+        {% endfor %}
+        {% for error in form.longitude.errors %}
+          <p class="mt-1 text-sm text-red-600">Please select a location from the suggestions.</p>
+        {% endfor %}
       </div>
-
+      
       <div>
-        {{ form.image_url.label(class="mb-1 block text-sm font-medium text-slate-700") }}
-        {{ form.image_url(class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200", placeholder="https://example.com/image.jpg") }}
-        {% for error in form.image_url.errors %}
+        {{ form.images.label(class="mb-1 block text-sm font-medium text-slate-700") }}
+        {{ form.images(multiple=True, class="block w-full cursor-pointer file:cursor-pointer rounded-lg border border-slate-300 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-blue-700 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800") }}
+
+        <p class="mt-1 text-xs text-slate-500">
+          Upload up to 10 images. JPG, PNG, or WEBP only.
+        </p>
+
+        {% for error in form.images.errors %}
           <p class="mt-1 text-sm text-red-600">{{ error }}</p>
         {% endfor %}
       </div>
@@ -71,9 +94,12 @@
           Cancel
         </a>
 
-        {{ form.submit(class="rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800") }}
+        {{ form.submit(class="cursor-pointer rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800") }}
       </div>
     </form>
   </div>
 </section>
+
+<script src="{{ url_for('static', filename='pages/CreateProductPage/createProduct.js') }}"></script>
+
 {% endblock %}

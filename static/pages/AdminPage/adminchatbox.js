@@ -63,7 +63,7 @@
   }
 
   function isRestrictedUser() {
-    return getCurrentUserRole() === 'normal';
+    return getCurrentUserRole() === 'standard_user';
   }
 
   function setActiveTab(targetTab, tabButtons, tabPanels) {
@@ -178,7 +178,7 @@
       (c) => c.other_participant.role === 'admin',
     );
     const userContacts = historyContacts.filter(
-      (c) => c.other_participant.role === 'normal',
+      (c) => c.other_participant.role === 'standard_user',
     );
 
     if (adminContacts.length === 0) {
@@ -195,7 +195,7 @@
         '<div class="p-3 text-xs text-slate-400">No user conversation history</div>';
     } else {
       userContacts.forEach((conv) =>
-        usersList.appendChild(createContactCard(conv, 'normal')),
+        usersList.appendChild(createContactCard(conv, 'standard_user')),
       );
     }
 
@@ -225,7 +225,8 @@
       .filter((c) => {
         const other = c.other_participant || {};
         if (activeTab === 'admins' && other.role !== 'admin') return false;
-        if (activeTab === 'users' && other.role !== 'normal') return false;
+        if (activeTab === 'users' && other.role !== 'standard_user')
+          return false;
         if (
           restrictedUser &&
           activeTab === 'users' &&
@@ -265,7 +266,7 @@
     const rows = matched
       .map((conv) => {
         const other = conv.other_participant;
-        const role = other.role || 'normal';
+        const role = other.role || 'standard_user';
         const actionText = conv.conversation_id
           ? 'Open chat'
           : 'Start new chat';
@@ -278,7 +279,7 @@
             .map((part) => part[0].toUpperCase())
             .join('') || 'U';
         const highlightedName = getHighlightedName(name, query);
-        const roleLabel = role === 'admin' ? 'Admin' : 'Normal';
+        const roleLabel = role === 'admin' ? 'Admin' : 'Standard User';
         return `<button type="button"
                       class="chatbox-search-item"
                       data-search-contact-id="${other.user_id}">
@@ -516,7 +517,7 @@
     if (!conv) return;
     if (
       isRestrictedUser() &&
-      conv.other_participant.role === 'normal' &&
+      conv.other_participant.role === 'standard_user' &&
       !conv.conversation_id
     )
       return;
@@ -646,7 +647,7 @@
           : getPanelPrefixFromRole(
               matched && matched.other_participant
                 ? matched.other_participant.role
-                : 'normal',
+                : 'standard_user',
             );
 
       if (matched) {

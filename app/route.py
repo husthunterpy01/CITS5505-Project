@@ -5,6 +5,13 @@ from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
 from app.utils import user_roles
 from app.forms import CreateProductForm
+import os
+from uuid import uuid4
+from werkzeug.utils import secure_filename
+from flask import current_app
+import json
+import urllib.parse
+import urllib.request
 
 main = Blueprint('main', __name__)
 
@@ -322,7 +329,7 @@ def admin_reports_page():
     return render_template('postmanager.html', products=all_products)
 
 @main.route('/createProduct', methods=['GET', 'POST'])
-@AuthService.role_accepted('normal')
+@AuthService.role_accepted('standard_user')
 def create_product_page():
     form = CreateProductForm()
 
@@ -331,32 +338,53 @@ def create_product_page():
         for category in Category.query.order_by(Category.category_name.asc()).all()
     ]
 
-    form.location_id.choices = [
-        (location.location_id, location.location_name)
-        for location in Location.query.order_by(Location.location_name.asc()).all()
-    ]
+    if form.validate_on_submit():  
+        uploaded_images = [file for file in form.images.data if file and file.filename]
 
-    if form.validate_on_submit():
+        location_name = form.location_name.data.strip()
+        latitude = float(form.latitude.data)
+        longitude = float(form.longitude.data)
+
+        location = Location.query.filter(Location.location_name.ilike(location_name)).first()
+
+        if not location: 
+            location = Location(
+                location_name = location_name,
+                latitude = latitude,
+                longitude = longitude,
+            )
+            db.session.add(location)
+            db.session.flush()
+
         new_product = Product(
             product_name=form.product_name.data.strip(),
             description=form.description.data.strip() if form.description.data else None,
             seller_id=session.get('user_id'),
             category_id=form.category_id.data,
             price=float(form.price.data),
-            location_id=form.location_id.data,
+            location_id=location.location_id,
             status='available',
             is_legit=True,
         )
 
         db.session.add(new_product)
         db.session.flush()
+        
+        upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+        os.makedirs(upload_dir, exist_ok=True)
 
-        image_url = form.image_url.data.strip() if form.image_url.data else None
-        if image_url:
+        for index, image_file in enumerate(uploaded_images):
+            filename = secure_filename(image_file.filename)
+            unique_filename = f"{uuid4().hex}_{filename}"
+            file_path = os.path.join(upload_dir, unique_filename)
+            image_file.save(file_path)
+
+            image_url = url_for('static', filename=f'uploads/products/{unique_filename}')
+
             product_image = ProductImage(
                 product_id=new_product.product_id,
                 image_url=image_url,
-                is_primary=True,
+                is_primary=(index == 0),
             )
             db.session.add(product_image)
 
@@ -366,3 +394,62 @@ def create_product_page():
         return redirect(url_for('main.browse_page'))
 
     return render_template('createproduct.html', form=form)
+
+@main.route('/api/locations/suggest')
+def suggest_locations():
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 3:
+        return jsonify({'ok': True, 'locations': []})
+    
+    api_key = current_app.config.get('GEOAPIFY_API_KEY')
+    if not api_key:
+        return jsonify({'ok': False, 'message': 'Geoapify API key is missing'}), 500
+    
+    params = {
+        'text': query,
+        'type': 'locality',
+        'filter': 'rect:112.8,-35.2,129.1,-13.4',
+        'limit': 5,
+        'format': 'json',
+        'apiKey': api_key
+    }
+
+    url = 'https://api.geoapify.com/v1/geocode/autocomplete?' + urllib.parse.urlencode(params)
+
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return jsonify({'ok': False, 'message': 'Location lookup failed'}), 502
+    
+    locations = []
+    seen = set()
+
+    for result in payload.get('results', []):
+        suburb = result.get('suburb') or result.get('city') or result.get('name')
+        state = result.get('state')
+        country = result.get('country_code')
+        lat = result.get('lat')
+        lon = result.get('lon')
+
+        if not suburb or lat is None or lon is None:
+            continue
+
+        if country and country.lower() != 'au':
+            continue
+
+        key = suburb.strip().lower()
+        if key in seen:
+            continue
+
+        seen.add(key)
+        locations.append({
+            'name': suburb,
+            'state': state,
+            'latitude': lat,
+            'longitude': lon,
+            'label': f"{suburb}, {state}" if state else suburb,
+        })
+
+    return jsonify({'ok': True, 'locations': locations})

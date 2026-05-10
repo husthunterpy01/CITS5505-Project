@@ -4,5 +4,5 @@ from app.models import Product
 
 user_roles = {
     'admin':0,
-    'normal':1,
+    'standard_user':1,
 }
