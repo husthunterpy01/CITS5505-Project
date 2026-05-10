@@ -106,32 +106,28 @@ def seed_database(force_reset: bool = False):
         }
 
         product_seed_data = [
-            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 0),
-            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 1),
-            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 2),
+            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 3),
+            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 3),
+            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 3),
             ("Python Book", "Beginner-friendly Python textbook with practice tasks.", "Textbooks", 28.0, "Perth", "available", 3),
-            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 4),
-            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 5),
-            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Perth", "available", 0),
-            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 1),
-            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Subiaco", "sold", 2),
-            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 3),
+            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 3),
+            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 3),
+            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Osborne Park", "available", 3),
+            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 3),
+            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Willetton", "sold", 8),
+            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 9),
             ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
-            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Nedlands", "available", 1),
-            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Joondalup", "available", 2),
-            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Crawley", "available", 3),
+            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Subiaco", "available", 1),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Crawley", "available", 2),
+            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Nedlands", "available", 3),
             ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
             ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5)
         ]
-
         products = []
-        for name, description, category_name, price, location_name, status, seller_idx in product_seed_data:
+        for name, description, category_name, price, location, status, seller_idx in product_seed_data:
             category = category_by_name.get(category_name)
             if not category:
                 raise ValueError(f"Missing category '{category_name}' while seeding products.")
-            location = location_map.get(location_name)
-            if not location:
-                raise ValueError(f"Missing location '{location_name}' while seeding products.")
             products.append(
                 Product(
                     product_name=name,
@@ -139,7 +135,7 @@ def seed_database(force_reset: bool = False):
                     seller_id=users[seller_idx].user_id,
                     category_id=category.category_id,
                     price=price,
-                    location_id=location.location_id,
+                    location_id=location_map[location].location_id,
                     status=status,
                 )
             )
