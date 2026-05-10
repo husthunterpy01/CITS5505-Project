@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-from app.models import Product, User
+from app.models import Product, User, Category
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles
+from app.utils import user_roles, serialize_product_for_listing, search_products_for_listing
 
 main = Blueprint('main', __name__)
 
@@ -161,10 +161,12 @@ def personal_profile_page():
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
+    categories = Category.query.order_by(Category.category_name).all()
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
     products = []
 
-    for product in all_products:
+    for idx, product in enumerate(all_products):
         primary_image = None
 
         for image in product.images:
@@ -173,32 +175,85 @@ def browse_page():
                 break
 
         if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
+            primary_image = default_img
 
         seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
 
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        loc = getattr(product, 'location', None)
+        location_label = loc.location_name if loc else ''
+
+        cat = getattr(product, 'category', None)
+        category_name = cat.category_name if cat else ''
+
+        image_src = primary_image
+        if image_src and not (image_src.startswith('http://') or image_src.startswith('https://')):
+            image_src = url_for('static', filename=image_src)
 
         products.append({
             'product_id': product.product_id,
             'title': product.product_name,
             'description': product.description,
             'price': product.price,
-            'location': product.location,
+            'category_id': product.category_id,
+            'category_name': category_name,
+            'location': location_label,
             'status': product.status,
             'seller_name': seller_name,
-            'image': primary_image
+            'image': image_src,
         })
 
-    return render_template('browse.html', products=products)
+    return render_template('browse.html', products=products, categories=categories)
+
+
+@main.route('/api/products/search')
+def api_products_search():
+    default_image = current_app.config['LISTING_DEFAULT_IMAGE']
+    limit = int(current_app.config.get('SEARCH_RESULT_LIMIT', 200))
+
+    q = (request.args.get('q') or '').strip()
+
+    raw_cat = request.args.get('category_id')
+    category_id = None
+    if raw_cat not in (None, ''):
+        try:
+            category_id = int(raw_cat)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'Invalid category_id.'}), 400
+
+    min_price = None
+    max_price = None
+    raw_min = request.args.get('min_price')
+    raw_max = request.args.get('max_price')
+    if raw_min not in (None, ''):
+        try:
+            min_price = float(raw_min)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'Invalid min_price.'}), 400
+    if raw_max not in (None, ''):
+        try:
+            max_price = float(raw_max)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'Invalid max_price.'}), 400
+
+    if min_price is not None and max_price is not None and min_price > max_price:
+        return jsonify({'success': False, 'message': 'min_price cannot be greater than max_price.'}), 400
+
+    rows = search_products_for_listing(q or None, limit, category_id=category_id, min_price=min_price, max_price=max_price)
+    items = [serialize_product_for_listing(p, default_image) for p in rows]
+
+    applied_filters = {
+        'q': q or None,
+        'category_id': category_id,
+        'min_price': min_price,
+        'max_price': max_price,
+    }
+
+    return jsonify({
+        'success': True,
+        'products': items,
+        'applied_filters': applied_filters,
+    })
 
 
 # Admin routes

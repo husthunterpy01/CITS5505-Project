@@ -1,5 +1,6 @@
-{% extends 'base.html' %} {% block title %}Browse Products - Swanflip{% endblock
-%} {% block content %}
+{% extends 'base.html' %}
+{% block title %}Browse Products - Swanflip{% endblock %}
+{% block content %}
 
 <section
   id="browse-root"
@@ -10,114 +11,151 @@
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
       <p class="mt-2 text-sm text-slate-600">
-        Find useful items from other UWA students.
+        Find useful items from other UWA students. Search and filter by category or price.
       </p>
     </div>
 
-    <form method="GET" action="{{ url_for('main.browse_page') }}" class="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_auto_auto]">
-      <input
-        type="text"
-        name="user_location"
-        value="{{ user_location or '' }}"
-        placeholder="Enter your location (e.g., Subiaco, Western Australia)"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-      />
-      <input type="hidden" name="sort" value="{{ sort_by or 'posted' }}" />
-      <input type="hidden" name="direction" value="{{ sort_direction or 'desc' }}" />
-      <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">
-        Calculate Distance
-      </button>
-    </form>
+    <div class="mb-6 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <!-- Single horizontal row; scroll sideways on small screens -->
+      <div
+        class="browse-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] sm:gap-3"
+        role="toolbar"
+        aria-label="Browse filters and search"
+      >
+        <label for="browse-category-filter" class="sr-only">Category</label>
+        <select
+          id="browse-category-filter"
+          class="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[10.5rem]"
+        >
+          <option value="">All categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+          {% endfor %}
+        </select>
 
-    {% if location_error %}
-    <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-      {{ location_error }}
+        <label for="browse-min-price" class="sr-only">Minimum price</label>
+        <input
+          id="browse-min-price"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="Min $"
+          class="h-9 w-[4.5rem] shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:w-[5rem]"
+        />
+
+        <label for="browse-max-price" class="sr-only">Maximum price</label>
+        <input
+          id="browse-max-price"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="Max $"
+          class="h-9 w-[4.5rem] shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:w-[5rem]"
+        />
+
+        <button
+          type="button"
+          id="browse-apply-filters"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-900"
+        >
+          Apply
+        </button>
+        <button
+          type="button"
+          id="browse-clear-filters"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          Clear
+        </button>
+
+        <span class="mx-0.5 hidden h-6 w-px shrink-0 bg-slate-200 sm:inline-block" aria-hidden="true"></span>
+
+        <label for="browse-search-input" class="sr-only">Search listings</label>
+        <input
+          id="browse-search-input"
+          type="search"
+          autocomplete="off"
+          placeholder="Search listings…"
+          class="h-9 min-w-[8rem] flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[12rem] sm:max-w-md"
+        />
+        <button
+          type="button"
+          id="browse-search-submit"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+        >
+          Search
+        </button>
+
+        <label for="browse-sort-select" class="sr-only">Sort by</label>
+        <select
+          id="browse-sort-select"
+          class="h-9 min-w-[9.5rem] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[11rem]"
+        >
+          <option value="newest">Newest listed</option>
+          <option value="price-low">Price: low to high</option>
+          <option value="price-high">Price: high to low</option>
+        </select>
+      </div>
+
+      <p id="browse-search-feedback" class="mt-2 hidden text-sm text-amber-800" role="status"></p>
     </div>
-    {% endif %}
 
-    {% if location_resolved %}
-    <div class="mb-6 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Within 5 km</p>
-        <p class="mt-1 text-2xl font-bold text-emerald-900">{{ distance_summary.within_5_km }}</p>
-      </div>
-      <div class="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">Within 10 km</p>
-        <p class="mt-1 text-2xl font-bold text-sky-900">{{ distance_summary.within_10_km }}</p>
-      </div>
-      <div class="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">15+ km</p>
-        <p class="mt-1 text-2xl font-bold text-violet-900">{{ distance_summary.over_15_km }}</p>
-      </div>
-    </div>
-    {% endif %}
+    <div
+      id="browse-product-grid"
+      class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    >
+      {% for product in products %}
+      {% set is_sold = product.status == 'sold' %}
+      <article
+        data-product-id="{{ product.product_id }}"
+        data-category-id="{{ product.category_id }}"
+        data-price="{{ product.price }}"
+        data-rank="{{ loop.index0 }}"
+        class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      >
+        <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+          <img src="{{ product.image }}" alt="{{ product.title }}" class="h-full w-full object-cover" />
+        </div>
+        <div class="flex flex-1 flex-col p-5">
+          <h2 class="text-lg font-semibold text-slate-800">{{ product.title }}</h2>
+          {% if product.category_name %}
+          <p class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{{ product.category_name }}</p>
+          {% endif %}
 
-    <div class="flex flex-wrap gap-6">
-      {% for product in products %} {% set is_sold = product.status == 'sold' %}
-
-          <article
-            data-product-id="{{ product.product_id }}"
-            data-price="{{ product.price }}"
-            data-rank="{{ loop.index0 }}"
-            class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-          >
-            <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
-              <img
-                src="{{product.image}}"
-                alt="{{product.title}}"
-                class="h-full w-full object-cover"
-              />
-            </div>
-            <div class="flex flex-1 flex-col p-5">
-              <h2 class="text-lg font-semibold text-slate-800">
-                {{product.title}}
-              </h2>
-
-          <p class="mt-2 text-sm font-medium text-blue-700">
-            ${{'%.2f'|format(product.price)}}
-          </p>
+          <p class="mt-2 text-sm font-medium text-blue-700">${{ '%.2f'|format(product.price) }}</p>
           <div class="mt-2 flex items-center justify-between gap-3">
-            <p class="mt-2 text-sm text-slate-500">{{product.location}}</p>
+            <p class="text-sm text-slate-500">{{ product.location }}</p>
             <span
               class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
             >
-              {{product.status|capitalize}}
+              {{ product.status|capitalize }}
             </span>
           </div>
 
-          {% if product.distance_km is not none %}
-          <div class="mt-2 flex items-center gap-2">
-            <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-              {{ '%.2f'|format(product.distance_km) }} km
-            </span>
-            <span class="text-xs font-medium text-slate-500">Bucket: {{ product.distance_band }}</span>
-          </div>
+          <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">{{ product.description }}</p>
+
+          {% if not is_sold %}
+          <button
+            type="button"
+            class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+            data-product-id="{{ product.product_id }}"
+            data-seller-name="{{ product.seller_name }}"
+            data-product-title="{{ product.title }}"
+            data-product-status="{{ product.status }}"
+          >
+            Chat with Seller
+          </button>
           {% endif %}
-
-          <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
-            {{product.description}}
-          </p>
-
-              {% if not is_sold %}
-              <button
-                type="button"
-                class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
-                data-product-id="{{product.product_id}}"
-                data-seller-name="{{product.seller_name}}"
-                data-product-title="{{product.title}}"
-                data-product-status="{{product.status}}"
-              >
-                Chat with Seller
-              </button>
-              {% endif %}
-            </div>
-          </article>
-          {% endfor %}
         </div>
-        <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
-          No listings to show. Try different keywords or clear the search.
-        </p>
+      </article>
+      {% endfor %}
     </div>
+
+    <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
+      No listings match your filters. Try clearing search or widening the price range.
+    </p>
   </div>
 </section>
 <script src="{{ url_for('static', filename='pages/BrowsePage/browsepage.js') }}"></script>
