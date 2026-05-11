@@ -1,12 +1,20 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-from app.models import Product, User
+from app.models import Product, User, Category, Location, ProductImage
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
-from app.utils import user_roles, serialize_product_for_listing, search_products_for_listing
+from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
+from app.utils import user_roles
+from app.forms import CreateProductForm
+import os
+from uuid import uuid4
+from werkzeug.utils import secure_filename
+from flask import current_app
+import json
+import urllib.parse
+import urllib.request
 
 main = Blueprint('main', __name__)
-
 
 @main.route('/')
 def home_page():
@@ -18,7 +26,6 @@ def home_page():
 @main.route('/about')
 def about_page():
     return render_template('about.html')
-
 
 @main.route('/signin', methods=['POST', 'GET'])
 def signin_page():
@@ -159,10 +166,12 @@ def personal_profile_page():
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
+    categories = Category.query.order_by(Category.category_name).all()
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
     products = []
 
-    for product in all_products:
+    for idx, product in enumerate(all_products):
         primary_image = None
 
         for image in product.images:
@@ -171,13 +180,20 @@ def browse_page():
                 break
 
         if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
+            primary_image = default_img
 
         seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
+
+        loc = getattr(product, 'location', None)
+        location_label = loc.location_name if loc else ''
+
+        cat = getattr(product, 'category', None)
+        category_name = cat.category_name if cat else ''
+
+        image_src = primary_image
+        if image_src and not (image_src.startswith('http://') or image_src.startswith('https://')):
+            image_src = url_for('static', filename=image_src)
 
         products.append({
             'product_id': product.product_id,
@@ -185,13 +201,14 @@ def browse_page():
             'description': product.description,
             'category': product.category.category_name if product.category else '',
             'price': product.price,
-            'location': product.location.location_name if product.location else '',
+            'location': product.location.location_name if product.location else 'Unknown Location',
             'status': product.status,
+            'seller_id': product.seller_id,
             'seller_name': seller_name,
-            'image': primary_image
+            'image': image_src,
         })
 
-    return render_template('browse.html', products=products)
+    return render_template('browse.html', products=products, categories=categories)
 
 
 @main.route('/api/products/search', methods=['GET'])
@@ -376,4 +393,223 @@ def admin_reports_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
 
+def save_product_images(product, uploaded_images):
+    upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+    os.makedirs(upload_dir, exist_ok=True)
 
+    has_primary = any(image.is_primary for image in product.images)
+
+    for index, image_file in enumerate(uploaded_images):
+        filename = secure_filename(image_file.filename)
+        unique_filename = f"{uuid4().hex}_{filename}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        image_file.save(file_path)
+
+        image_url = url_for('static', filename=f'uploads/products/{unique_filename}')
+
+        product_image = ProductImage(
+            product_id=product.product_id,
+            image_url=image_url,
+            is_primary=(not has_primary and index == 0),
+        )
+        db.session.add(product_image)
+
+
+@main.route('/createProduct', methods=['GET', 'POST'])
+@AuthService.role_accepted('standard_user')
+def create_product_page():
+    form = CreateProductForm()
+
+    form.category_id.choices = [
+        (category.category_id, category.category_name)
+        for category in Category.query.order_by(Category.category_name.asc()).all()
+    ]
+
+    if form.validate_on_submit():  
+        uploaded_images = [file for file in (form.images.data or []) if file and file.filename]
+
+        location_name = form.location_name.data.strip()
+        latitude = float(form.latitude.data)
+        longitude = float(form.longitude.data)
+
+        location = Location.query.filter(Location.location_name.ilike(location_name)).first()
+
+        if not location: 
+            location = Location(
+                location_name = location_name,
+                latitude = latitude,
+                longitude = longitude,
+            )
+            db.session.add(location)
+            db.session.flush()
+
+        new_product = Product(
+            product_name=form.product_name.data.strip(),
+            description=form.description.data.strip() if form.description.data else None,
+            seller_id=session.get('user_id'),
+            category_id=form.category_id.data,
+            price=float(form.price.data),
+            location_id=location.location_id,
+            status='available',
+            is_legit=True,
+        )
+
+        db.session.add(new_product)
+        db.session.flush()
+        
+        save_product_images(new_product, uploaded_images)
+
+        db.session.commit()
+
+        flash('Your listing has been created.', 'success')
+        return redirect(url_for('main.browse_page'))
+
+    return render_template('createproduct.html', form=form)
+
+@main.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
+@AuthService.role_accepted('standard_user')
+def edit_product_page(product_id):
+    product = Product.query.get_or_404(product_id)
+
+    if product.seller_id != session.get('user_id'):
+        flash('You do not have permission to edit this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    form = CreateProductForm()
+    form.submit.label.text = 'Update Listing'
+
+    form.category_id.choices = [
+        (category.category_id, category.category_name)
+        for category in Category.query.order_by(Category.category_name.asc()).all()
+    ]
+
+    if request.method == 'GET':
+        form.product_name.data = product.product_name
+        form.description.data = product.description
+        form.price.data = product.price
+        form.category_id.data = product.category_id
+
+        if product.location:
+            form.location_name.data = product.location.location_name
+            form.latitude.data = str(product.location.latitude)
+            form.longitude.data = str(product.location.longitude)
+
+    if form.validate_on_submit():
+        delete_image_ids = request.form.getlist('delete_image_ids')
+        delete_image_ids = [int(image_id) for image_id in delete_image_ids if image_id.isdigit()]
+
+        existing_images_after_delete = [
+            image for image in product.images
+            if image.image_id not in delete_image_ids
+        ]
+
+        uploaded_images = [file for file in (form.images.data or []) if file and file.filename]
+
+        if len(existing_images_after_delete) + len(uploaded_images) == 0:
+            flash('A product must have at least one image.', 'error')
+            return render_template('updateproduct.html', form=form, product=product)
+
+        if len(existing_images_after_delete) + len(uploaded_images) > 10:
+            flash('A product can have a maximum of 10 images.', 'error')
+            return render_template('updateproduct.html', form=form, product=product)
+
+        location_name = form.location_name.data.strip()
+        latitude = float(form.latitude.data)
+        longitude = float(form.longitude.data)
+
+        location = Location.query.filter(Location.location_name.ilike(location_name)).first()
+
+        if not location:
+            location = Location(
+                location_name=location_name,
+                latitude=latitude,
+                longitude=longitude,
+            )
+            db.session.add(location)
+            db.session.flush()
+
+        product.product_name = form.product_name.data.strip()
+        product.description = form.description.data.strip() if form.description.data else None
+        product.category_id = form.category_id.data
+        product.price = float(form.price.data)
+        product.location_id = location.location_id
+
+        if delete_image_ids:
+            ProductImage.query.filter(
+                ProductImage.product_id == product.product_id,
+                ProductImage.image_id.in_(delete_image_ids),
+            ).delete(synchronize_session=False)
+
+        db.session.flush()
+        save_product_images(product, uploaded_images)
+
+        remaining_images = ProductImage.query.filter_by(product_id=product.product_id).all()
+        if remaining_images and not any(image.is_primary for image in remaining_images):
+            remaining_images[0].is_primary = True
+
+        db.session.commit()
+
+        flash('Your listing has been updated.', 'success')
+        return redirect(url_for('main.personal_profile_page'))
+
+    return render_template('updateproduct.html', form=form, product=product)
+
+
+@main.route('/api/locations/suggest')
+def suggest_locations():
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 3:
+        return jsonify({'ok': True, 'locations': []})
+    
+    api_key = current_app.config.get('GEOAPIFY_API_KEY')
+    if not api_key:
+        return jsonify({'ok': False, 'message': 'Geoapify API key is missing'}), 500
+    
+    params = {
+        'text': query,
+        'type': 'locality',
+        'filter': 'rect:112.8,-35.2,129.1,-13.4',
+        'limit': 5,
+        'format': 'json',
+        'apiKey': api_key
+    }
+
+    url = 'https://api.geoapify.com/v1/geocode/autocomplete?' + urllib.parse.urlencode(params)
+
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return jsonify({'ok': False, 'message': 'Location lookup failed'}), 502
+    
+    locations = []
+    seen = set()
+
+    for result in payload.get('results', []):
+        suburb = result.get('suburb') or result.get('city') or result.get('name')
+        state = result.get('state')
+        country = result.get('country_code')
+        lat = result.get('lat')
+        lon = result.get('lon')
+
+        if not suburb or lat is None or lon is None:
+            continue
+
+        if country and country.lower() != 'au':
+            continue
+
+        key = suburb.strip().lower()
+        if key in seen:
+            continue
+
+        seen.add(key)
+        locations.append({
+            'name': suburb,
+            'state': state,
+            'latitude': lat,
+            'longitude': lon,
+            'label': f"{suburb}, {state}" if state else suburb,
+        })
+
+    return jsonify({'ok': True, 'locations': locations})

@@ -5,6 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const emptyState = document.getElementById("browse-empty-state");
   const searchInput = document.getElementById("browse-search-input");
   const searchSubmit = document.getElementById("browse-search-submit");
+  const categorySelect = document.getElementById("browse-category-filter");
+  const minPriceInput = document.getElementById("browse-min-price");
+  const maxPriceInput = document.getElementById("browse-max-price");
+  const applyFiltersBtn = document.getElementById("browse-apply-filters");
+  const clearFiltersBtn = document.getElementById("browse-clear-filters");
   const sortSelect = document.getElementById("browse-sort-select");
   const productCards = Array.from(
     grid ? grid.querySelectorAll("article.browse-product-card[data-product-id]") : [],
@@ -26,11 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function setEmptyState(show) {
     if (!emptyState) return;
-    if (show) {
-      emptyState.classList.remove("hidden");
-    } else {
-      emptyState.classList.add("hidden");
-    }
+    emptyState.classList.toggle("hidden", !show);
   }
 
   function bindChatDelegation(container) {
@@ -40,14 +41,27 @@ document.addEventListener("DOMContentLoaded", function () {
       const sellerName = button.dataset.sellerName;
       const productTitle = button.dataset.productTitle;
       const productId = button.dataset.productId;
-      alert(
-        `Chat feature coming soon.\n\nSeller: ${sellerName}\nProduct: ${productTitle}\nProduct ID: ${productId}`,
+      const sellerId = Number(button.dataset.sellerId || 0);
+      if (!sellerId) {
+        alert("Unable to open chat for this seller.");
+        return;
+      }
+
+      document.dispatchEvent(
+        new CustomEvent("swanflip:chat-start", {
+          detail: {
+            targetUserId: sellerId,
+            productId: Number(productId || 0) || null,
+            displayName: sellerName || productTitle || "Seller",
+            role: "standard_user",
+          },
+        }),
       );
     });
   }
 
-  if (grid) {
-    bindChatDelegation(grid);
+  if (grid || root) {
+    bindChatDelegation(grid || root);
   }
 
   if (!root || !grid) {
@@ -59,16 +73,42 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  async function runSearch(query) {
+  function hasActiveFilters() {
+    const q = searchInput && searchInput.value.trim();
+    const cat = categorySelect && categorySelect.value;
+    const minV = minPriceInput && minPriceInput.value.trim();
+    const maxV = maxPriceInput && maxPriceInput.value.trim();
+    return !!(q || cat || minV !== "" || maxV !== "");
+  }
+
+  function buildSearchParams() {
     const params = new URLSearchParams();
-    params.set("q", query);
-    const res = await fetch(`${apiUrl}?${params.toString()}`, {
+    const q = searchInput ? searchInput.value.trim() : "";
+    if (q) params.set("q", q);
+    if (categorySelect && categorySelect.value) {
+      params.set("category_id", categorySelect.value);
+    }
+    const minV = minPriceInput ? minPriceInput.value.trim() : "";
+    const maxV = maxPriceInput ? maxPriceInput.value.trim() : "";
+    if (minV !== "") params.set("min_price", minV);
+    if (maxV !== "") params.set("max_price", maxV);
+    return params;
+  }
+
+  async function fetchFilteredProducts() {
+    const params = buildSearchParams();
+    const qs = params.toString();
+    const url = qs ? `${apiUrl}?${qs}` : apiUrl;
+    const res = await fetch(url, {
       headers: { Accept: "application/json" },
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error("Search request failed");
+      const msg =
+        data && data.message ? data.message : "Filter request failed.";
+      throw new Error(msg);
     }
-    return res.json();
+    return data;
   }
 
   function applyVisibleProducts(visibleProductIds) {
@@ -101,8 +141,8 @@ document.addEventListener("DOMContentLoaded", function () {
     cards.forEach((card) => grid.appendChild(card));
   }
 
-  async function performSearch(q) {
-    if (!q) {
+  async function applyBrowseFilters() {
+    if (!hasActiveFilters()) {
       setFeedback("", false);
       applyVisibleProducts(defaultVisibleIds);
       return;
@@ -112,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
     grid.classList.add("opacity-60", "pointer-events-none");
 
     try {
-      const data = await runSearch(q);
+      const data = await fetchFilteredProducts();
       if (!data.success || !Array.isArray(data.products)) {
         throw new Error("Invalid response");
       }
@@ -124,22 +164,32 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       const visibleIds = new Set(items.map((item) => String(item.product_id)));
       applyVisibleProducts(visibleIds);
-    } catch {
-      setFeedback("Something went wrong. Please try again.", true);
+    } catch (err) {
+      setFeedback(err.message || "Something went wrong. Please try again.", true);
       setEmptyState(false);
     } finally {
       grid.classList.remove("opacity-60", "pointer-events-none");
     }
   }
 
+  function clearAllFilters() {
+    if (searchInput) searchInput.value = "";
+    if (categorySelect) categorySelect.value = "";
+    if (minPriceInput) minPriceInput.value = "";
+    if (maxPriceInput) maxPriceInput.value = "";
+    setFeedback("", false);
+    applyVisibleProducts(defaultVisibleIds);
+  }
+
   document.addEventListener("swanflip:browse-search", async function (ev) {
     const raw = ev.detail && ev.detail.query != null ? String(ev.detail.query) : "";
-    await performSearch(raw.trim());
+    if (searchInput) searchInput.value = raw;
+    await applyBrowseFilters();
   });
 
-  if (searchInput && searchSubmit) {
+  if (searchInput) {
     searchInput.addEventListener("input", () => {
-      if (!searchInput.value.trim()) {
+      if (!hasActiveFilters()) {
         setFeedback("", false);
         applyVisibleProducts(defaultVisibleIds);
       }
@@ -148,12 +198,26 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.addEventListener("keydown", async (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      await performSearch(searchInput.value.trim());
+      await applyBrowseFilters();
     });
+  }
 
+  if (searchSubmit) {
     searchSubmit.addEventListener("click", async () => {
-      await performSearch(searchInput.value.trim());
-      searchInput.focus();
+      await applyBrowseFilters();
+      if (searchInput) searchInput.focus();
+    });
+  }
+
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener("click", async () => {
+      await applyBrowseFilters();
+    });
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener("click", () => {
+      clearAllFilters();
     });
   }
 

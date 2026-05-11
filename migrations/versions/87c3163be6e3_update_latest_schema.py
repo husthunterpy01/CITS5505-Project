@@ -27,6 +27,10 @@ def _backfill_user_passwords_if_missing(bind):
 
     fallback_hash = generate_password_hash('password123')
     if 'password' in user_columns:
+        op.execute(sa.text("UPDATE users SET password = :fallback WHERE password IS NULL").bindparams(fallback=fallback_hash))
+    if 'password_hash' in user_columns:
+        op.execute(sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL").bindparams(fallback=fallback_hash))
+
         bind.execute(
             sa.text("UPDATE users SET password = :fallback WHERE password IS NULL"),
             {'fallback': fallback_hash},
@@ -86,48 +90,69 @@ def upgrade():
             sa.PrimaryKeyConstraint('logging_id'),
         )
 
+    # Check existing columns in messages table to avoid re-adding them
+    inspector = sa.inspect(bind)
+    msg_columns = {col['name'] for col in inspector.get_columns('messages')}
+    
     with op.batch_alter_table('messages', schema=None, naming_convention=FK_CONVENTION) as batch_op:
-        batch_op.add_column(sa.Column('conversation_id', sa.Integer(), nullable=True))
-        batch_op.add_column(sa.Column('message_type', sa.String(length=30), nullable=False, server_default=sa.text("'text'")))
-        batch_op.add_column(sa.Column('is_read', sa.Boolean(), nullable=False, server_default=sa.false()))
-        batch_op.add_column(sa.Column('read_at', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
-        batch_op.create_foreign_key('fk_messages_conversation_id_conversations', 'conversations', ['conversation_id'], ['conversation_id'])
-        batch_op.drop_column('receiver_id')
+        if 'conversation_id' not in msg_columns:
+            batch_op.add_column(sa.Column('conversation_id', sa.Integer(), nullable=True))
+        if 'message_type' not in msg_columns:
+            batch_op.add_column(sa.Column('message_type', sa.String(length=30), nullable=False, server_default=sa.text("'text'")))
+        if 'is_read' not in msg_columns:
+            batch_op.add_column(sa.Column('is_read', sa.Boolean(), nullable=False, server_default=sa.false()))
+        if 'read_at' not in msg_columns:
+            batch_op.add_column(sa.Column('read_at', sa.DateTime(), nullable=True))
+        if 'created_at' not in msg_columns:
+            batch_op.add_column(sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
+        
+        # Only create foreign key and drop receiver_id if they haven't been done
+        if 'receiver_id' in msg_columns:
+            if 'conversation_id' in msg_columns or 'conversation_id' not in msg_columns:
+                # Safe to create FK since conversation_id is either newly added or already exists
+                batch_op.create_foreign_key('fk_messages_conversation_id_conversations', 'conversations', ['conversation_id'], ['conversation_id'])
+            batch_op.drop_column('receiver_id')
 
-    op.execute(sa.text(
-        """
-        INSERT INTO conversations (product_id, conv_type, created_at, updated_at)
-        SELECT DISTINCT m.product_id, 'direct', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        FROM messages AS m
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM conversations AS c
-            WHERE c.product_id = m.product_id
-              AND c.conv_type = 'direct'
-        )
-        """
-    ))
+    # Only populate conversations if both tables exist
+    existing_tables = set(sa.inspect(bind).get_table_names())
+    if 'conversations' in existing_tables and 'messages' in existing_tables:
+        op.execute(sa.text(
+            """
+            INSERT INTO conversations (product_id, conv_type, created_at, updated_at)
+            SELECT DISTINCT m.product_id, 'direct', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            FROM messages AS m
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM conversations AS c
+                WHERE c.product_id = m.product_id
+                  AND c.conv_type = 'direct'
+            )
+            """
+        ))
 
-    op.execute(sa.text(
-        """
-        UPDATE messages
-        SET conversation_id = (
-            SELECT conversation_id
-            FROM conversations
-            WHERE conversations.product_id = messages.product_id
-            ORDER BY conversation_id ASC
-            LIMIT 1
-        )
-        WHERE conversation_id IS NULL
-        """
-    ))
+        op.execute(sa.text(
+            """
+            UPDATE messages
+            SET conversation_id = (
+                SELECT conversation_id
+                FROM conversations
+                WHERE conversations.product_id = messages.product_id
+                ORDER BY conversation_id ASC
+                LIMIT 1
+            )
+            WHERE conversation_id IS NULL
+            """
+        ))
 
     with op.batch_alter_table('messages', schema=None, naming_convention=FK_CONVENTION) as batch_op:
-        batch_op.alter_column('conversation_id', existing_type=sa.Integer(), nullable=False)
-        batch_op.alter_column('created_at', existing_type=sa.DateTime(), server_default=None)
-        batch_op.alter_column('message_type', existing_type=sa.String(length=30), server_default=None)
-        batch_op.alter_column('is_read', existing_type=sa.Boolean(), server_default=None)
+        if 'conversation_id' in msg_columns:
+            batch_op.alter_column('conversation_id', existing_type=sa.Integer(), nullable=False)
+        if 'created_at' in msg_columns:
+            batch_op.alter_column('created_at', existing_type=sa.DateTime(), server_default=None)
+        if 'message_type' in msg_columns:
+            batch_op.alter_column('message_type', existing_type=sa.String(length=30), server_default=None)
+        if 'is_read' in msg_columns:
+            batch_op.alter_column('is_read', existing_type=sa.Boolean(), server_default=None)
 
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.alter_column(

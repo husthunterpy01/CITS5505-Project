@@ -1,5 +1,6 @@
-{% extends 'base.html' %} {% block title %}Browse Products - Swanflip{% endblock
-%} {% block content %}
+{% extends 'base.html' %}
+{% block title %}Browse Products - Swanflip{% endblock %}
+{% block content %}
 
 <section
   id="browse-root"
@@ -7,121 +8,153 @@
   data-search-url="{{ url_for('main.api_products_search') }}"
 >
   <div class="mx-auto w-full max-w-7xl">
-    <section class="mb-3">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
-        <p class="mt-1.5 text-sm text-slate-600">
-          Find useful items from other UWA students.
-        </p>
-      </div>
-    </section>
-
-    <section class="mb-3">
-      <div class="grid grid-cols-1 gap-3 xl:grid-cols-4 xl:items-end">
-        <div aria-hidden="true"></div>
-        <div class="xl:col-span-2">
-          <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-            <div class="flex items-center gap-2">
-              <label class="sr-only" for="browse-search-input">Search products</label>
-              <input
-                type="search"
-                id="browse-search-input"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="Search by title or description..."
-                autocomplete="off"
-              />
-              <button
-                type="button"
-                id="browse-search-submit"
-                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                title="Search listings"
-                aria-label="Search listings"
-              >
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="xl:col-start-4">
-          <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-            <label class="sr-only" for="browse-sort-select">Sort products</label>
-            <select
-              id="browse-sort-select"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="newest">Sort: Newest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="min-w-0">
-      <p id="browse-search-feedback" class="mb-3 hidden text-sm font-medium text-slate-700"></p>
-      <div id="browse-product-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {% for product in products %} {% set is_sold = product.status == 'sold' %}
-
-          <article
-            data-product-id="{{ product.product_id }}"
-            data-price="{{ product.price }}"
-            data-rank="{{ loop.index0 }}"
-            class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-          >
-            <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
-              <img
-                src="{{product.image}}"
-                alt="{{product.title}}"
-                onerror="this.onerror=null;this.src='data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;800&quot; height=&quot;600&quot;><rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;%23e2e8f0&quot;/><text x=&quot;50%&quot; y=&quot;50%&quot; dominant-baseline=&quot;middle&quot; text-anchor=&quot;middle&quot; font-family=&quot;Arial,sans-serif&quot; font-size=&quot;42&quot; fill=&quot;%23334155&quot;>' + this.alt + '</text></svg>');"
-                class="h-full w-full object-cover object-center"
-              />
-            </div>
-            <div class="flex flex-1 flex-col p-5">
-              <h2 class="text-lg font-semibold text-slate-800">
-                {{product.title}}
-              </h2>
-              <p class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                {{ product.category }}
-              </p>
-
-              <p class="mt-2 text-sm font-medium text-blue-700">
-                ${{'%.2f'|format(product.price)}}
-              </p>
-              <div class="mt-2 flex items-center justify-between gap-3">
-                <p class="mt-2 text-sm text-slate-500">{{product.location}}</p>
-                <span
-                  class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
-                >
-                  {{product.status|capitalize}}
-                </span>
-              </div>
-              <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">
-                {{product.description}}
-              </p>
-
-              {% if not is_sold %}
-              <button
-                type="button"
-                class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
-                data-product-id="{{product.product_id}}"
-                data-seller-name="{{product.seller_name}}"
-                data-product-title="{{product.title}}"
-                data-product-status="{{product.status}}"
-              >
-                Chat with Seller
-              </button>
-              {% endif %}
-            </div>
-          </article>
-      {% endfor %}
-      </div>
-      <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
-        No listings to show. Try different keywords or clear the search.
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
+      <p class="mt-2 text-sm text-slate-600">
+        Find useful items from other UWA students. Search and filter by category or price.
       </p>
     </div>
+
+    <div class="mb-6 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div
+        class="browse-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] sm:gap-3"
+        role="toolbar"
+        aria-label="Browse filters and search"
+      >
+        <label for="browse-category-filter" class="sr-only">Category</label>
+        <select
+          id="browse-category-filter"
+          class="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[10.5rem]"
+        >
+          <option value="">All categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="browse-min-price" class="sr-only">Minimum price</label>
+        <input
+          id="browse-min-price"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="Min $"
+          class="h-9 w-[4.5rem] shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:w-[5rem]"
+        />
+
+        <label for="browse-max-price" class="sr-only">Maximum price</label>
+        <input
+          id="browse-max-price"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="Max $"
+          class="h-9 w-[4.5rem] shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:w-[5rem]"
+        />
+
+        <button
+          type="button"
+          id="browse-apply-filters"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-900"
+        >
+          Apply
+        </button>
+        <button
+          type="button"
+          id="browse-clear-filters"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          Clear
+        </button>
+
+        <span class="mx-0.5 hidden h-6 w-px shrink-0 bg-slate-200 sm:inline-block" aria-hidden="true"></span>
+
+        <label for="browse-search-input" class="sr-only">Search listings</label>
+        <input
+          id="browse-search-input"
+          type="search"
+          autocomplete="off"
+          placeholder="Search listings…"
+          class="h-9 min-w-[8rem] flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[12rem] sm:max-w-md"
+        />
+        <button
+          type="button"
+          id="browse-search-submit"
+          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+        >
+          Search
+        </button>
+
+        <label for="browse-sort-select" class="sr-only">Sort by</label>
+        <select
+          id="browse-sort-select"
+          class="h-9 min-w-[9.5rem] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[11rem]"
+        >
+          <option value="newest">Newest listed</option>
+          <option value="price-low">Price: low to high</option>
+          <option value="price-high">Price: high to low</option>
+        </select>
+      </div>
+
+      <p id="browse-search-feedback" class="mt-2 hidden text-sm text-amber-800" role="status"></p>
+    </div>
+
+    <div
+      id="browse-product-grid"
+      class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    >
+      {% for product in products %}
+      {% set is_sold = product.status == 'sold' %}
+      <article
+        data-product-id="{{ product.product_id }}"
+        data-category-id="{{ product.category_id }}"
+        data-price="{{ product.price }}"
+        data-rank="{{ loop.index0 }}"
+        class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      >
+        <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+          <img src="{{ product.image }}" alt="{{ product.title }}" class="h-full w-full object-cover" />
+        </div>
+        <div class="flex flex-1 flex-col p-5">
+          <h2 class="text-lg font-semibold text-slate-800">{{ product.title }}</h2>
+          {% if product.category_name %}
+          <p class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{{ product.category_name }}</p>
+          {% endif %}
+
+          <p class="mt-2 text-sm font-medium text-blue-700">${{ '%.2f'|format(product.price) }}</p>
+          <div class="mt-2 flex items-center justify-between gap-3">
+            <p class="text-sm text-slate-500">{{ product.location }}</p>
+            <span
+              class="rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}"
+            >
+              {{ product.status|capitalize }}
+            </span>
+          </div>
+
+          <p class="mt-3 flex-1 text-sm leading-6 text-slate-600">{{ product.description }}</p>
+
+          {% if not is_sold %}
+          <button
+            type="button"
+            class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+            data-product-id="{{ product.product_id }}"
+            data-seller-name="{{ product.seller_name }}"
+            data-product-title="{{ product.title }}"
+            data-product-status="{{ product.status }}"
+          >
+            Chat with Seller
+          </button>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <p id="browse-empty-state" class="hidden w-full py-8 text-center text-sm text-slate-600">
+      No listings match your filters. Try clearing search or widening the price range.
+    </p>
   </div>
 </section>
 <script src="{{ url_for('static', filename='pages/BrowsePage/browsepage.js') }}"></script>

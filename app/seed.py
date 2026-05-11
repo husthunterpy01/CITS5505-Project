@@ -42,16 +42,16 @@ def seed_database(force_reset: bool = False):
             db.session.commit()
 
         user_seed_data = [
-            ("Alice", "Nguyen", "alice@example.com", "password123", "normal"),
-            ("Ben", "Lee", "ben@example.com", "password123", "normal"),
+            ("Alice", "Nguyen", "alice@example.com", "password123", "standard_user"),
+            ("Ben", "Lee", "ben@example.com", "password123", "standard_user"),
             ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
-            ("David", "Wong", "david@example.com", "password123", "normal"),
-            ("Eva", "Lim", "eva@example.com", "password123", "normal"),
-            ("Farah", "Hassan", "farah@example.com", "password123", "normal"),
-            ("George", "Tan", "george@example.com", "password123", "normal"),
-            ("Hannah", "Yeo", "hannah@example.com", "password123", "normal"),
-            ("Ivan", "Koh", "ivan@example.com", "password123", "normal"),
-            ("Jasmine", "Teo", "jasmine@example.com", "password123", "normal"),
+            ("David", "Wong", "david@example.com", "password123", "standard_user"),
+            ("Eva", "Lim", "eva@example.com", "password123", "standard_user"),
+            ("Farah", "Hassan", "farah@example.com", "password123", "standard_user"),
+            ("George", "Tan", "george@example.com", "password123", "standard_user"),
+            ("Hannah", "Yeo", "hannah@example.com", "password123", "standard_user"),
+            ("Ivan", "Koh", "ivan@example.com", "password123", "standard_user"),
+            ("Jasmine", "Teo", "jasmine@example.com", "password123", "standard_user"),
         ]
         
 
@@ -112,36 +112,23 @@ def seed_database(force_reset: bool = False):
         }
 
         product_seed_data = [
-            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 0),
-            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 1),
-            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 2),
+            ("iPhone 12", "Good condition, 128GB unlocked.", "Electronics", 650.0, "Perth", "available", 3),
+            ("Dell XPS 13", "13-inch ultrabook with charger included.", "Electronics", 850.0, "Subiaco", "available", 3),
+            ("Sony WH-1000XM4", "Noise-cancelling headphones in excellent condition.", "Electronics", 220.0, "Fremantle", "available", 3),
             ("Python Book", "Beginner-friendly Python textbook with practice tasks.", "Textbooks", 28.0, "Perth", "available", 3),
-            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 4),
-            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 5),
-            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Cannington", "available", 6),
-            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 7),
-            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Victoria Park", "sold", 8),
-            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Scarborough", "available", 9),
+            ("Data Structures Notes", "University notes and solved examples.", "Textbooks", 20.0, "Nedlands", "available", 3),
+            ("Calculus Workbook", "Workbook with minimal markings.", "Textbooks", 18.0, "Joondalup", "available", 3),
+            ("Study Desk", "Wooden study desk with cable hole.", "Furniture", 120.0, "Osborne Park", "available", 3),
+            ("Ergonomic Chair", "Mesh back support, adjustable height.", "Furniture", 140.0, "Perth", "available", 3),
+            ("Bedside Table", "Compact bedside table, good condition.", "Furniture", 40.0, "Willetton", "sold", 8),
+            ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 9),
             ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
-            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Leederville", "available", 1),
-            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Booragoon", "available", 2),
-            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Murdoch", "available", 3),
+            ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Subiaco", "available", 1),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Crawley", "available", 2),
+            ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Nedlands", "available", 3),
             ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
-            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5),
+            ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5)
         ]
-        products = [
-            Product(
-                product_name=name,
-                description=description,
-                seller_id=users[seller_idx].user_id,
-                category_id=category_map[category_name].category_id,
-                price=price,
-                location_id=location_map[location_name].location_id,
-                status=status,
-            )
-            for name, description, category_name, price, location_name, status, seller_idx in product_seed_data
-        ]
-
         products = []
         for name, description, category_name, price, location, status, seller_idx in product_seed_data:
             category = category_by_name.get(category_name)
@@ -154,7 +141,7 @@ def seed_database(force_reset: bool = False):
                     seller_id=users[seller_idx].user_id,
                     category_id=category.category_id,
                     price=price,
-                    location=location,
+                    location_id=location_map[location].location_id,
                     status=status,
                 )
             )
@@ -193,9 +180,107 @@ def seed_database(force_reset: bool = False):
             )
         db.session.add_all(images)
 
-        # Conversation and moderation seed data is intentionally skipped here.
-        # The current project schema differs across branches/migrations for these tables,
-        # and Issue 2 only requires stable product/category data for browse filtering.
+        conversations = [
+            Conversation(product_id=products[0].product_id),
+            Conversation(product_id=products[1].product_id),
+            Conversation(product_id=products[5].product_id),
+            Conversation(product_id=products[9].product_id),
+            Conversation(product_id=products[9].product_id),
+        ]
+        db.session.add_all(conversations)
+        db.session.flush()
+
+        participants = [
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[0].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[1].conversation_id, user_id=users[1].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[4].user_id),
+            ConversationParticipant(conversation_id=conversations[2].conversation_id, user_id=users[3].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[7].user_id),
+            ConversationParticipant(conversation_id=conversations[3].conversation_id, user_id=users[6].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[0].user_id),
+            ConversationParticipant(conversation_id=conversations[4].conversation_id, user_id=users[6].user_id),
+        ]
+        db.session.add_all(participants)
+        db.session.flush()
+
+        messages = [
+            Message(
+                conversation_id=conversations[0].conversation_id,
+                sender_id=users[1].user_id,
+                content="Hi, is this still available?",
+            ),
+            Message(
+                conversation_id=conversations[0].conversation_id,
+                sender_id=users[3].user_id,
+                content="Yes, it is available.",
+            ),
+            Message(
+                conversation_id=conversations[1].conversation_id,
+                sender_id=users[0].user_id,
+                content="Can you do $20?",
+            ),
+            Message(
+                conversation_id=conversations[2].conversation_id,
+                sender_id=users[4].user_id,
+                content="Is this skincare set unused and sealed?",
+            ),
+            Message(
+                conversation_id=conversations[2].conversation_id,
+                sender_id=users[3].user_id,
+                content="Yes, still sealed and ready for pickup.",
+            ),
+            Message(
+                conversation_id=conversations[3].conversation_id,
+                sender_id=users[7].user_id,
+                content="Could you hold the keyboard until Friday?",
+            ),
+            Message(
+                conversation_id=conversations[4].conversation_id,
+                sender_id=users[0].user_id,
+                content="Hi George, is the gaming keyboard still available?",
+            ),
+            Message(
+                conversation_id=conversations[4].conversation_id,
+                sender_id=users[6].user_id,
+                content="Hi Alice, yes it is available and works perfectly.",
+            ),
+        ]
+        db.session.add_all(messages)
+
+        # Create an admin conversation (Carol is admin at index 2) with Alice (index 0)
+        admin_conv = Conversation(product_id=products[0].product_id)
+        db.session.add(admin_conv)
+        db.session.flush()
+
+        admin_participants = [
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[2].user_id),
+            ConversationParticipant(conversation_id=admin_conv.conversation_id, user_id=users[0].user_id),
+        ]
+        db.session.add_all(admin_participants)
+        db.session.flush()
+
+        admin_messages = [
+            Message(
+                conversation_id=admin_conv.conversation_id,
+                sender_id=users[2].user_id,
+                content="Hello Alice, I can help with your issue.",
+            ),
+            Message(
+                conversation_id=admin_conv.conversation_id,
+                sender_id=users[0].user_id,
+                content="Thanks Carol, I have a question about my listing.",
+            ),
+        ]
+        db.session.add_all(admin_messages)
+
+        logs = [
+            Logging(user_id=users[2].user_id, target_type='user', target_id=users[3].user_id, action='report', reason='Repeated suspicious activity.'),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[2].product_id, action='flag', reason='Mismatch between description and condition.'),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[5].product_id, action='approve', reason='Reviewed and approved by admin.'),
+        ]
+        db.session.add_all(logs)
 
         db.session.commit()
         print("Database seeded successfully.")

@@ -9,6 +9,7 @@ DB_PATH = os.path.join(INSTANCE_DIR, 'app.db')
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY') or 'hard-to-guess-secret'
+    GEOAPIFY_API_KEY = os.getenv('GEOAPIFY_API_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or f"sqlite:///{DB_PATH}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
