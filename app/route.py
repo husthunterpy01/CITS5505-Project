@@ -210,56 +210,6 @@ def browse_page():
     return render_template('browse.html', products=products, categories=categories)
 
 
-@main.route('/api/products/search')
-def api_products_search():
-    default_image = current_app.config['LISTING_DEFAULT_IMAGE']
-    limit = int(current_app.config.get('SEARCH_RESULT_LIMIT', 200))
-
-    q = (request.args.get('q') or '').strip()
-
-    raw_cat = request.args.get('category_id')
-    category_id = None
-    if raw_cat not in (None, ''):
-        try:
-            category_id = int(raw_cat)
-        except (TypeError, ValueError):
-            return jsonify({'success': False, 'message': 'Invalid category_id.'}), 400
-
-    min_price = None
-    max_price = None
-    raw_min = request.args.get('min_price')
-    raw_max = request.args.get('max_price')
-    if raw_min not in (None, ''):
-        try:
-            min_price = float(raw_min)
-        except (TypeError, ValueError):
-            return jsonify({'success': False, 'message': 'Invalid min_price.'}), 400
-    if raw_max not in (None, ''):
-        try:
-            max_price = float(raw_max)
-        except (TypeError, ValueError):
-            return jsonify({'success': False, 'message': 'Invalid max_price.'}), 400
-
-    if min_price is not None and max_price is not None and min_price > max_price:
-        return jsonify({'success': False, 'message': 'min_price cannot be greater than max_price.'}), 400
-
-    rows = search_products_for_listing(q or None, limit, category_id=category_id, min_price=min_price, max_price=max_price)
-    items = [serialize_product_for_listing(p, default_image) for p in rows]
-
-    applied_filters = {
-        'q': q or None,
-        'category_id': category_id,
-        'min_price': min_price,
-        'max_price': max_price,
-    }
-
-    return jsonify({
-        'success': True,
-        'products': items,
-        'applied_filters': applied_filters,
-    })
-
-
 @main.route('/api/products/search', methods=['GET'])
 def api_products_search():
     """Search products by text with optional category and price filters."""

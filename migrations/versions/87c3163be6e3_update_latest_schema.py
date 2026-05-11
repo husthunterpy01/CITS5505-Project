@@ -30,11 +30,16 @@ def _backfill_user_passwords_if_missing(bind):
         op.execute(sa.text("UPDATE users SET password = :fallback WHERE password IS NULL").bindparams(fallback=fallback_hash))
     if 'password_hash' in user_columns:
         op.execute(sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL").bindparams(fallback=fallback_hash))
-=======
-        op.execute(sa.text("UPDATE users SET password = :fallback WHERE password IS NULL").bindparams(fallback=fallback_hash))
-    if 'password_hash' in user_columns:
-        op.execute(sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL").bindparams(fallback=fallback_hash))
 
+        bind.execute(
+            sa.text("UPDATE users SET password = :fallback WHERE password IS NULL"),
+            {'fallback': fallback_hash},
+        )
+    if 'password_hash' in user_columns:
+        bind.execute(
+            sa.text("UPDATE users SET password_hash = :fallback WHERE password_hash IS NULL"),
+            {'fallback': fallback_hash},
+        )
 
 
 def upgrade():
