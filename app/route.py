@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import Product, User, Category, Location, ProductImage
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
+from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
 from app.utils import user_roles
 from app.forms import CreateProductForm
 import os
@@ -165,10 +166,12 @@ def personal_profile_page():
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
+    categories = Category.query.order_by(Category.category_name).all()
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
     products = []
 
-    for product in all_products:
+    for idx, product in enumerate(all_products):
         primary_image = None
 
         for image in product.images:
@@ -177,19 +180,20 @@ def browse_page():
                 break
 
         if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
+            primary_image = default_img
 
         seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
 
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        loc = getattr(product, 'location', None)
+        location_label = loc.location_name if loc else ''
+
+        cat = getattr(product, 'category', None)
+        category_name = cat.category_name if cat else ''
+
+        image_src = primary_image
+        if image_src and not (image_src.startswith('http://') or image_src.startswith('https://')):
+            image_src = url_for('static', filename=image_src)
 
         products.append({
             'product_id': product.product_id,
@@ -200,10 +204,10 @@ def browse_page():
             'status': product.status,
             'seller_id': product.seller_id,
             'seller_name': seller_name,
-            'image': primary_image
+            'image': image_src,
         })
 
-    return render_template('browse.html', products=products)
+    return render_template('browse.html', products=products, categories=categories)
 
 
 @main.route('/api/products/search', methods=['GET'])
