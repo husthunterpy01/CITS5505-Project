@@ -40,7 +40,7 @@ def serialize_product_for_listing(product, default_image):
     }
 
 
-def search_products_for_listing(query, limit=None, category_id=None, min_price=None, max_price=None):
+def search_products_for_listing(query, limit, category_id=None, min_price=None, max_price=None):
     base = products_listing_query()
 
     if query:
