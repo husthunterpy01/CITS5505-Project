@@ -78,9 +78,14 @@ def seed_database(force_reset: bool = False):
             "Kitchen",
             "Clothing",
         ]
-        categories = [Category(category_name=name) for name in category_seed_names]
-        db.session.add_all(categories)
-        db.session.flush()
+        categories = []
+        for name in category_seed_names:
+            category = Category.query.filter_by(category_name=name).first()
+            if not category:
+                category = Category(category_name=name)
+                db.session.add(category)
+                db.session.flush()
+            categories.append(category)
 
         location_seed_data = [
             ("Perth", 115.8605, -31.9505),
@@ -101,6 +106,7 @@ def seed_database(force_reset: bool = False):
 
         location_map = {location.location_name: location for location in locations}
 
+        category_map = {c.category_name: c for c in categories}
         category_by_name = {
             category.category_name: category for category in Category.query.all()
         }

@@ -199,6 +199,7 @@ def browse_page():
             'product_id': product.product_id,
             'title': product.product_name,
             'description': product.description,
+            'category': product.category.category_name if product.category else '',
             'price': product.price,
             'location': product.location.location_name if product.location else 'Unknown Location',
             'status': product.status,
@@ -267,6 +268,8 @@ def api_products_search():
     if (q or category_id is not None or min_price is not None or max_price is not None) and not items:
         payload['message'] = 'No products matched your search.'
     return jsonify(payload)
+
+
 # Admin routes
 @main.route('/admin')
 @AuthService.role_accepted('admin')
