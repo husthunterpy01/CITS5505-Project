@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("browse-search-input");
   const searchSubmit = document.getElementById("browse-search-submit");
   const locationInput = document.getElementById("browse-location-input");
+  const locationSuggestions = document.getElementById("browse-location-suggestions");
+  const searchSuggestions = document.getElementById("browse-search-suggestions");
   const useLocationBtn = document.getElementById("browse-use-location");
   const distanceSelect = document.getElementById("browse-distance-filter");
   const categorySelect = document.getElementById("browse-category-filter");
@@ -19,6 +21,8 @@ document.addEventListener("DOMContentLoaded", function () {
     productCards.map((card) => String(card.dataset.productId)),
   );
   let geoCoords = null;
+  let locationSuggestionsTimer = null;
+  let searchSuggestionsTimer = null;
 
   function setFeedback(message, show) {
     if (!feedback) return;
@@ -34,6 +38,90 @@ document.addEventListener("DOMContentLoaded", function () {
   function setEmptyState(show) {
     if (!emptyState) return;
     emptyState.classList.toggle("hidden", !show);
+  }
+
+  function hideLocationSuggestions() {
+    if (locationSuggestions) {
+      locationSuggestions.classList.add("hidden");
+      locationSuggestions.innerHTML = "";
+    }
+  }
+
+  function hideSearchSuggestions() {
+    if (searchSuggestions) {
+      searchSuggestions.classList.add("hidden");
+      searchSuggestions.innerHTML = "";
+    }
+  }
+
+  async function fetchLocationSuggestions(query) {
+    if (!query || query.length < 3) {
+      hideLocationSuggestions();
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/locations/suggest?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+
+      if (!data.ok || !data.locations) {
+        hideLocationSuggestions();
+        return;
+      }
+
+      if (locationSuggestions) {
+        locationSuggestions.innerHTML = data.locations
+          .map(
+            (loc) => `
+          <button type="button" class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100" data-location="${loc.name}">
+            ${loc.label}
+          </button>
+        `,
+          )
+          .join("");
+        locationSuggestions.classList.remove("hidden");
+      }
+    } catch (error) {
+      hideLocationSuggestions();
+    }
+  }
+
+  function getProductNames() {
+    return Array.from(productCards)
+      .map((card) => card.dataset.productName)
+      .filter((name) => name && name.trim());
+  }
+
+  function fetchSearchSuggestions(query) {
+    if (!query || query.length < 2) {
+      hideSearchSuggestions();
+      return;
+    }
+
+    const allProducts = getProductNames();
+    const normalized = query.toLowerCase();
+    const matching = allProducts
+      .filter((name) => name.toLowerCase().includes(normalized))
+      .filter((name, idx, arr) => arr.indexOf(name) === idx)
+      .slice(0, 5);
+
+    if (searchSuggestions) {
+      if (matching.length === 0) {
+        hideSearchSuggestions();
+        return;
+      }
+
+      searchSuggestions.innerHTML = matching
+        .map(
+          (name) => `
+        <button type="button" class="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100" data-search-product="${name}">
+          ${name}
+        </button>
+      `,
+        )
+        .join("");
+      searchSuggestions.classList.remove("hidden");
+    }
   }
 
   function bindChatDelegation(container) {
@@ -197,6 +285,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (searchInput) {
     searchInput.addEventListener("input", () => {
+      clearTimeout(searchSuggestionsTimer);
+      const query = searchInput.value.trim();
+      searchSuggestionsTimer = setTimeout(() => {
+        fetchSearchSuggestions(query);
+      }, 300);
       if (!hasActiveFilters()) {
         setFeedback("", false);
         applyVisibleProducts(defaultVisibleIds);
@@ -206,23 +299,57 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.addEventListener("keydown", async (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
+      hideSearchSuggestions();
       await applyBrowseFilters();
     });
+
+    if (searchSuggestions) {
+      searchSuggestions.addEventListener("click", async (e) => {
+        const button = e.target.closest("button");
+        if (button && button.dataset.searchProduct) {
+          searchInput.value = button.dataset.searchProduct;
+          hideSearchSuggestions();
+          await applyBrowseFilters();
+        }
+      });
+    }
   }
 
   if (locationInput) {
     locationInput.addEventListener("input", () => {
-      // If user edits text manually, stop using previous geo pin.
       geoCoords = null;
+      clearTimeout(locationSuggestionsTimer);
+      const query = locationInput.value.trim();
+      locationSuggestionsTimer = setTimeout(() => {
+        fetchLocationSuggestions(query);
+      }, 400);
       if (!hasActiveFilters()) {
         setFeedback("", false);
         applyVisibleProducts(defaultVisibleIds);
       }
     });
+
+    if (locationSuggestions) {
+      locationSuggestions.addEventListener("click", async (e) => {
+        const button = e.target.closest("button");
+        if (button && button.dataset.location) {
+          locationInput.value = button.dataset.location;
+          hideLocationSuggestions();
+          geoCoords = null;
+          await applyBrowseFilters();
+        }
+      });
+    }
   }
 
   if (distanceSelect) {
     distanceSelect.addEventListener("change", async () => {
+      await applyBrowseFilters();
+    });
+  }
+
+  if (categorySelect) {
+    categorySelect.addEventListener("change", async () => {
       await applyBrowseFilters();
     });
   }
@@ -288,4 +415,14 @@ document.addEventListener("DOMContentLoaded", function () {
       applySort();
     });
   }
+
+  // Hide suggestions when clicking outside
+  document.addEventListener("click", (e) => {
+    if (locationInput && !locationInput.contains(e.target) && locationSuggestions && !locationSuggestions.contains(e.target)) {
+      hideLocationSuggestions();
+    }
+    if (searchInput && !searchInput.contains(e.target) && searchSuggestions && !searchSuggestions.contains(e.target)) {
+      hideSearchSuggestions();
+    }
+  });
 });
