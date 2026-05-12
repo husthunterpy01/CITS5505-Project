@@ -31,19 +31,8 @@ def upgrade():
             sa.PrimaryKeyConstraint('location_id'),
         )
 
-    conversation_columns = {col['name'] for col in inspector.get_columns('conversations')}
-    if 'conv_type' not in conversation_columns:
-        with op.batch_alter_table('conversations', schema=None) as batch_op:
-            # Add with server default so existing rows can be migrated safely in SQLite.
-            batch_op.add_column(sa.Column('conv_type', sa.String(length=30), nullable=False, server_default=sa.text("'direct'")))
-
-        with op.batch_alter_table('conversations', schema=None) as batch_op:
-            batch_op.alter_column('conv_type', existing_type=sa.String(length=30), server_default=None)
-
-    message_columns = {col['name'] for col in inspector.get_columns('messages')}
-    if 'product_id' in message_columns:
-        with op.batch_alter_table('messages', schema=None) as batch_op:
-            batch_op.drop_column('product_id')
+    # Do not re-add conv_type: revision 1e1679d8eaeb removed it to match the ORM.
+    # Keep messages.product_id: Message ORM still maps product_id (needed for seed & queries).
 
     product_columns = {col['name'] for col in inspector.get_columns('products')}
 
@@ -125,15 +114,5 @@ def downgrade():
         batch_op.alter_column('location', existing_type=sa.VARCHAR(length=200), nullable=False)
         batch_op.drop_constraint(batch_op.f('fk_products_location_id_locations'), type_='foreignkey')
         batch_op.drop_column('location_id')
-
-    with op.batch_alter_table('messages', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('product_id', sa.INTEGER(), nullable=True))
-
-    with op.batch_alter_table('messages', schema=None) as batch_op:
-        batch_op.alter_column('product_id', existing_type=sa.INTEGER(), nullable=False)
-        batch_op.create_foreign_key(batch_op.f('fk_messages_product_id_products'), 'products', ['product_id'], ['product_id'])
-
-    with op.batch_alter_table('conversations', schema=None) as batch_op:
-        batch_op.drop_column('conv_type')
 
     op.drop_table('locations')

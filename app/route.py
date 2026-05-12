@@ -1,14 +1,15 @@
-from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import Product, User, Category, Location, ProductImage
 from app.service.authservice import AuthService
 from app.service.productqueryservice import ProductQueryService
+from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
+from app.service.geolocationservice import GeoLocationService
 from app.utils import user_roles
 from app.forms import CreateProductForm
 import os
 from uuid import uuid4
 from werkzeug.utils import secure_filename
-from flask import current_app
 import json
 import urllib.parse
 import urllib.request
@@ -165,10 +166,12 @@ def personal_profile_page():
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
     all_products = Product.query.order_by(Product.created_at.desc()).all()
+    categories = Category.query.order_by(Category.category_name).all()
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
     products = []
 
-    for product in all_products:
+    for idx, product in enumerate(all_products):
         primary_image = None
 
         for image in product.images:
@@ -177,33 +180,38 @@ def browse_page():
                 break
 
         if not primary_image:
-            primary_image = 'assets/logo/UWA_logo.webp'
+            primary_image = default_img
 
         seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
 
-        seller = getattr(product, 'seller', None)
-        if seller:
-            seller_name = f"{seller.first_name} {seller.last_name}".strip()
-        else:
-            seller_name = 'Unknown Seller'
+        loc = getattr(product, 'location', None)
+        location_label = loc.location_name if loc else ''
+
+        cat = getattr(product, 'category', None)
+        category_name = cat.category_name if cat else ''
+
+        image_src = primary_image
+        if image_src and not (image_src.startswith('http://') or image_src.startswith('https://')):
+            image_src = url_for('static', filename=image_src)
 
         products.append({
             'product_id': product.product_id,
             'title': product.product_name,
             'description': product.description,
+            'category': product.category.category_name if product.category else '',
             'price': product.price,
+            'category_id': product.category_id,
+            'category_name': category_name,
             'location': product.location.location_name if product.location else 'Unknown Location',
+            'distance_km': None,
             'status': product.status,
             'seller_id': product.seller_id,
             'seller_name': seller_name,
-            'image': primary_image
+            'image': image_src,
         })
 
-    return render_template('browse.html', products=products)
+    return render_template('browse.html', products=products, categories=categories)
 
 
 @main.route('/api/products/search', methods=['GET'])
@@ -214,10 +222,15 @@ def api_products_search():
     raw_category_id = (request.args.get('category_id') or '').strip()
     raw_min_price = (request.args.get('min_price') or '').strip()
     raw_max_price = (request.args.get('max_price') or '').strip()
+    raw_user_location = (request.args.get('user_location') or '').strip()
+    raw_distance_km = (request.args.get('distance_km') or '').strip()
+    raw_user_lat = (request.args.get('user_lat') or '').strip()
+    raw_user_lon = (request.args.get('user_lon') or '').strip()
 
     category_id = None
     min_price = None
     max_price = None
+    distance_km = None
 
     if raw_category_id:
         try:
@@ -240,16 +253,91 @@ def api_products_search():
     if min_price is not None and max_price is not None and min_price > max_price:
         return jsonify({'success': False, 'message': 'min_price cannot be greater than max_price.'}), 400
 
+    if raw_distance_km and raw_distance_km.lower() != 'any':
+        try:
+            distance_km = float(raw_distance_km)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'distance_km must be a number.'}), 400
+        if distance_km <= 0:
+            return jsonify({'success': False, 'message': 'distance_km must be greater than 0.'}), 400
+
+    user_coords = None
+    resolved_location_name = None
+    if raw_user_lat or raw_user_lon:
+        if not (raw_user_lat and raw_user_lon):
+            return jsonify({'success': False, 'message': 'Both user_lat and user_lon are required.'}), 400
+        try:
+            user_lat = float(raw_user_lat)
+            user_lon = float(raw_user_lon)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'user_lat and user_lon must be numbers.'}), 400
+        user_coords = (user_lat, user_lon)
+        resolved_location_name = raw_user_location or 'Current location'
+    elif raw_user_location:
+        matched_location = (
+            Location.query
+            .filter(Location.location_name.ilike(raw_user_location))
+            .first()
+        )
+        if not matched_location:
+            matched_location = (
+                Location.query
+                .filter(Location.location_name.ilike(f"%{raw_user_location}%"))
+                .first()
+            )
+
+        if matched_location:
+            user_coords = (matched_location.latitude, matched_location.longitude)
+            resolved_location_name = matched_location.location_name
+        else:
+            geocoded = GeoLocationService.geocode_batch([raw_user_location])
+            coords = geocoded.get(raw_user_location)
+            if coords:
+                user_coords = (coords['latitude'], coords['longitude'])
+                resolved_location_name = raw_user_location
+            else:
+                return jsonify({'success': False, 'message': 'Could not resolve that location. Try a nearby suburb.'}), 400
+
+    if distance_km is not None and user_coords is None:
+        return jsonify({'success': False, 'message': 'Please provide a location when using distance filter.'}), 400
+
     default_image = current_app.config.get('LISTING_DEFAULT_IMAGE', 'assets/logo/UWA_logo.webp')
     search_limit = current_app.config.get('SEARCH_RESULT_LIMIT', 200)
     rows = search_products_for_listing(
         q,
-        search_limit,
+        None if user_coords else search_limit,
         category_id=category_id,
         min_price=min_price,
         max_price=max_price,
     )
-    items = [serialize_product_for_listing(p, default_image) for p in rows]
+
+    if user_coords:
+        user_lat, user_lon = user_coords
+        with_distance = []
+        for product in rows:
+            item = serialize_product_for_listing(product, default_image)
+            if not product.location:
+                item['distance_km'] = None
+                if distance_km is None:
+                    with_distance.append((float('inf'), item))
+                continue
+
+            product_distance = GeoLocationService.calculate_distance(
+                user_lon,
+                user_lat,
+                product.location.longitude,
+                product.location.latitude,
+            )
+            item['distance_km'] = round(product_distance, 2)
+
+            if distance_km is None or product_distance <= distance_km:
+                with_distance.append((product_distance, item))
+
+        with_distance.sort(key=lambda row: row[0])
+        items = [item for _, item in with_distance[:search_limit]]
+    else:
+        items = [serialize_product_for_listing(p, default_image) for p in rows]
+
     payload = {
         'success': True,
         'query': q,
@@ -257,12 +345,16 @@ def api_products_search():
             'category_id': category_id,
             'min_price': min_price,
             'max_price': max_price,
+            'user_location': resolved_location_name if user_coords else None,
+            'distance_km': distance_km,
         },
         'products': items,
     }
-    if (q or category_id is not None or min_price is not None or max_price is not None) and not items:
+    if (q or category_id is not None or min_price is not None or max_price is not None or user_coords or distance_km is not None) and not items:
         payload['message'] = 'No products matched your search.'
     return jsonify(payload)
+
+
 # Admin routes
 @main.route('/admin')
 @AuthService.role_accepted('admin')
