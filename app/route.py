@@ -10,10 +10,6 @@ from app.forms import CreateProductForm
 import os
 from uuid import uuid4
 from werkzeug.utils import secure_filename
-import json
-import urllib.parse
-import urllib.request
-
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -171,7 +167,7 @@ def browse_page():
 
     products = []
 
-    for idx, product in enumerate(all_products):
+    for product in all_products:
         primary_image = None
 
         for image in product.images:
@@ -184,9 +180,6 @@ def browse_page():
 
         seller = getattr(product, 'seller', None)
         seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
-
-        loc = getattr(product, 'location', None)
-        location_label = loc.location_name if loc else ''
 
         cat = getattr(product, 'category', None)
         category_name = cat.category_name if cat else ''
@@ -274,29 +267,12 @@ def api_products_search():
         user_coords = (user_lat, user_lon)
         resolved_location_name = raw_user_location or 'Current location'
     elif raw_user_location:
-        matched_location = (
-            Location.query
-            .filter(Location.location_name.ilike(raw_user_location))
-            .first()
-        )
-        if not matched_location:
-            matched_location = (
-                Location.query
-                .filter(Location.location_name.ilike(f"%{raw_user_location}%"))
-                .first()
-            )
-
-        if matched_location:
-            user_coords = (matched_location.latitude, matched_location.longitude)
-            resolved_location_name = matched_location.location_name
+        resolved_location = GeoLocationService.resolve_wa_location(raw_user_location)
+        if resolved_location:
+            user_coords = (resolved_location['latitude'], resolved_location['longitude'])
+            resolved_location_name = resolved_location['name']
         else:
-            geocoded = GeoLocationService.geocode_batch([raw_user_location])
-            coords = geocoded.get(raw_user_location)
-            if coords:
-                user_coords = (coords['latitude'], coords['longitude'])
-                resolved_location_name = raw_user_location
-            else:
-                return jsonify({'success': False, 'message': 'Could not resolve that location. Try a nearby suburb.'}), 400
+            return jsonify({'success': False, 'message': 'Could not resolve that WA location. Try a nearby suburb in Western Australia.'}), 400
 
     if distance_km is not None and user_coords is None:
         return jsonify({'success': False, 'message': 'Please provide a location when using distance filter.'}), 400
@@ -514,16 +490,20 @@ def create_product_page():
         uploaded_images = [file for file in (form.images.data or []) if file and file.filename]
 
         location_name = form.location_name.data.strip()
-        latitude = float(form.latitude.data)
-        longitude = float(form.longitude.data)
+        resolved_location = GeoLocationService.resolve_wa_location(location_name)
 
+        if not resolved_location:
+            flash('Please enter a valid WA suburb.', 'error')
+            return render_template('createproduct.html', form=form)
+
+        location_name = resolved_location['name']
         location = Location.query.filter(Location.location_name.ilike(location_name)).first()
 
-        if not location: 
+        if not location:
             location = Location(
                 location_name = location_name,
-                latitude = latitude,
-                longitude = longitude,
+                latitude = resolved_location['latitude'],
+                longitude = resolved_location['longitude'],
             )
             db.session.add(location)
             db.session.flush()
@@ -599,16 +579,20 @@ def edit_product_page(product_id):
             return render_template('updateproduct.html', form=form, product=product)
 
         location_name = form.location_name.data.strip()
-        latitude = float(form.latitude.data)
-        longitude = float(form.longitude.data)
+        resolved_location = GeoLocationService.resolve_wa_location(location_name)
 
+        if not resolved_location:
+            flash('Please enter a valid WA suburb.', 'error')
+            return render_template('updateproduct.html', form=form, product=product)
+
+        location_name = resolved_location['name']
         location = Location.query.filter(Location.location_name.ilike(location_name)).first()
 
         if not location:
             location = Location(
                 location_name=location_name,
-                latitude=latitude,
-                longitude=longitude,
+                latitude=resolved_location['latitude'],
+                longitude=resolved_location['longitude'],
             )
             db.session.add(location)
             db.session.flush()
@@ -650,51 +634,7 @@ def suggest_locations():
     api_key = current_app.config.get('GEOAPIFY_API_KEY')
     if not api_key:
         return jsonify({'ok': False, 'message': 'Geoapify API key is missing'}), 500
-    
-    params = {
-        'text': query,
-        'type': 'locality',
-        'filter': 'rect:112.8,-35.2,129.1,-13.4',
-        'limit': 5,
-        'format': 'json',
-        'apiKey': api_key
-    }
 
-    url = 'https://api.geoapify.com/v1/geocode/autocomplete?' + urllib.parse.urlencode(params)
-
-    try:
-        with urllib.request.urlopen(url, timeout=5) as response:
-            payload = json.loads(response.read().decode('utf-8'))
-    except Exception:
-        return jsonify({'ok': False, 'message': 'Location lookup failed'}), 502
-    
-    locations = []
-    seen = set()
-
-    for result in payload.get('results', []):
-        suburb = result.get('suburb') or result.get('city') or result.get('name')
-        state = result.get('state')
-        country = result.get('country_code')
-        lat = result.get('lat')
-        lon = result.get('lon')
-
-        if not suburb or lat is None or lon is None:
-            continue
-
-        if country and country.lower() != 'au':
-            continue
-
-        key = suburb.strip().lower()
-        if key in seen:
-            continue
-
-        seen.add(key)
-        locations.append({
-            'name': suburb,
-            'state': state,
-            'latitude': lat,
-            'longitude': lon,
-            'label': f"{suburb}, {state}" if state else suburb,
-        })
+    locations = GeoLocationService.suggest_wa_locations(query)
 
     return jsonify({'ok': True, 'locations': locations})

@@ -8,26 +8,26 @@
     </button>
   
     <!-- Chatbox Popup -->
-    <div id="chatbox-popup" class="chatbox-popup hidden absolute bottom-20 right-0 w-96 bg-white rounded-lg shadow-2xl flex flex-col" style="height: 600px;">
+    <div id="chatbox-popup" class="chatbox-popup hidden fixed sm:absolute bottom-4 sm:bottom-20 right-4 sm:right-0 w-80 sm:w-96 lg:w-[28rem] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden" style="height: min(80vh, 550px); max-height: 80vh; max-width: min(400px, 90vw); top: auto; left: auto;">
       <!-- Header -->
-      <div class="bg-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <button id="chatbox-back" class="hidden hover:bg-blue-600 rounded p-1 transition" title="Back to conversations">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+      <div class="flex-shrink-0 bg-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between min-h-16">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <button id="chatbox-back" class="hidden flex-shrink-0 hover:bg-blue-600 rounded p-2 transition" title="Back to conversations">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg>
           </button>
-          <h3 id="chatbox-title" class="font-semibold text-lg">Chat</h3>
+          <h3 id="chatbox-title" class="font-semibold text-lg truncate">Chat</h3>
         </div>
-        <button id="chatbox-close" class="hover:bg-blue-600 rounded p-1 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <button id="chatbox-close" class="flex-shrink-0 hover:bg-blue-600 rounded p-2 transition" title="Close chat">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
   
       <!-- Tab Navigation -->
-      <div id="chatbox-tab-nav" class="chatbox-menu-only border-b border-slate-200 px-4 pt-3 flex gap-0">
+      <div id="chatbox-tab-nav" class="flex-shrink-0 chatbox-menu-only border-b border-slate-200 px-4 pt-3 flex gap-0">
         <button class="chatbox-tab-btn mr-2 pb-3 px-3 text-sm font-semibold border-b-2 border-blue-700 text-blue-700 transition" data-tab="admins">
           Admins
         </button>
@@ -37,7 +37,7 @@
       </div>
   
       <!-- Search Bar -->
-      <div id="chatbox-search-wrap" class="chatbox-menu-only p-4 border-b border-slate-200">
+      <div id="chatbox-search-wrap" class="flex-shrink-0 chatbox-menu-only p-4 border-b border-slate-200">
         <input
           type="text"
           id="chatbox-search"
@@ -62,10 +62,10 @@
               <!-- Right: messages container -->
               <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="admins-messages-container">
                 <div class="p-3 flex-1 overflow-y-auto msger-chat" id="admins-messages-list"><!-- messages appended here --></div>
-                <div class="p-3 border-t bg-slate-50 msger-inputarea">
+                <div class="flex-shrink-0 p-3 border-t bg-slate-50 msger-inputarea">
                   <div class="flex gap-2 w-full">
-                    <input id="admins-message-input" class="flex-1 rounded-lg border px-3 py-2 msger-input" placeholder="Type a message...">
-                    <button class="bg-blue-700 text-white rounded-lg px-4 py-2 admins-send-btn msger-send-btn">Send</button>
+                    <input id="admins-message-input" class="flex-1 rounded-lg border px-3 py-2 text-sm msger-input" placeholder="Type a message...">
+                    <button class="flex-shrink-0 bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap admins-send-btn msger-send-btn">Send</button>
                   </div>
                 </div>
               </div>
@@ -88,10 +88,10 @@
               <!-- Right: messages container -->
               <div class="w-2/3 bg-white border border-slate-100 rounded-lg flex flex-col hidden" id="users-messages-container">
                 <div class="p-3 flex-1 overflow-y-auto msger-chat" id="users-messages-list"><!-- messages appended here --></div>
-                <div class="p-3 border-t bg-slate-50 msger-inputarea">
+                <div class="flex-shrink-0 p-3 border-t bg-slate-50 msger-inputarea">
                   <div class="flex gap-2 w-full">
-                    <input id="users-message-input" class="flex-1 rounded-lg border px-3 py-2 msger-input" placeholder="Type a message...">
-                    <button class="bg-blue-700 text-white rounded-lg px-4 py-2 users-send-btn msger-send-btn">Send</button>
+                    <input id="users-message-input" class="flex-1 rounded-lg border px-3 py-2 text-sm msger-input" placeholder="Type a message...">
+                    <button class="flex-shrink-0 bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap users-send-btn msger-send-btn">Send</button>
                   </div>
                 </div>
               </div>

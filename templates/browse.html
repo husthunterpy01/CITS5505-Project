@@ -7,7 +7,7 @@
   class="w-full px-4 py-3 sm:px-6 lg:px-8"
   data-search-url="{{ url_for('main.api_products_search') }}"
 >
-  <div class="mx-auto w-full max-w-7xl">
+  <div class="mx-auto w-full max-w-7xl transition-all duration-300">
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
       <p class="mt-2 text-sm text-slate-600">
@@ -17,21 +17,25 @@
 
     <div class="mb-6 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <div
-        class="browse-toolbar flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap"
+        class="browse-toolbar flex flex-nowrap items-center gap-2 sm:gap-2.5 overflow-visible"
         role="toolbar"
         aria-label="Browse filters and search"
       >
         <label for="browse-location-input" class="sr-only">Your location</label>
-        <input
-          id="browse-location-input"
-          type="text"
-          placeholder="Your location (e.g., Crawley)"
-          class="h-9 min-w-[10rem] flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:max-w-[16rem] lg:max-w-[14rem]"
-        />
+        <div class="relative flex-shrink-0 w-40 sm:w-44">
+          <input
+            id="browse-location-input"
+            type="text"
+            placeholder="Your location (e.g., Crawley)"
+            autocomplete="off"
+            class="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+          />
+          <div id="browse-location-suggestions" class="absolute z-20 mt-1 hidden w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"></div>
+        </div>
         <button
           type="button"
           id="browse-use-location"
-          class="h-9 shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          class="h-9 flex-shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           Use my location
         </button>
@@ -41,7 +45,7 @@
         <label for="browse-category-filter" class="sr-only">Category</label>
         <select
           id="browse-category-filter"
-          class="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[9.5rem]"
+          class="h-9 flex-shrink-0 w-32 sm:w-36 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
         >
           <option value="">All categories</option>
           {% for cat in categories %}
@@ -52,7 +56,7 @@
         <label for="browse-distance-filter" class="sr-only">Distance</label>
         <select
           id="browse-distance-filter"
-          class="h-9 min-w-[8rem] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+          class="h-9 flex-shrink-0 w-32 sm:w-36 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
         >
           <option value="">Any distance</option>
           <option value="5">Within 5 km</option>
@@ -64,14 +68,14 @@
         <button
           type="button"
           id="browse-apply-filters"
-          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-900"
+          class="h-9 flex-shrink-0 whitespace-nowrap rounded-lg bg-slate-700 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Apply
         </button>
         <button
           type="button"
           id="browse-clear-filters"
-          class="h-9 shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          class="h-9 flex-shrink-0 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           Clear
         </button>
@@ -79,17 +83,20 @@
         <span class="mx-0.5 hidden h-6 w-px shrink-0 bg-slate-200 sm:inline-block" aria-hidden="true"></span>
 
         <label for="browse-search-input" class="sr-only">Search listings</label>
-        <input
-          id="browse-search-input"
-          type="search"
-          autocomplete="off"
-          placeholder="Search listings…"
-          class="h-9 min-w-[9rem] flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[10rem] sm:max-w-[12rem] lg:max-w-[11rem]"
-        />
+        <div class="relative flex-shrink-0 w-36 sm:w-40">
+          <input
+            id="browse-search-input"
+            type="search"
+            autocomplete="off"
+            placeholder="Search listings…"
+            class="h-9 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+          />
+          <div id="browse-search-suggestions" class="absolute z-20 mt-1 hidden w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg max-h-48 overflow-y-auto"></div>
+        </div>
         <button
           type="button"
           id="browse-search-submit"
-          class="h-9 shrink-0 whitespace-nowrap rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+          class="h-9 flex-shrink-0 whitespace-nowrap rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-800"
         >
           Search
         </button>
@@ -97,7 +104,7 @@
         <label for="browse-sort-select" class="sr-only">Sort by</label>
         <select
           id="browse-sort-select"
-          class="h-9 min-w-[8rem] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 sm:min-w-[8.5rem]"
+          class="h-9 flex-shrink-0 w-32 sm:w-36 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
         >
           <option value="newest">Newest listed</option>
           <option value="price-low">Price: low to high</option>
@@ -116,6 +123,7 @@
       {% set is_sold = product.status == 'sold' %}
       <article
         data-product-id="{{ product.product_id }}"
+        data-product-name="{{ product.title }}"
         data-category-id="{{ product.category_id }}"
         data-price="{{ product.price }}"
         data-rank="{{ loop.index0 }}"
