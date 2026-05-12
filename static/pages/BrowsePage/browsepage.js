@@ -5,9 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const emptyState = document.getElementById("browse-empty-state");
   const searchInput = document.getElementById("browse-search-input");
   const searchSubmit = document.getElementById("browse-search-submit");
+  const locationInput = document.getElementById("browse-location-input");
+  const useLocationBtn = document.getElementById("browse-use-location");
+  const distanceSelect = document.getElementById("browse-distance-filter");
   const categorySelect = document.getElementById("browse-category-filter");
-  const minPriceInput = document.getElementById("browse-min-price");
-  const maxPriceInput = document.getElementById("browse-max-price");
   const applyFiltersBtn = document.getElementById("browse-apply-filters");
   const clearFiltersBtn = document.getElementById("browse-clear-filters");
   const sortSelect = document.getElementById("browse-sort-select");
@@ -17,6 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const defaultVisibleIds = new Set(
     productCards.map((card) => String(card.dataset.productId)),
   );
+  let geoCoords = null;
 
   function setFeedback(message, show) {
     if (!feedback) return;
@@ -75,23 +77,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function hasActiveFilters() {
     const q = searchInput && searchInput.value.trim();
+    const location = locationInput && locationInput.value.trim();
+    const distance = distanceSelect && distanceSelect.value;
     const cat = categorySelect && categorySelect.value;
-    const minV = minPriceInput && minPriceInput.value.trim();
-    const maxV = maxPriceInput && maxPriceInput.value.trim();
-    return !!(q || cat || minV !== "" || maxV !== "");
+    return !!(q || location || distance || cat);
   }
 
   function buildSearchParams() {
     const params = new URLSearchParams();
     const q = searchInput ? searchInput.value.trim() : "";
     if (q) params.set("q", q);
+    const location = locationInput ? locationInput.value.trim() : "";
+    if (location) params.set("user_location", location);
+    if (geoCoords && Number.isFinite(geoCoords.latitude) && Number.isFinite(geoCoords.longitude)) {
+      params.set("user_lat", String(geoCoords.latitude));
+      params.set("user_lon", String(geoCoords.longitude));
+    }
+    if (distanceSelect && distanceSelect.value) {
+      params.set("distance_km", distanceSelect.value);
+    }
     if (categorySelect && categorySelect.value) {
       params.set("category_id", categorySelect.value);
     }
-    const minV = minPriceInput ? minPriceInput.value.trim() : "";
-    const maxV = maxPriceInput ? maxPriceInput.value.trim() : "";
-    if (minV !== "") params.set("min_price", minV);
-    if (maxV !== "") params.set("max_price", maxV);
     return params;
   }
 
@@ -173,10 +180,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function clearAllFilters() {
+    geoCoords = null;
     if (searchInput) searchInput.value = "";
+    if (locationInput) locationInput.value = "";
+    if (distanceSelect) distanceSelect.value = "";
     if (categorySelect) categorySelect.value = "";
-    if (minPriceInput) minPriceInput.value = "";
-    if (maxPriceInput) maxPriceInput.value = "";
     setFeedback("", false);
     applyVisibleProducts(defaultVisibleIds);
   }
@@ -199,6 +207,60 @@ document.addEventListener("DOMContentLoaded", function () {
       if (e.key !== "Enter") return;
       e.preventDefault();
       await applyBrowseFilters();
+    });
+  }
+
+  if (locationInput) {
+    locationInput.addEventListener("input", () => {
+      // If user edits text manually, stop using previous geo pin.
+      geoCoords = null;
+      if (!hasActiveFilters()) {
+        setFeedback("", false);
+        applyVisibleProducts(defaultVisibleIds);
+      }
+    });
+  }
+
+  if (distanceSelect) {
+    distanceSelect.addEventListener("change", async () => {
+      await applyBrowseFilters();
+    });
+  }
+
+  if (useLocationBtn) {
+    useLocationBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setFeedback("Geolocation is not supported by your browser.", true);
+        return;
+      }
+
+      useLocationBtn.disabled = true;
+      useLocationBtn.textContent = "Locating...";
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          geoCoords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          if (locationInput && !locationInput.value.trim()) {
+            locationInput.value = "Current location";
+          }
+          setFeedback("Using your current location.", true);
+          await applyBrowseFilters();
+          useLocationBtn.disabled = false;
+          useLocationBtn.textContent = "Use my location";
+        },
+        (err) => {
+          let message = "Unable to get your location.";
+          if (err && err.code === 1) message = "Location permission denied.";
+          if (err && err.code === 2) message = "Location unavailable.";
+          if (err && err.code === 3) message = "Location request timed out.";
+          setFeedback(message, true);
+          useLocationBtn.disabled = false;
+          useLocationBtn.textContent = "Use my location";
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+      );
     });
   }
 

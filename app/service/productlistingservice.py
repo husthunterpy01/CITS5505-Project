@@ -61,4 +61,6 @@ def search_products_for_listing(query, limit, category_id=None, min_price=None, 
     if max_price is not None:
         base = base.filter(Product.price <= max_price)
 
+    if limit is None:
+        return base.all()
     return base.limit(limit).all()
