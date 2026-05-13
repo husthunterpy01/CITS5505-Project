@@ -20,6 +20,44 @@
     position: relative;
 }
 
+.account-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.account-nav-item {
+    margin-left: -6px;
+}
+
+.notification-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.notification-button:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.notification-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.notification-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
 .profile-menu summary {
     list-style: none;
 }
