@@ -1,6 +1,21 @@
 {% extends 'base.html' %}
 
 {% block title %}Admin Home - SwanFlip{% endblock %}
+{% block page_css %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+<style>
+  .admin-sales-map {
+    height: 16rem;
+    width: 100%;
+    border-radius: 0.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -35,12 +50,52 @@
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
       <!-- Tab headers -->
       <div class="mb-4 border-b border-slate-200" role="tablist" aria-label="Admin moderation tabs">
-        <button type="button" role="tab" aria-selected="true" data-tab-target="reported-users" class="admin-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition">Reported Users</button>
+        <button type="button" role="tab" aria-selected="true" data-tab-target="analytics-overview" class="admin-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition">Analytics</button>
+        <button type="button" role="tab" aria-selected="false" data-tab-target="reported-users" class="admin-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700">Reported Users</button>
         <button type="button" role="tab" aria-selected="false" data-tab-target="suspicious-products" class="admin-tab-button border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700">Suspicious Products</button>
       </div>
 
       <!-- Tab panels -->
-      <div id="reported-users" class="admin-tab-panel">
+      <div id="analytics-overview" class="admin-tab-panel" role="tabpanel">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-xl font-semibold text-slate-900">Analytics Snapshot</h2>
+            <p class="text-sm text-slate-500">Live insights from current Swanflip data.</p>
+          </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Last 7 days + current totals</span>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 p-4">
+            <p class="mb-3 text-sm font-semibold text-slate-700">User and Listing Trends</p>
+            <div class="h-64">
+              <canvas id="adminTrendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 p-4">
+            <p class="mb-3 text-sm font-semibold text-slate-700">Product Status Mix</p>
+            <div class="h-64">
+              <canvas id="adminProductStatusChart"></canvas>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 p-4">
+            <p class="mb-3 text-sm font-semibold text-slate-700">Top Categories</p>
+            <div class="h-64">
+              <canvas id="adminCategoryChart"></canvas>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 p-4">
+            <p class="mb-3 text-sm font-semibold text-slate-700">Product Density by Location</p>
+            <div id="adminSalesMap" class="admin-sales-map"></div>
+            <p class="mt-2 text-xs text-slate-500">Bubble size indicates total product count by location.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="reported-users" class="admin-tab-panel hidden" role="tabpanel">
         <div class="overflow-hidden rounded-lg border border-slate-200 mb-6">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-100 text-slate-700">
@@ -105,24 +160,10 @@
           </table>
         </div>
       </div>
+
     </div>
 
     <div class="space-y-6">
-      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-semibold text-slate-900">Quick Actions</h2>
-        <div class="mt-4 space-y-3">
-          <a href="#" class="block rounded-lg bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800">
-            Manage Users
-          </a>
-          <a href="#" class="block rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
-            Review Products
-          </a>
-          <a href="#" class="block rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            View Reports
-          </a>
-        </div>
-      </div>
-
       <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-lg font-semibold text-slate-900">Recent Signups</h2>
         <div class="mt-4 space-y-3">
@@ -158,5 +199,12 @@
 </section>
 
 <script src="{{ url_for('static', filename='pages/AdminPage/adminhomepage.js') }}"></script>
+<script id="admin-chart-data" type="application/json">{{ admin_chart_data|tojson }}</script>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script src="{{ url_for('static', filename='pages/AdminPage/admincharts.js') }}"></script>
 
 {% endblock %}

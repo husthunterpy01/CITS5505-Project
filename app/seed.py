@@ -52,6 +52,7 @@ def seed_database(force_reset: bool = False):
             ("Hannah", "Yeo", "hannah@example.com", "password123", "standard_user"),
             ("Ivan", "Koh", "ivan@example.com", "password123", "standard_user"),
             ("Jasmine", "Teo", "jasmine@example.com", "password123", "standard_user"),
+            ("Nora", "Admin", "nora.admin@example.com", "admin123", "admin"),
         ]
         
 

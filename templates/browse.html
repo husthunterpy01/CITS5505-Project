@@ -7,12 +7,18 @@
   class="w-full px-4 py-3 sm:px-6 lg:px-8"
   data-search-url="{{ url_for('main.api_products_search') }}"
 >
-  <div class="mx-auto w-full max-w-7xl transition-all duration-300">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
-      <p class="mt-2 text-sm text-slate-600">
-        Find useful items from other UWA students. Search and filter by category or price.
-      </p>
+  <div class="mx-auto w-full max-w-7xl">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-800">Browse Listings</h1>
+        <p class="mt-2 text-sm text-slate-600">
+          Find useful items from other UWA students.
+        </p>
+      </div>
+
+      <a href="{{url_for('main.create_product_page')}}" class="inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
+        Sell Something +
+      </a>
     </div>
 
     <div class="mb-6 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
