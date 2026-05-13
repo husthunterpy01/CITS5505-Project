@@ -20,7 +20,10 @@ def handle_load_message(message_history_payload):
     if not result['ok']:
         emit('error', {'message': result['error']})
         return
-    emit('message_history', {'messages': result['messages']})
+    emit('message_history', {
+        'conversation_id': result['conversation_id'],
+        'messages': result['messages'],
+    })
 
 
 @socketio.on('send_message')

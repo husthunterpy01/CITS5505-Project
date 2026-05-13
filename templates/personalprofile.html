@@ -37,7 +37,6 @@
                 class="profile-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition"
             > My listings
             </button>
-            {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
                 role="tab"
@@ -47,8 +46,6 @@
             >
                 Edit Personal Profile
             </button>
-            {% endif %}
-            {% if session.get('user_role') != 'admin' %}
             <button
                 type="button"
                 role="tab"
@@ -58,7 +55,6 @@
             >
                 Security
             </button>
-            {% endif %}
         </div>
 
         <!-- My listings section -->

@@ -380,6 +380,10 @@
 
   function appendMessageToList(message) {
     if (!messagesList) return;
+    const emptyState = messagesList.querySelector('.chat-empty-state');
+    if (emptyState) {
+      emptyState.remove();
+    }
 
     const root = document.getElementById('admin-chatbox');
     const currentUserId = Number(
@@ -681,15 +685,23 @@
 
     socket.on('message_history', (data) => {
       if (!messagesList) return;
+      if (
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '')
+      ) {
+        return;
+      }
       if (messageLoadTimeout) {
         clearTimeout(messageLoadTimeout);
         messageLoadTimeout = null;
       }
       const messages = data.messages || [];
+      const existingRenderedMessages = messagesList.querySelectorAll('.msg').length;
+      if (!messages.length && existingRenderedMessages > 0) {
+        return;
+      }
       messagesList.innerHTML = '';
       if (!messages.length) {
-        messagesList.innerHTML =
-          '<div class="text-xs text-slate-400 p-2">No messages yet</div>';
         return;
       }
       messages.forEach((m) => appendMessageToList(m));
