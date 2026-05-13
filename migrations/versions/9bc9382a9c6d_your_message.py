@@ -68,7 +68,7 @@ def upgrade():
     if not _table_exists(conn, 'messages'):
         op.create_table('messages',
             sa.Column('message_id', sa.Integer(), autoincrement=True, nullable=False),
-            sa.Column('product_id', sa.Integer(), nullable=False),
+            sa.Column('product_id', sa.Integer(), nullable=True),
             sa.Column('sender_id', sa.Integer(), nullable=False),
             sa.Column('receiver_id', sa.Integer(), nullable=False),
             sa.Column('content', sa.Text(), nullable=False),

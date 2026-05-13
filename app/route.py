@@ -185,7 +185,11 @@ def browse_page():
         category_name = cat.category_name if cat else ''
 
         image_src = primary_image
-        if image_src and not (image_src.startswith('http://') or image_src.startswith('https://')):
+        if image_src and not (
+            image_src.startswith('http://') or
+            image_src.startswith('https://') or
+            image_src.startswith('/')
+        ):
             image_src = url_for('static', filename=image_src)
 
         products.append({
@@ -622,6 +626,25 @@ def edit_product_page(product_id):
         return redirect(url_for('main.personal_profile_page'))
 
     return render_template('updateproduct.html', form=form, product=product)
+
+
+@main.route('/products/<int:product_id>/delete', methods=['POST'])
+@AuthService.role_accepted('standard_user')
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.seller_id != session.get('user_id'):
+        flash('You do not have permission to delete this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    ProductImage.query.filter(ProductImage.product_id == product.product_id).delete(synchronize_session=False)
+    from app.models import Conversation
+    Conversation.query.filter(Conversation.product_id == product.product_id).update({'product_id': None}, synchronize_session=False)
+
+    db.session.delete(product)
+    db.session.commit()
+
+    flash('Product deleted successfully.', 'success')
+    return redirect(url_for('main.personal_profile_page'))
 
 
 @main.route('/api/locations/suggest')
