@@ -361,6 +361,9 @@
 
     if (socket) {
       if (socket.connected) {
+        socket.emit('set_active_conversation', {
+          conversation_id: conversationId,
+        });
         socket.emit('join_conversation', { conversation_id: conversationId });
         socket.emit('load_message', { conversation_id: conversationId });
       } else {
@@ -449,6 +452,9 @@
     currentProductId = null;
     messagesList = null;
     pendingConversationStart = null;
+    if (socket && socket.connected) {
+      socket.emit('set_active_conversation', { conversation_id: null });
+    }
     updateSearchSuggestions('');
   }
 
@@ -670,11 +676,15 @@
     socket.on('connect', () => {
       console.log('Chat socket connected:', socket.id);
       if (currentConversationId) {
+        socket.emit('set_active_conversation', {
+          conversation_id: currentConversationId,
+        });
         socket.emit('join_conversation', {
           conversation_id: currentConversationId,
         });
         socket.emit('load_message', { conversation_id: currentConversationId });
       } else {
+        socket.emit('set_active_conversation', { conversation_id: null });
         socket.emit('list_conversations');
       }
     });

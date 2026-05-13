@@ -64,10 +64,27 @@ def handle_connect(auth=None):
     if result.get('warning'):
         print(result['warning'])
     if result.get('user_id'):
+        join_room(f"user:{result['user_id']}")
         print(f"Socket {request.sid} authenticated as user {result['user_id']}")
     else:
         print(f'Socket {request.sid} connected without authentication')
     return True
+
+
+@socketio.on('mark_notification_read')
+def handle_mark_notification_read(payload):
+    result = chat_service.mark_notification_read(request.sid, payload)
+    if not result['ok']:
+        return {'ok': False, 'error': result['error']}
+    return {'ok': True, 'notification_id': result.get('notification_id')}
+
+
+@socketio.on('set_active_conversation')
+def handle_set_active_conversation(payload):
+    result = chat_service.set_active_conversation(request.sid, payload)
+    if not result['ok']:
+        return {'ok': False, 'error': result['error']}
+    return {'ok': True, 'conversation_id': result.get('conversation_id')}
 
 
 @socketio.on('disconnect')

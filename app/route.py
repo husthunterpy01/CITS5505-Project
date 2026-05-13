@@ -2,8 +2,9 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-from app.models import Product, User, Category, Location, ProductImage
+from app.models import Product, User, Category, Location, ProductImage, Notification
 from app.service.authservice import AuthService
+from app.service.notificationservice import NotificationService
 from app.service.productqueryservice import ProductQueryService
 from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
 from app.service.geolocationservice import GeoLocationService
@@ -494,17 +495,30 @@ def admin_users_page():
         if target_user.role == 'admin' and action == 'report':
             return jsonify({'ok': False, 'message': 'Admin users cannot be reported.'}), 400
 
-        if action == 'report':
+        created_notification = None
+        if action in ('report', 'ban'):
             if not reason:
                 return jsonify({'ok': False, 'message': 'Report reason is required.'}), 400
             target_user.is_report = True
             target_user.review = reason
-        elif action == 'unreport':
+            created_notification = NotificationService.create_notification(
+                recipient_id=target_user.user_id,
+                notification_type='user_banned',
+                title='Account restricted by admin',
+                message=f'Your account was restricted by an admin. Reason: {reason}',
+                action_url=url_for('main.personal_profile_page'),
+                reference_type='user',
+                reference_id=target_user.user_id,
+                commit=False,
+            )
+        elif action in ('unreport', 'unban'):
             target_user.is_report = False
         else:
             return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
 
         db.session.commit()
+        if created_notification:
+            NotificationService.emit_notification(created_notification)
         return jsonify({
             'ok': True,
             'message': f"{target_user.first_name} {target_user.last_name} updated successfully.",
@@ -540,6 +554,7 @@ def admin_reports_page():
         if getattr(target_product, 'status', '') == 'sold':
             return jsonify({'ok': False, 'message': 'Cannot moderate a sold product.'}), 400
 
+        created_notification = None
         if action == 'approve':
             target_product.is_legit = True
             # clear previous review when approving
@@ -549,10 +564,22 @@ def admin_reports_page():
                 return jsonify({'ok': False, 'message': 'Reason is required when flagging a post.'}), 400
             target_product.is_legit = False
             target_product.review = reason
+            created_notification = NotificationService.create_notification(
+                recipient_id=target_product.seller_id,
+                notification_type='post_banned',
+                title='Your post was flagged by admin',
+                message=f'"{target_product.product_name}" was flagged by admin. Reason: {reason}',
+                action_url=url_for('main.personal_profile_page'),
+                reference_type='product',
+                reference_id=target_product.product_id,
+                commit=False,
+            )
         else:
             return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
 
         db.session.commit()
+        if created_notification:
+            NotificationService.emit_notification(created_notification)
         return jsonify({
             'ok': True,
             'message': f"{target_product.product_name} updated successfully.",
@@ -568,6 +595,36 @@ def admin_reports_page():
 
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
+
+
+@main.route('/notifications/mark-read', methods=['POST'])
+@AuthService.role_accepted(*user_roles.keys())
+def mark_notification_read():
+    current_user_id = session.get('user_id')
+    payload = request.get_json(silent=True) or request.form
+    raw_notification_id = payload.get('notification_id')
+
+    if raw_notification_id in (None, ''):
+        NotificationService.mark_all_read(current_user_id)
+        return jsonify({'ok': True, 'message': 'All notifications marked as read.'})
+
+    try:
+        notification_id = int(raw_notification_id)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Invalid notification_id.'}), 400
+
+    notification = Notification.query.filter_by(
+        notification_id=notification_id,
+        recipient_id=current_user_id,
+    ).first()
+    if not notification:
+        return jsonify({'ok': False, 'message': 'Notification not found.'}), 404
+
+    if not notification.is_read:
+        notification.is_read = True
+        db.session.commit()
+
+    return jsonify({'ok': True, 'message': 'Notification marked as read.'})
 
 def save_product_images(product, uploaded_images):
     upload_dir = os.path.join(current_app.static_folder, 'uploads', 'products')

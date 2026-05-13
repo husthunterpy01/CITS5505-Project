@@ -1,7 +1,8 @@
 from datetime import datetime
 from flask import session
 from app.extensions import db
-from app.models import Conversation, ConversationParticipant, Message, Product, User
+from app.models import Conversation, ConversationParticipant, Message, Product, User, Notification
+from app.service.notificationservice import NotificationService
 
 
 class ChatService:
@@ -44,8 +45,85 @@ class ChatService:
             return {'ok': True, 'user_id': None, 'warning': f'Socket connect session read failed: {exc}'}
 
         if user_id:
-            self.user_sessions[sid] = {'user_id': user_id}
+            self.user_sessions[sid] = {
+                'user_id': user_id,
+                'active_conversation_id': None,
+            }
         return {'ok': True, 'user_id': user_id}
+
+    def _is_user_online(self, user_id):
+        return any(
+            session_data.get('user_id') == user_id
+            for session_data in self.user_sessions.values()
+        )
+
+    def _is_user_viewing_conversation(self, user_id, conversation_id):
+        for session_data in self.user_sessions.values():
+            if session_data.get('user_id') != user_id:
+                continue
+            if session_data.get('active_conversation_id') == conversation_id:
+                return True
+        return False
+
+    def set_active_conversation(self, sid, payload):
+        user_id = self._get_user_id(sid)
+        if not user_id:
+            return self._error('User not authenticated')
+
+        if sid not in self.user_sessions:
+            self.user_sessions[sid] = {'user_id': user_id, 'active_conversation_id': None}
+
+        raw_conversation_id = (payload or {}).get('conversation_id')
+        if raw_conversation_id in (None, ''):
+            self.user_sessions[sid]['active_conversation_id'] = None
+            return {'ok': True, 'conversation_id': None}
+
+        try:
+            conversation_id = int(raw_conversation_id)
+        except (TypeError, ValueError):
+            return self._error('Invalid conversation_id')
+
+        is_participant = ConversationParticipant.query.filter_by(
+            conversation_id=conversation_id,
+            user_id=user_id,
+        ).first()
+        if not is_participant:
+            return self._error('User not a participant of this conversation')
+
+        self.user_sessions[sid]['active_conversation_id'] = conversation_id
+        return {'ok': True, 'conversation_id': conversation_id}
+
+    def mark_notification_read(self, sid, payload):
+        user_id = self._get_user_id(sid)
+        if not user_id:
+            return self._error('User not authenticated')
+
+        raw_notification_id = (payload or {}).get('notification_id')
+        if raw_notification_id in (None, ''):
+            Notification.query.filter_by(recipient_id=user_id, is_read=False).update(
+                {'is_read': True},
+                synchronize_session=False,
+            )
+            db.session.commit()
+            return {'ok': True, 'notification_id': None}
+
+        try:
+            notification_id = int(raw_notification_id)
+        except (TypeError, ValueError):
+            return self._error('Invalid notification_id')
+
+        notification = Notification.query.filter_by(
+            notification_id=notification_id,
+            recipient_id=user_id,
+        ).first()
+        if not notification:
+            return self._error('Notification not found')
+
+        if not notification.is_read:
+            notification.is_read = True
+            db.session.commit()
+
+        return {'ok': True, 'notification_id': notification_id}
 
     def unregister_connection(self, sid):
         existed = sid in self.user_sessions
@@ -70,6 +148,8 @@ class ChatService:
             return self._error('User not a participant of this conversation')
 
         room = f"conv:{conversation.conversation_id}"
+        if sid in self.user_sessions:
+            self.user_sessions[sid]['active_conversation_id'] = conversation.conversation_id
         return {'ok': True, 'conversation_id': conversation.conversation_id, 'room': room}
 
     def load_messages(self, sid, payload):
@@ -132,14 +212,38 @@ class ChatService:
         try:
             db.session.add(message)
             conversation.updated_at = datetime.utcnow()
+
+            sender = User.query.get(user_id)
+            sender_name = f"{sender.first_name} {sender.last_name}" if sender else f'User {user_id}'
+            receiver_ids = [
+                participant.user_id
+                for participant in related_participants
+                if participant.user_id != user_id
+            ]
+            pending_notifications = []
+            for receiver_id in receiver_ids:
+                if self._is_user_viewing_conversation(receiver_id, conversation_id):
+                    continue
+                notification = NotificationService.create_notification(
+                    recipient_id=receiver_id,
+                    notification_type='new_message',
+                    title=f'New message from {sender_name}',
+                    message=content if len(content) <= 140 else f'{content[:137]}...',
+                    action_url='/',
+                    reference_type='conversation',
+                    reference_id=conversation_id,
+                    commit=False,
+                )
+                pending_notifications.append(notification)
+
             db.session.commit()
+            for notification in pending_notifications:
+                NotificationService.emit_notification(notification)
         except Exception as exc:
             db.session.rollback()
             print(f'Failed to commit message for conversation {conversation_id}: {exc}')
             return self._error('Failed to save message. Please try again.')
 
-        sender = User.query.get(user_id)
-        sender_name = f"{sender.first_name} {sender.last_name}" if sender else f'User {user_id}'
         return {
             'ok': True,
             'room': f"conv:{conversation_id}",
