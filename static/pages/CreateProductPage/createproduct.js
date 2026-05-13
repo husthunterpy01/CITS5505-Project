@@ -123,60 +123,6 @@ suggestionsBox.addEventListener('click', function (event) {
   hideSuggestions();
 });
 
-locationInput.addEventListener('blur', function () {
-  setTimeout(function () {
-    const typedLocation = locationInput.value.trim();
-
-    if (typedLocation && (!latitudeInput.value || !longitudeInput.value)) {
-      showLocationError('Please enter a valid WA suburb.');
-    }
-  }, 200);
-});
-
-locationInput
-  .closest('form')
-  .addEventListener('submit', async function (event) {
-    const typedLocation = locationInput.value.trim();
-
-    if (latitudeInput.value && longitudeInput.value) {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (typedLocation.length < 3) {
-      showLocationError('Please enter a valid WA suburb.');
-      return;
-    }
-
-    showLoading();
-
-    try {
-      const locations = await fetchLocations(typedLocation);
-      const exactMatch = locations.find(
-        (location) =>
-          location.name.toLowerCase() === typedLocation.toLowerCase(),
-      );
-
-      if (!exactMatch) {
-        showError('Please select a valid WA suburb from the suggestions.');
-        showLocationError('Please enter a valid WA suburb.');
-        return;
-      }
-
-      locationInput.value = exactMatch.name;
-      latitudeInput.value = exactMatch.latitude;
-      longitudeInput.value = exactMatch.longitude;
-
-      hideLocationError();
-      hideSuggestions();
-      event.target.submit();
-    } catch (error) {
-      showLocationError(error.message);
-      showError(error.message);
-    }
-  });
-
 document.addEventListener('click', function (event) {
   if (
     !suggestionsBox.contains(event.target) &&

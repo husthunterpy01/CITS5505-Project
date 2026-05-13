@@ -1,6 +1,5 @@
 import json
 import os
-import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -11,15 +10,122 @@ from app.models import Location, Product
 class GeoLocationService:
     """Resolve location names to coordinates using Geapify batch geocoding."""
 
-    BASE_URL = "https://api.geoapify.com/v1/batch/geocode/search"
-    MAX_POLL_ATTEMPTS = 10
-    POLL_INTERVAL_SECONDS = 1
-    def __init__(self):
-        pass
+    AUTOCOMPLETE_URL = "https://api.geoapify.com/v1/geocode/autocomplete"
+    WA_FILTER = "rect:112.8,-35.2,129.1,-13.4"
     
     @classmethod
     def _api_key(cls):
         return os.getenv("GEOAPIFY_API_KEY", "").strip()
+
+    @staticmethod
+    def _normalize_text(value):
+        return " ".join((value or "").strip().split()).lower()
+
+    @classmethod
+    def _is_western_australia_result(cls, payload):
+        if not isinstance(payload, dict):
+            return False
+
+        country = str(payload.get("country_code") or payload.get("country") or "").strip().lower()
+        if country and country != "au":
+            return False
+
+        state = cls._normalize_text(payload.get("state"))
+        state_code = cls._normalize_text(payload.get("state_code"))
+        admin1 = cls._normalize_text(payload.get("county"))
+
+        return any(
+            token in {"wa", "western australia"}
+            for token in (state, state_code, admin1)
+        )
+
+    @classmethod
+    def _normalize_location_result(cls, payload):
+        if not isinstance(payload, dict):
+            return None
+
+        suburb = payload.get("name") or payload.get("suburb") or payload.get("city")
+        lon = payload.get("lon")
+        lat = payload.get("lat")
+
+        if not suburb or lon is None or lat is None:
+            return None
+
+        if not cls._is_western_australia_result(payload):
+            return None
+
+        state = payload.get("state")
+        return {
+            "name": suburb.strip(),
+            "state": state,
+            "label": f"{suburb.strip()}, {state}" if state else suburb.strip(),
+            "longitude": float(lon),
+            "latitude": float(lat),
+        }
+
+    @classmethod
+    def suggest_wa_locations(cls, query, limit=5):
+        clean_query = (query or "").strip()
+        if len(clean_query) < 3:
+            return []
+
+        api_key = cls._api_key()
+        if not api_key:
+            return []
+
+        params = {
+            "text": clean_query,
+            "filter": cls.WA_FILTER,
+            "limit": limit,
+            "format": "json",
+            "apiKey": api_key,
+        }
+        url = f"{cls.AUTOCOMPLETE_URL}?{urlencode(params)}"
+
+        try:
+            payload = cls._request_json(url, method="GET")
+        except (HTTPError, URLError, TimeoutError, ValueError):
+            return []
+
+        locations = []
+        seen = set()
+        for result in payload.get("results", []):
+            location = cls._normalize_location_result(result)
+            if not location:
+                continue
+
+            key = cls._normalize_text(location["name"])
+            if key in seen:
+                continue
+
+            seen.add(key)
+            locations.append(location)
+
+        return locations[:limit]
+
+    @classmethod
+    def resolve_wa_location(cls, query):
+        clean_query = (query or "").strip()
+        if not clean_query:
+            return None
+
+        locations = cls.suggest_wa_locations(clean_query, limit=10)
+        if not locations:
+            return None
+
+        normalized_query = cls._normalize_text(clean_query)
+        for location in locations:
+            normalized_name = cls._normalize_text(location["name"])
+            normalized_label = cls._normalize_text(location["label"])
+            if normalized_query in {normalized_name, normalized_label}:
+                return location
+
+        for location in locations:
+            normalized_name = cls._normalize_text(location["name"])
+            if normalized_query in normalized_name or normalized_name in normalized_query:
+                return location
+
+        return locations[0]
 
     @staticmethod
     def _request_json(url, method="GET", payload=None):
@@ -36,10 +142,7 @@ class GeoLocationService:
 
     @classmethod
     def geocode_batch(cls, location_names):
-        """
-        Two-step Geapify flow:
-        1) POST batch job
-        2) GET job result URL
+        """Resolve location names to WA-only coordinates.
 
         Returns: {location_name: {"longitude": float, "latitude": float}}
         """
@@ -54,80 +157,21 @@ class GeoLocationService:
         if not unique_locations:
             return {}
 
-        api_key = cls._api_key()
-        if not api_key:
-            print("GEOAPIFY_API_KEY is not set. Falling back to default coordinates.")
-            return {}
-
-        query = urlencode({"apiKey": api_key})
-        create_job_url = f"{cls.BASE_URL}?{query}"
-
-        try:
-            create_result = cls._request_json(
-                create_job_url,
-                method="POST",
-                payload=unique_locations,
-            )
-            result_url = (create_result or {}).get("url")
-            if not result_url:
-                print("Geapify batch job did not return a result URL.")
-                return {}
-
-            result_payload = None
-            for _ in range(cls.MAX_POLL_ATTEMPTS):
-                result_payload = cls._request_json(result_url, method="GET")
-                if not isinstance(result_payload, dict):
-                    break
-
-                status = str(result_payload.get("status", "")).lower()
-                if status not in {"pending", "running", "processing"}:
-                    break
-                time.sleep(cls.POLL_INTERVAL_SECONDS)
-        except (HTTPError, URLError, TimeoutError, ValueError) as error:
-            print(f"Geolocation lookup failed: {error}")
-            return {}
-
         resolved = {}
 
-        items = []
-        if isinstance(result_payload, list):
-            items = result_payload
-        elif isinstance(result_payload, dict):
-            if isinstance(result_payload.get("results"), list):
-                items = result_payload.get("results", [])
-            elif isinstance(result_payload.get("features"), list):
-                items = result_payload.get("features", [])
-
-        for index, item in enumerate(items):
-            if not isinstance(item, dict):
+        for input_location in unique_locations:
+            match = cls.resolve_wa_location(input_location)
+            if not match:
                 continue
 
-            properties = item.get("properties") if isinstance(item.get("properties"), dict) else item
-            lon = properties.get("lon")
-            lat = properties.get("lat")
-            if lon is None or lat is None:
-                continue
-
-            raw_query = None
-            query_node = properties.get("query")
-            if isinstance(query_node, dict):
-                raw_query = query_node.get("text")
-            if not raw_query and isinstance(item.get("query"), str):
-                raw_query = item.get("query")
-
-            # Keep the primary key as the original input value used by seed.
-            input_location = unique_locations[index] if index < len(unique_locations) else None
-            if not input_location:
-                continue
-
-            coordinates = {
-                "longitude": float(lon),
-                "latitude": float(lat),
+            resolved[input_location] = {
+                "longitude": match["longitude"],
+                "latitude": match["latitude"],
             }
-
-            resolved[input_location] = coordinates
-            if raw_query:
-                resolved[raw_query] = coordinates
+            resolved[match["name"]] = {
+                "longitude": match["longitude"],
+                "latitude": match["latitude"],
+            }
 
         return resolved
 

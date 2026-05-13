@@ -6,6 +6,16 @@ html, body {
     min-height: 100vh;
 }
 
+/* Hide scrollbar for browse toolbar while keeping scroll functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Moderation badge styles for admin dashboard */
 .moderation-badge {
     display: inline-block;
