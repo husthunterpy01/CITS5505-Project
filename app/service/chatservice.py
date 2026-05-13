@@ -87,7 +87,7 @@ class ChatService:
             .limit(50) \
             .all()
         if not messages:
-            return {'ok': True, 'messages': []}
+            return {'ok': True, 'conversation_id': conversation_id, 'messages': []}
 
         sender_ids = list({msg.sender_id for msg in messages if msg.sender_id})
         senders = User.query.filter(User.user_id.in_(sender_ids)).all() if sender_ids else []
@@ -102,7 +102,7 @@ class ChatService:
             'is_read': msg.is_read,
         } for msg in reversed(messages)]
 
-        return {'ok': True, 'messages': message_list}
+        return {'ok': True, 'conversation_id': conversation_id, 'messages': message_list}
 
     def send_message(self, sid, payload):
         user_id = self._get_user_id(sid)

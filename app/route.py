@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import Product, User, Category, Location, ProductImage
@@ -7,6 +9,7 @@ from app.service.productlistingservice import serialize_product_for_listing, sea
 from app.service.geolocationservice import GeoLocationService
 from app.utils import user_roles
 from app.forms import CreateProductForm
+from sqlalchemy import func
 import os
 from uuid import uuid4
 from werkzeug.utils import secure_filename
@@ -348,6 +351,106 @@ def admin_home_page():
     reported_users_list = User.query.filter_by(is_report=True).all()
     suspicious_products_list = Product.query.filter_by(is_legit=False).all()
 
+    # Analytics from current database records (no synthetic data)
+    utc_today = datetime.utcnow().date()
+    period_start = utc_today - timedelta(days=6)
+
+    daily_user_rows = (
+        db.session.query(
+            func.date(User.created_at).label('day'),
+            func.count(User.user_id).label('count')
+        )
+        .filter(User.created_at >= datetime.combine(period_start, datetime.min.time()))
+        .group_by(func.date(User.created_at))
+        .all()
+    )
+    daily_product_rows = (
+        db.session.query(
+            func.date(Product.created_at).label('day'),
+            func.count(Product.product_id).label('count')
+        )
+        .filter(Product.created_at >= datetime.combine(period_start, datetime.min.time()))
+        .group_by(func.date(Product.created_at))
+        .all()
+    )
+
+    daily_user_counts = {str(row.day): row.count for row in daily_user_rows}
+    daily_product_counts = {str(row.day): row.count for row in daily_product_rows}
+
+    trend_labels = []
+    user_signups_last_7d = []
+    product_listings_last_7d = []
+    for index in range(7):
+        day = period_start + timedelta(days=index)
+        day_key = day.isoformat()
+        trend_labels.append(day.strftime('%d %b'))
+        user_signups_last_7d.append(daily_user_counts.get(day_key, 0))
+        product_listings_last_7d.append(daily_product_counts.get(day_key, 0))
+
+    product_status_rows = (
+        db.session.query(
+            Product.status.label('status'),
+            func.count(Product.product_id).label('count')
+        )
+        .group_by(Product.status)
+        .all()
+    )
+    product_status_labels = [str(row.status or 'unknown').title() for row in product_status_rows]
+    product_status_values = [row.count for row in product_status_rows]
+
+    category_rows = (
+        db.session.query(
+            Category.category_name.label('name'),
+            func.count(Product.product_id).label('count')
+        )
+        .outerjoin(Product, Product.category_id == Category.category_id)
+        .group_by(Category.category_id, Category.category_name)
+        .order_by(func.count(Product.product_id).desc())
+        .limit(6)
+        .all()
+    )
+    category_labels = [row.name for row in category_rows]
+    category_values = [row.count for row in category_rows]
+
+    product_location_rows = (
+        db.session.query(
+            Location.location_name.label('name'),
+            Location.latitude.label('latitude'),
+            Location.longitude.label('longitude'),
+            func.count(Product.product_id).label('count')
+        )
+        .join(Product, Product.location_id == Location.location_id)
+        .group_by(Location.location_id, Location.location_name, Location.latitude, Location.longitude)
+        .order_by(func.count(Product.product_id).desc())
+        .all()
+    )
+    product_locations = [
+        {
+            'name': row.name,
+            'latitude': float(row.latitude),
+            'longitude': float(row.longitude),
+            'count': row.count,
+        }
+        for row in product_location_rows
+    ]
+
+    admin_chart_data = {
+        'trend': {
+            'labels': trend_labels,
+            'users': user_signups_last_7d,
+            'products': product_listings_last_7d,
+        },
+        'product_status': {
+            'labels': product_status_labels,
+            'values': product_status_values,
+        },
+        'top_categories': {
+            'labels': category_labels,
+            'values': category_values,
+        },
+        'product_locations': product_locations,
+    }
+
     return render_template(
         'adminhomepage.html',
         admin_username=admin_username,
@@ -359,6 +462,7 @@ def admin_home_page():
         recent_products=recent_products,
         reported_users_list=reported_users_list,
         suspicious_products_list=suspicious_products_list,
+        admin_chart_data=admin_chart_data,
     )
 
 
@@ -450,6 +554,13 @@ def admin_reports_page():
             'message': f"{target_product.product_name} updated successfully.",
             'is_legit': target_product.is_legit,
         })
+
+    # Normalize legacy rows so legitimacy always has an explicit value.
+    unknown_legit_products = Product.query.filter(Product.is_legit.is_(None)).all()
+    if unknown_legit_products:
+        for product in unknown_legit_products:
+            product.is_legit = True
+        db.session.commit()
 
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('postmanager.html', products=all_products)
