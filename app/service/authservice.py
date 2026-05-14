@@ -5,15 +5,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 from app.models import User
+from app.service.logservice import LoggingService
 
 
 class AuthService:
-    @staticmethod
-    def normalize_role(role):
-        if role == 'normal':
-            return 'standard_user'
-        return role
-
     @staticmethod
     def signin_user(email, password):
         """Validate credentials and return (user, error_message)."""
@@ -56,6 +51,15 @@ class AuthService:
         )
 
         db.session.add(new_user)
+        db.session.flush()
+        LoggingService.log_action(
+            user_id=new_user.user_id,
+            target_type='user',
+            target_id=new_user.user_id,
+            action='signup',
+            reason='User created a new account.',
+            commit=False,
+        )
         db.session.commit()
         return new_user, None
 
@@ -86,6 +90,16 @@ class AuthService:
         return RoleAcceptedView(allowed_roles)
 
     @staticmethod
+    def normalize_role(role):
+        """Normalize legacy role labels to canonical app roles."""
+        raw = (role or '').strip().lower()
+        if raw in ('admin',):
+            return 'admin'
+        if raw in ('standard_user', 'standard user', 'user', 'customer'):
+            return 'standard_user'
+        return 'standard_user'
+
+    @staticmethod
     def change_password(user_id, old_password, new_password, confirmed_password):
         user = User.query.get(user_id)
         if not user:
@@ -98,6 +112,14 @@ class AuthService:
             return 'Current password is incorrect.'
         
         user.password = generate_password_hash(new_password)
+        LoggingService.log_action(
+            user_id=user.user_id,
+            target_type='user',
+            target_id=user.user_id,
+            action='change_password',
+            reason='User changed account password.',
+            commit=False,
+        )
         db.session.commit()
         return None
     

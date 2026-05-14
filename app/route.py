@@ -2,8 +2,9 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-from app.models import Product, User, Category, Location, ProductImage, Notification
+from app.models import Product, User, Category, Location, ProductImage, Notification, Logging
 from app.service.authservice import AuthService
+from app.service.logservice import LoggingService
 from app.service.notificationservice import NotificationService
 from app.service.productqueryservice import ProductQueryService
 from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
@@ -43,6 +44,13 @@ def signin_page():
             return render_template('signinpage.html')
 
         AuthService.login_user(existing_user)
+        LoggingService.log_action(
+            user_id=existing_user.user_id,
+            target_type='user',
+            target_id=existing_user.user_id,
+            action='signin',
+            reason='User signed in successfully.',
+        )
 
         flash("Login Successful", 'success')
         if existing_user.role == 'admin':
@@ -75,6 +83,13 @@ def signup_page():
             return render_template('signuppage.html')
 
         AuthService.login_user(new_user)
+        LoggingService.log_action(
+            user_id=new_user.user_id,
+            target_type='user',
+            target_id=new_user.user_id,
+            action='signin_after_signup',
+            reason='New user signed in after signup.',
+        )
 
         flash('Account created successfully.', 'success')
         return redirect(url_for('main.home_page'))
@@ -84,6 +99,15 @@ def signup_page():
 
 @main.route('/logout')
 def logout():
+    current_user_id = session.get('user_id')
+    if current_user_id:
+        LoggingService.log_action(
+            user_id=current_user_id,
+            target_type='user',
+            target_id=current_user_id,
+            action='logout',
+            reason='User logged out.',
+        )
     AuthService.logout_user()
     flash('You have been logged out', 'success')
     return redirect(url_for('main.home_page'))
@@ -94,6 +118,7 @@ def logout():
 def personal_profile_page():
     current_user_id = session.get('user_id')
     user_profile = User.query.get(current_user_id)
+    is_admin_profile = bool(user_profile and user_profile.role == 'admin')
     display_name = ''
 
     if user_profile:
@@ -112,6 +137,14 @@ def personal_profile_page():
                 user_profile.last_name = last_name
             if email:
                 user_profile.email = email
+            LoggingService.log_action(
+                user_id=current_user_id,
+                target_type='user',
+                target_id=current_user_id,
+                action='update_profile',
+                reason='User updated personal profile details.',
+                commit=False,
+            )
             db.session.commit()
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('main.personal_profile_page'))
@@ -127,19 +160,46 @@ def personal_profile_page():
                 flash('Password updated successfully.', 'success')
                 return redirect(url_for('main.personal_profile_page'))
 
-    listing_data = ProductQueryService.get_user_listings(
-        current_user_id,
-        status=request.args.get('status', 'all'),
-        query=request.args.get('q', ''),
-        page=request.args.get('page', 1, type=int),
-        per_page=request.args.get('per_page', 4, type=int),
-        sort_by=request.args.get('sort', 'posted'),
-        direction=request.args.get('direction', 'desc'),
-    )
+    if is_admin_profile:
+        listing_data = {
+            'products': [],
+            'summary': {
+                'total_listed': 0,
+                'active_listed': 0,
+                'earned_total': 0.0,
+                'total_views': 0,
+            },
+            'filters': {
+                'status': 'all',
+                'query': '',
+                'sort_by': 'posted',
+                'direction': 'desc',
+            },
+            'pagination': {
+                'page': 1,
+                'per_page': 4,
+                'total_pages': 1,
+                'total_items': 0,
+                'start_item': 0,
+                'end_item': 0,
+                'page_numbers': [],
+            },
+        }
+    else:
+        listing_data = ProductQueryService.get_user_listings(
+            current_user_id,
+            status=request.args.get('status', 'all'),
+            query=request.args.get('q', ''),
+            page=request.args.get('page', 1, type=int),
+            per_page=request.args.get('per_page', 4, type=int),
+            sort_by=request.args.get('sort', 'posted'),
+            direction=request.args.get('direction', 'desc'),
+        )
 
     return render_template(
         'personalprofile.html',
         user=user_profile,
+        is_admin_profile=is_admin_profile,
         username=display_name,
         user_products=listing_data['products'],
         total_listed=listing_data['summary']['total_listed'],
@@ -471,6 +531,87 @@ def admin_home_page():
     )
 
 
+@main.route('/admin/activity', methods=['GET'])
+@AuthService.role_accepted('admin')
+def admin_activity_page():
+    raw_actor_id = (request.args.get('actor_id') or '').strip()
+    raw_action = (request.args.get('action') or '').strip().lower()
+    raw_target_type = (request.args.get('target_type') or '').strip().lower()
+
+    query = Logging.query
+    if raw_actor_id:
+        try:
+            actor_id = int(raw_actor_id)
+            query = query.filter(Logging.user_id == actor_id)
+        except (TypeError, ValueError):
+            flash('Actor filter must be a valid user id.', 'error')
+            return redirect(url_for('main.admin_activity_page'))
+
+    if raw_action:
+        query = query.filter(Logging.action == raw_action)
+
+    if raw_target_type:
+        query = query.filter(Logging.target_type == raw_target_type)
+
+    logs = query.order_by(Logging.created_at.desc()).limit(200).all()
+
+    actor_ids = sorted({log.user_id for log in logs if log.user_id})
+    actor_rows = User.query.filter(User.user_id.in_(actor_ids)).all() if actor_ids else []
+    actor_map = {
+        actor.user_id: f'{actor.first_name} {actor.last_name}'.strip()
+        for actor in actor_rows
+    }
+
+    target_user_ids = sorted({log.target_id for log in logs if log.target_type == 'user'})
+    target_product_ids = sorted({log.target_id for log in logs if log.target_type == 'product'})
+    target_user_rows = User.query.filter(User.user_id.in_(target_user_ids)).all() if target_user_ids else []
+    target_product_rows = Product.query.filter(Product.product_id.in_(target_product_ids)).all() if target_product_ids else []
+    target_user_map = {
+        user.user_id: f'{user.first_name} {user.last_name}'.strip()
+        for user in target_user_rows
+    }
+    target_product_map = {
+        product.product_id: product.product_name
+        for product in target_product_rows
+    }
+
+    activity_rows = []
+    for log in logs:
+        if log.target_type == 'user':
+            target_label = target_user_map.get(log.target_id, f'User #{log.target_id}')
+        elif log.target_type == 'product':
+            target_label = target_product_map.get(log.target_id, f'Product #{log.target_id}')
+        else:
+            target_label = f'{str(log.target_type).title()} #{log.target_id}'
+
+        activity_rows.append({
+            'logging_id': log.logging_id,
+            'created_at': log.created_at,
+            'actor_name': actor_map.get(log.user_id, f'User #{log.user_id}'),
+            'action': log.action,
+            'target_type': log.target_type,
+            'target_label': target_label,
+            'reason': log.reason or '-',
+        })
+
+    all_users = User.query.order_by(User.first_name.asc(), User.last_name.asc()).all()
+    all_actions = [
+        row.action
+        for row in db.session.query(Logging.action).distinct().order_by(Logging.action.asc()).all()
+        if row.action
+    ]
+
+    return render_template(
+        'adminactivity.html',
+        activities=activity_rows,
+        all_users=all_users,
+        all_actions=all_actions,
+        selected_actor_id=raw_actor_id,
+        selected_action=raw_action,
+        selected_target_type=raw_target_type,
+    )
+
+
 @main.route('/admin/users', methods=['GET', 'POST'])
 @AuthService.role_accepted('admin')
 def admin_users_page():
@@ -496,6 +637,7 @@ def admin_users_page():
             return jsonify({'ok': False, 'message': 'Admin users cannot be reported.'}), 400
 
         created_notification = None
+        admin_user_id = session.get('user_id')
         if action in ('report', 'ban'):
             if not reason:
                 return jsonify({'ok': False, 'message': 'Report reason is required.'}), 400
@@ -516,6 +658,14 @@ def admin_users_page():
         else:
             return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
 
+        LoggingService.log_action(
+            user_id=admin_user_id,
+            target_type='user',
+            target_id=target_user.user_id,
+            action=action,
+            reason=reason if reason else f'Admin performed {action} on user.',
+            commit=False,
+        )
         db.session.commit()
         if created_notification:
             NotificationService.emit_notification(created_notification)
@@ -527,6 +677,49 @@ def admin_users_page():
 
     all_users = User.query.all()
     return render_template('usermanager.html', users=all_users)
+
+
+@main.route('/admin/users/<int:user_id>/activity', methods=['GET'])
+@AuthService.role_accepted('admin')
+def admin_user_activity(user_id):
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+    activity_query = Logging.query.filter(
+        (Logging.user_id == user_id) |
+        ((Logging.target_type == 'user') & (Logging.target_id == user_id))
+    )
+    # Keep admin profile activity focused on account-level actions,
+    # instead of mixing product moderation operations into that timeline.
+    if target_user.role == 'admin':
+        activity_query = activity_query.filter(Logging.target_type != 'product')
+
+    logs = (
+        activity_query
+        .order_by(Logging.created_at.desc())
+        .limit(25)
+        .all()
+    )
+    actor_ids = sorted({log.user_id for log in logs if log.user_id})
+    actor_rows = User.query.filter(User.user_id.in_(actor_ids)).all() if actor_ids else []
+    actor_map = {
+        actor.user_id: f'{actor.first_name} {actor.last_name}'.strip()
+        for actor in actor_rows
+    }
+
+    payload = [{
+        'logging_id': log.logging_id,
+        'actor_user_id': log.user_id,
+        'actor_name': actor_map.get(log.user_id, f'User {log.user_id}'),
+        'target_type': log.target_type,
+        'target_id': log.target_id,
+        'action': log.action,
+        'reason': log.reason,
+        'created_at': log.created_at.isoformat() if log.created_at else None,
+    } for log in logs]
+
+    return jsonify({'ok': True, 'activities': payload})
 
 
 @main.route('/admin/reports', methods=['GET', 'POST'])
@@ -555,6 +748,7 @@ def admin_reports_page():
             return jsonify({'ok': False, 'message': 'Cannot moderate a sold product.'}), 400
 
         created_notification = None
+        admin_user_id = session.get('user_id')
         if action == 'approve':
             target_product.is_legit = True
             # clear previous review when approving
@@ -577,6 +771,14 @@ def admin_reports_page():
         else:
             return jsonify({'ok': False, 'message': 'Unsupported action.'}), 400
 
+        LoggingService.log_action(
+            user_id=admin_user_id,
+            target_type='product',
+            target_id=target_product.product_id,
+            action=action,
+            reason=reason if reason else f'Admin performed {action} on product.',
+            commit=False,
+        )
         db.session.commit()
         if created_notification:
             NotificationService.emit_notification(created_notification)
@@ -695,6 +897,14 @@ def create_product_page():
         db.session.flush()
         
         save_product_images(new_product, uploaded_images)
+        LoggingService.log_action(
+            user_id=session.get('user_id'),
+            target_type='product',
+            target_id=new_product.product_id,
+            action='create_product',
+            reason='User created a new product listing.',
+            commit=False,
+        )
 
         db.session.commit()
 
@@ -788,6 +998,14 @@ def edit_product_page(product_id):
         if remaining_images and not any(image.is_primary for image in remaining_images):
             remaining_images[0].is_primary = True
 
+        LoggingService.log_action(
+            user_id=session.get('user_id'),
+            target_type='product',
+            target_id=product.product_id,
+            action='update_product',
+            reason='User updated a product listing.',
+            commit=False,
+        )
         db.session.commit()
 
         flash('Your listing has been updated.', 'success')
@@ -808,6 +1026,14 @@ def delete_product(product_id):
     from app.models import Conversation
     Conversation.query.filter(Conversation.product_id == product.product_id).update({'product_id': None}, synchronize_session=False)
 
+    LoggingService.log_action(
+        user_id=session.get('user_id'),
+        target_type='product',
+        target_id=product.product_id,
+        action='delete_product',
+        reason='User deleted a product listing.',
+        commit=False,
+    )
     db.session.delete(product)
     db.session.commit()
 

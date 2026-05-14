@@ -30,6 +30,7 @@
         
         <!-- Profile tab -->
         <div class="mb-5 border-b border-slate-200" role="tablist" aria-label="Personal profile tabs">
+            {% if not is_admin_profile %}
             <button  type="button"
                 role="tab"
                 aria-selected="true"
@@ -37,12 +38,13 @@
                 class="profile-tab-button mr-6 border-b-2 border-blue-700 px-1 pb-3 text-sm font-semibold text-blue-700 transition"
             > My listings
             </button>
+            {% endif %}
             <button
                 type="button"
                 role="tab"
-                aria-selected="false"
+                aria-selected="{{ 'true' if is_admin_profile else 'false' }}"
                 data-tab-target="profile-tab"
-                class="profile-tab-button mr-6 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+                class="profile-tab-button mr-6 border-b-2 {{ 'border-blue-700 text-blue-700' if is_admin_profile else 'border-transparent text-slate-500 hover:text-slate-700' }} px-1 pb-3 text-sm font-semibold transition"
             >
                 Edit Personal Profile
             </button>
@@ -57,6 +59,7 @@
             </button>
         </div>
 
+        {% if not is_admin_profile %}
         <!-- My listings section -->
         <div id="mylisting-tab" class="profile-tab-panel" role="tabpanel">
             <div class="rounded-lg border border-slate-200 p-4">
@@ -265,9 +268,10 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
 
         <!-- Profile section -->
-        <div id="profile-tab" class="profile-tab-panel hidden" role="tabpanel">
+        <div id="profile-tab" class="profile-tab-panel {% if not is_admin_profile %}hidden{% endif %}" role="tabpanel">
             <form id="profileEditForm" method="POST" class="space-y-4">
                 <input type="hidden" name="form_type" value="profile_update">
                 <div>
@@ -318,6 +322,7 @@
     </div>
 </section>
 
+{% if not is_admin_profile %}
 <div id="deleteProductModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
     <div class="rounded-lg bg-white shadow-lg max-w-md w-full mx-4">
         <div class="border-b border-slate-200 px-6 py-4">
@@ -337,6 +342,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <script src="{{ url_for('static', filename='pages/ProfilePage/profilepage.js') }}"></script>
 

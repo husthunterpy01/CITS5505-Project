@@ -38,3 +38,62 @@
   background-color: #fef3c7;
   color: #92400e;
 }
+
+.activity-trace {
+  max-height: 240px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 0.35rem;
+}
+
+.activity-trace-table-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 0.4rem;
+}
+
+.activity-trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.activity-trace-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.activity-trace-table th,
+.activity-trace-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+  text-align: left;
+}
+
+.activity-trace-table tbody tr:nth-child(2n) {
+  background: #f8fafc;
+}
+
+.activity-trace-empty {
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.activity-trace-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.5rem;
+}

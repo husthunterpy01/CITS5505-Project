@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 from app import app
 from app.extensions import db
@@ -276,10 +277,27 @@ def seed_database(force_reset: bool = False):
         ]
         db.session.add_all(admin_messages)
 
+        now = datetime.utcnow()
         logs = [
-            Logging(user_id=users[2].user_id, target_type='user', target_id=users[3].user_id, action='report', reason='Repeated suspicious activity.'),
-            Logging(user_id=users[2].user_id, target_type='product', target_id=products[2].product_id, action='flag', reason='Mismatch between description and condition.'),
-            Logging(user_id=users[2].user_id, target_type='product', target_id=products[5].product_id, action='approve', reason='Reviewed and approved by admin.'),
+            Logging(user_id=users[0].user_id, target_type='user', target_id=users[0].user_id, action='signin', reason='User signed in successfully.', created_at=now - timedelta(days=3, hours=2)),
+            Logging(user_id=users[1].user_id, target_type='user', target_id=users[1].user_id, action='signin', reason='User signed in successfully.', created_at=now - timedelta(days=3, hours=1)),
+            Logging(user_id=users[3].user_id, target_type='product', target_id=products[0].product_id, action='create_product', reason='User created a new product listing.', created_at=now - timedelta(days=2, hours=18)),
+            Logging(user_id=users[3].user_id, target_type='product', target_id=products[0].product_id, action='update_product', reason='Updated listing price and description.', created_at=now - timedelta(days=2, hours=15)),
+            Logging(user_id=users[4].user_id, target_type='product', target_id=products[4].product_id, action='create_product', reason='User created a new product listing.', created_at=now - timedelta(days=2, hours=9)),
+            Logging(user_id=users[5].user_id, target_type='user', target_id=users[5].user_id, action='change_password', reason='User changed account password.', created_at=now - timedelta(days=2, hours=3)),
+            Logging(user_id=users[2].user_id, target_type='user', target_id=users[3].user_id, action='report', reason='Repeated suspicious activity.', created_at=now - timedelta(days=1, hours=19)),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[2].product_id, action='flag', reason='Mismatch between description and condition.', created_at=now - timedelta(days=1, hours=18, minutes=40)),
+            Logging(user_id=users[2].user_id, target_type='product', target_id=products[5].product_id, action='approve', reason='Reviewed and approved by admin.', created_at=now - timedelta(days=1, hours=16)),
+            Logging(user_id=users[0].user_id, target_type='product', target_id=products[10].product_id, action='delete_product', reason='Removed old listing after sale.', created_at=now - timedelta(hours=23)),
+            Logging(user_id=users[6].user_id, target_type='user', target_id=users[6].user_id, action='update_profile', reason='Updated contact details.', created_at=now - timedelta(hours=20)),
+            Logging(user_id=users[8].user_id, target_type='user', target_id=users[8].user_id, action='logout', reason='User logged out.', created_at=now - timedelta(hours=16)),
+            Logging(user_id=users[9].user_id, target_type='user', target_id=users[9].user_id, action='signin_after_signup', reason='New user signed in after signup.', created_at=now - timedelta(hours=12)),
+            Logging(user_id=users[10].user_id, target_type='user', target_id=users[10].user_id, action='signin', reason='Admin signed in.', created_at=now - timedelta(hours=9)),
+            Logging(user_id=users[10].user_id, target_type='user', target_id=users[4].user_id, action='unreport', reason='Cleared report after manual review.', created_at=now - timedelta(hours=7)),
+            Logging(user_id=users[10].user_id, target_type='product', target_id=products[7].product_id, action='flag', reason='Potential duplicate listing detected.', created_at=now - timedelta(hours=5)),
+            Logging(user_id=users[10].user_id, target_type='product', target_id=products[7].product_id, action='approve', reason='Duplicate concern resolved by seller proof.', created_at=now - timedelta(hours=3)),
+            Logging(user_id=users[4].user_id, target_type='product', target_id=products[7].product_id, action='update_product', reason='Added clearer condition photos.', created_at=now - timedelta(hours=2, minutes=30)),
+            Logging(user_id=users[4].user_id, target_type='user', target_id=users[4].user_id, action='logout', reason='User logged out.', created_at=now - timedelta(hours=1, minutes=10)),
         ]
         db.session.add_all(logs)
 

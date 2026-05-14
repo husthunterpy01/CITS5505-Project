@@ -1,6 +1,28 @@
 let usersData = [];
 let pendingReportUserId = null;
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatActivityTimestamp(value) {
+  if (!value) return 'Unknown time';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown time';
+  return date.toLocaleString([], {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function loadUsersFromDom() {
   const rows = document.querySelectorAll('.user-row');
   return Array.from(rows).map((row) => ({
@@ -55,6 +77,24 @@ function updateUserReportStatus(userId, action, reason) {
         reason: reason || '',
       }),
     );
+  });
+}
+
+function fetchUserActivities(userId) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `/admin/users/${userId}/activity`, true);
+    xhr.onload = function () {
+      try {
+        resolve(JSON.parse(xhr.responseText));
+      } catch (error) {
+        reject(error);
+      }
+    };
+    xhr.onerror = function () {
+      reject(new Error('Network request failed'));
+    };
+    xhr.send();
   });
 }
 
@@ -262,10 +302,67 @@ function viewUserDetails(userId) {
         <p class="text-sm font-medium text-slate-600">Notes</p>
         <p class="text-slate-900 mt-1 text-sm bg-slate-50 p-2 rounded">${user.review}</p>
       </div>
+
+      <div>
+        <p class="text-sm font-medium text-slate-600">Recent Activity</p>
+        <div id="user-activity-feed" class="activity-trace mt-2">
+          <p class="activity-trace-empty">Loading activity...</p>
+        </div>
+      </div>
     </div>
   `;
 
   modal.classList.remove('hidden');
+  const activityFeed = document.getElementById('user-activity-feed');
+  fetchUserActivities(userId)
+    .then((result) => {
+      if (!activityFeed) return;
+      if (!result.ok) {
+        activityFeed.innerHTML = `<p class="text-red-600">${escapeHtml(result.message || 'Failed to load user activity.')}</p>`;
+        return;
+      }
+      const activities = result.activities || [];
+      if (!activities.length) {
+        activityFeed.innerHTML =
+          '<p class="activity-trace-empty">No activities recorded yet.</p>';
+        return;
+      }
+      const rowsHtml = activities
+        .map((activity) => {
+          const targetLabel = `${activity.target_type || 'unknown'}#${activity.target_id ?? '-'}`;
+          return `
+            <tr>
+              <td>${escapeHtml(formatActivityTimestamp(activity.created_at))}</td>
+              <td>${escapeHtml(activity.action)}</td>
+              <td>${escapeHtml(targetLabel)}</td>
+              <td>${escapeHtml(activity.actor_name)}</td>
+              <td>${escapeHtml(activity.reason || '-')}</td>
+            </tr>
+          `;
+        })
+        .join('');
+      activityFeed.innerHTML = `
+        <div class="activity-trace-table-wrap">
+          <table class="activity-trace-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Actor</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    })
+    .catch(() => {
+      if (!activityFeed) return;
+      activityFeed.innerHTML =
+        '<p class="activity-trace-error">Unable to load user activity.</p>';
+    });
 }
 
 function closeModal() {
