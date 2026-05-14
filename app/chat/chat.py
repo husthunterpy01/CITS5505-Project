@@ -24,6 +24,11 @@ def handle_load_message(message_history_payload):
         'conversation_id': result['conversation_id'],
         'messages': result['messages'],
     })
+    if result.get('read_message_ids'):
+        emit('messages_read', {
+            'conversation_id': result['conversation_id'],
+            'message_ids': result['read_message_ids'],
+        }, room=f"conv:{result['conversation_id']}")
 
 
 @socketio.on('send_message')
@@ -33,6 +38,12 @@ def handle_send_message(message_payload):
         emit('error', {'message': result['error']})
         return
     emit('message_received', result['message'], room=result['room'])
+    for participant_user_id in result.get('participant_user_ids', []):
+        emit('conversation_updated', {
+            'conversation_id': result['message']['conversation_id'],
+            'last_message_preview': result['message']['content'][:30],
+            'sent_at': result['message']['sent_at'],
+        }, room=f"user:{participant_user_id}")
 
 
 @socketio.on('list_conversations')
@@ -64,10 +75,27 @@ def handle_connect(auth=None):
     if result.get('warning'):
         print(result['warning'])
     if result.get('user_id'):
+        join_room(f"user:{result['user_id']}")
         print(f"Socket {request.sid} authenticated as user {result['user_id']}")
     else:
         print(f'Socket {request.sid} connected without authentication')
     return True
+
+
+@socketio.on('mark_notification_read')
+def handle_mark_notification_read(payload):
+    result = chat_service.mark_notification_read(request.sid, payload)
+    if not result['ok']:
+        return {'ok': False, 'error': result['error']}
+    return {'ok': True, 'notification_id': result.get('notification_id')}
+
+
+@socketio.on('set_active_conversation')
+def handle_set_active_conversation(payload):
+    result = chat_service.set_active_conversation(request.sid, payload)
+    if not result['ok']:
+        return {'ok': False, 'error': result['error']}
+    return {'ok': True, 'conversation_id': result.get('conversation_id')}
 
 
 @socketio.on('disconnect')

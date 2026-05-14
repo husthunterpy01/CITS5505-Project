@@ -18,6 +18,7 @@ class User(db.Model):
     conversations = db.relationship('ConversationParticipant', backref='user', lazy=True, foreign_keys='ConversationParticipant.user_id')
     loggings      = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
     sent_messages = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
+    notifications = db.relationship('Notification', backref='recipient', lazy=True, foreign_keys='Notification.recipient_id')
 
 
 class Category(db.Model):
@@ -112,3 +113,18 @@ class Logging(db.Model):
     action      = db.Column(db.String(100), nullable=False)
     reason      = db.Column(db.Text, nullable=True)
     created_at  = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    notification_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    notification_type = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    action_url = db.Column(db.String(500), nullable=True)
+    reference_type = db.Column(db.String(50), nullable=True)
+    reference_id = db.Column(db.Integer, nullable=True)
+    is_read = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)

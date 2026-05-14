@@ -41,6 +41,7 @@
     background: transparent;
     color: #ffffff;
     cursor: pointer;
+    position: relative;
 }
 
 .notification-button:hover {
@@ -56,6 +57,122 @@
     width: 20px;
     height: 20px;
     fill: currentColor;
+}
+
+.notification-menu {
+    position: relative;
+}
+
+.notification-menu summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.notification-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.notification-summary {
+    display: inline-flex;
+    align-items: center;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    padding: 0 4px;
+}
+
+.notification-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 320px;
+    max-height: 360px;
+    overflow: hidden;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    z-index: 1000;
+}
+
+.notification-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.notification-title {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.notification-mark-all {
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: block;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #111827;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-unread {
+    background: #eff6ff;
+}
+
+.notification-item-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.notification-item-message {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #334155;
+}
+
+.notification-item-time {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.notification-empty {
+    color: #64748b;
+    font-size: 13px;
+    padding: 12px;
 }
 
 .profile-menu summary {

@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, session
 from app.extensions import db, socketio
 from app.config import Config
 from app.route import main
@@ -30,6 +30,22 @@ if Migrate is not None:
 
 # Register application routes and API endpoints.
 app.register_blueprint(main)
+
+
+@app.context_processor
+def inject_notifications():
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'header_notifications': [], 'header_unread_notifications': 0}
+
+    from app.service.notificationservice import NotificationService
+
+    notifications = NotificationService.get_recent_notifications(user_id, limit=5)
+    unread_count = NotificationService.count_unread(user_id)
+    return {
+        'header_notifications': notifications,
+        'header_unread_notifications': unread_count,
+    }
 
 # Register SocketIO for real-time communication.
 socketio.init_app(app, async_mode='threading')
