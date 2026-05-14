@@ -23,17 +23,58 @@
         {% endif %}
 
         {% if session.get('user_id') %}
-        <li>
-          <details class="profile-menu">
-            <summary class="profile-trigger">
-              <span class="profile-avatar">{{ session.get('user_initials', 'U') }}</span>
-              <span class="profile-name">{{ session.get('user_name', 'User') }}</span>
-            </summary>
-            <div class="profile-dropdown">
-              <a class="dropdown-link" href="{{ url_for('main.personal_profile_page') }}">My Profile</a>
-              <a class="dropdown-link" href="{{ url_for('main.logout') }}">Log out</a>
-            </div>
-          </details>
+        <li class="account-nav-item">
+          <div class="account-actions">
+            <details id="notification-menu" class="notification-menu">
+              <summary class="notification-summary" aria-label="Notifications">
+                <span class="notification-button" aria-hidden="true">
+                  <svg class="notification-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-4H5a1 1 0 0 1-.78-1.63L6 14.12V10a6 6 0 1 1 12 0v4.12l1.78 2.25A1 1 0 0 1 19 18Z" />
+                  </svg>
+                  {% if header_unread_notifications > 0 %}
+                  <span id="notification-badge" class="notification-badge">{{ header_unread_notifications }}</span>
+                  {% endif %}
+                </span>
+              </summary>
+              <div class="notification-dropdown">
+                <div class="notification-dropdown-header">
+                  <p class="notification-title">Notifications</p>
+                  <button
+                    type="button"
+                    id="mark-all-notifications-read"
+                    class="notification-mark-all {% if not header_notifications %}hidden{% endif %}"
+                  >
+                    Mark all read
+                  </button>
+                </div>
+                <div class="notification-list">
+                  {% for notification in header_notifications %}
+                  <a
+                    href="{{ notification.action_url or '#' }}"
+                    class="notification-item {% if not notification.is_read %}notification-unread{% endif %}"
+                    data-notification-id="{{ notification.notification_id }}"
+                  >
+                    <p class="notification-item-title">{{ notification.title }}</p>
+                    <p class="notification-item-message">{{ notification.message }}</p>
+                    <p class="notification-item-time">{{ notification.created_at.strftime('%d %b %H:%M') }}</p>
+                  </a>
+                  {% else %}
+                  <p class="notification-empty">You do not have notifications yet.</p>
+                  {% endfor %}
+                </div>
+              </div>
+            </details>
+            <details class="profile-menu">
+              <summary class="profile-trigger">
+                <span class="profile-avatar">{{ session.get('user_initials', 'U') }}</span>
+                <span class="profile-name">{{ session.get('user_name', 'User') }}</span>
+              </summary>
+              <div class="profile-dropdown">
+                <a class="dropdown-link" href="{{ url_for('main.personal_profile_page') }}">My Profile</a>
+                <a class="dropdown-link" href="{{ url_for('main.logout') }}">Log out</a>
+              </div>
+            </details>
+          </div>
         </li>
         {% else %}
         <li><a class="hover:underline nav-link" href="{{ url_for('main.signin_page') }}">Sign In</a></li>
