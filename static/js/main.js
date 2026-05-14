@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const notificationList = notificationMenu.querySelector(".notification-list");
   if (!notificationList) return;
+  const MAX_NOTIFICATIONS = 5;
 
   let badge = document.getElementById("notification-badge");
   const markAllButton = document.getElementById("mark-all-notifications-read");
@@ -119,9 +120,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
+  const trimNotificationList = () => {
+    const items = notificationList.querySelectorAll(".notification-item");
+    if (items.length <= MAX_NOTIFICATIONS) return;
+    for (let index = MAX_NOTIFICATIONS; index < items.length; index += 1) {
+      items[index].remove();
+    }
+  };
+
   notificationMenu
     .querySelectorAll(".notification-item")
     .forEach((item) => bindNotificationClick(item));
+  trimNotificationList();
 
   if (markAllButton) {
     markAllButton.addEventListener("click", async (event) => {
@@ -146,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const item = renderNotificationItem(notification);
       bindNotificationClick(item);
       notificationList.prepend(item);
+      trimNotificationList();
 
       unreadCount += 1;
       updateBadge();

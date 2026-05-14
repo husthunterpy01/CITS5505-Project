@@ -40,7 +40,7 @@ def inject_notifications():
 
     from app.service.notificationservice import NotificationService
 
-    notifications = NotificationService.get_recent_notifications(user_id, limit=8)
+    notifications = NotificationService.get_recent_notifications(user_id, limit=5)
     unread_count = NotificationService.count_unread(user_id)
     return {
         'header_notifications': notifications,
