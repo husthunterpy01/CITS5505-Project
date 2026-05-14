@@ -65,6 +65,24 @@ class ChatService:
                 return True
         return False
 
+    @staticmethod
+    def _mark_incoming_messages_as_read(conversation_id, reader_user_id):
+        unread_messages = Message.query.filter(
+            Message.conversation_id == conversation_id,
+            Message.sender_id != reader_user_id,
+            Message.is_read.is_(False),
+        ).all()
+        if not unread_messages:
+            return []
+
+        read_at = datetime.utcnow()
+        read_ids = []
+        for message in unread_messages:
+            message.is_read = True
+            message.read_at = read_at
+            read_ids.append(message.message_id)
+        return read_ids
+
     def set_active_conversation(self, sid, payload):
         user_id = self._get_user_id(sid)
         if not user_id:
@@ -162,12 +180,21 @@ class ChatService:
         if not conversation:
             return self._error('Conversation not found')
 
+        read_message_ids = self._mark_incoming_messages_as_read(conversation_id, user_id)
+        if read_message_ids:
+            db.session.commit()
+
         messages = Message.query.filter_by(conversation_id=conversation_id) \
             .order_by(Message.sent_at.desc()) \
             .limit(50) \
             .all()
         if not messages:
-            return {'ok': True, 'conversation_id': conversation_id, 'messages': []}
+            return {
+                'ok': True,
+                'conversation_id': conversation_id,
+                'messages': [],
+                'read_message_ids': read_message_ids,
+            }
 
         sender_ids = list({msg.sender_id for msg in messages if msg.sender_id})
         senders = User.query.filter(User.user_id.in_(sender_ids)).all() if sender_ids else []
@@ -180,9 +207,15 @@ class ChatService:
             'content': msg.content,
             'sent_at': msg.sent_at.isoformat() if msg.sent_at else None,
             'is_read': msg.is_read,
+            'read_at': msg.read_at.isoformat() if msg.read_at else None,
         } for msg in reversed(messages)]
 
-        return {'ok': True, 'conversation_id': conversation_id, 'messages': message_list}
+        return {
+            'ok': True,
+            'conversation_id': conversation_id,
+            'messages': message_list,
+            'read_message_ids': read_message_ids,
+        }
 
     def send_message(self, sid, payload):
         user_id = self._get_user_id(sid)
@@ -221,8 +254,10 @@ class ChatService:
                 if participant.user_id != user_id
             ]
             pending_notifications = []
+            should_mark_read_now = False
             for receiver_id in receiver_ids:
                 if self._is_user_viewing_conversation(receiver_id, conversation_id):
+                    should_mark_read_now = True
                     continue
                 notification = NotificationService.create_notification(
                     recipient_id=receiver_id,
@@ -236,6 +271,10 @@ class ChatService:
                 )
                 pending_notifications.append(notification)
 
+            if should_mark_read_now:
+                message.is_read = True
+                message.read_at = datetime.utcnow()
+
             db.session.commit()
             for notification in pending_notifications:
                 NotificationService.emit_notification(notification)
@@ -247,6 +286,7 @@ class ChatService:
         return {
             'ok': True,
             'room': f"conv:{conversation_id}",
+            'participant_user_ids': [p.user_id for p in related_participants],
             'message': {
                 'message_id': message.message_id,
                 'conversation_id': conversation_id,
@@ -254,6 +294,8 @@ class ChatService:
                 'sender_username': sender_name,
                 'content': content,
                 'sent_at': message.sent_at.isoformat(),
+                'is_read': message.is_read,
+                'read_at': message.read_at.isoformat() if message.read_at else None,
             },
         }
 

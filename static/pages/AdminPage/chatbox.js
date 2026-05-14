@@ -16,6 +16,11 @@
   let allContacts = [];
   let pendingConversationStart = null;
 
+  function getCurrentUserId() {
+    const root = document.getElementById('admin-chatbox');
+    return Number(root && root.dataset ? root.dataset.currentUserId : 0);
+  }
+
   function openChatboxPopup() {
     const chatboxPopup = document.getElementById('chatbox-popup');
     const tabButtons = document.querySelectorAll('.chatbox-tab-btn');
@@ -388,10 +393,7 @@
       emptyState.remove();
     }
 
-    const root = document.getElementById('admin-chatbox');
-    const currentUserId = Number(
-      root && root.dataset ? root.dataset.currentUserId : 0,
-    );
+    const currentUserId = getCurrentUserId();
     const senderId = Number(message.sender_id || 0);
     const senderName = (
       message.sender_username || String(message.sender_id || 'User')
@@ -418,11 +420,15 @@
 
     const el = document.createElement('div');
     el.className = `msg ${sideClass}`;
+    if (message.message_id) {
+      el.setAttribute('data-message-id', String(message.message_id));
+    }
+    const readStatus = isOwn ? (message.is_read ? 'Seen' : 'Sent') : '';
     el.innerHTML = `<div class="msg-img">${initials}</div>
                     <div class="msg-bubble">
                       <div class="msg-info">
                         <div class="msg-info-name">${senderName}</div>
-                        <div class="msg-info-time">${time}</div>
+                        <div class="msg-info-time">${time} <span class="msg-read-status">${readStatus}</span></div>
                       </div>
                       <div class="msg-text">${safeText}</div>
                     </div>`;
@@ -719,12 +725,38 @@
 
     socket.on('message_received', (data) => {
       if (
-        !messagesList ||
-        String(data.conversation_id) !== String(currentConversationId)
-      )
-        return;
-      appendMessageToList(data);
+        messagesList &&
+        String(data.conversation_id) === String(currentConversationId)
+      ) {
+        appendMessageToList(data);
+      }
       requestConversations();
+    });
+
+    socket.on('conversation_updated', (_data) => {
+      requestConversations();
+    });
+
+    socket.on('messages_read', (data) => {
+      if (
+        !messagesList ||
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '')
+      ) {
+        return;
+      }
+
+      const messageIds = Array.isArray(data.message_ids) ? data.message_ids : [];
+      if (!messageIds.length) return;
+
+      messageIds.forEach((messageId) => {
+        const messageNode = messagesList.querySelector(
+          `.msg[data-message-id="${messageId}"]`,
+        );
+        if (!messageNode || !messageNode.classList.contains('right-msg')) return;
+        const statusNode = messageNode.querySelector('.msg-read-status');
+        if (statusNode) statusNode.textContent = 'Seen';
+      });
     });
 
     socket.on('conversations_list', (data) => {

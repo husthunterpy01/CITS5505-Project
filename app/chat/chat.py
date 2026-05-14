@@ -24,6 +24,11 @@ def handle_load_message(message_history_payload):
         'conversation_id': result['conversation_id'],
         'messages': result['messages'],
     })
+    if result.get('read_message_ids'):
+        emit('messages_read', {
+            'conversation_id': result['conversation_id'],
+            'message_ids': result['read_message_ids'],
+        }, room=f"conv:{result['conversation_id']}")
 
 
 @socketio.on('send_message')
@@ -33,6 +38,12 @@ def handle_send_message(message_payload):
         emit('error', {'message': result['error']})
         return
     emit('message_received', result['message'], room=result['room'])
+    for participant_user_id in result.get('participant_user_ids', []):
+        emit('conversation_updated', {
+            'conversation_id': result['message']['conversation_id'],
+            'last_message_preview': result['message']['content'][:30],
+            'sent_at': result['message']['sent_at'],
+        }, room=f"user:{participant_user_id}")
 
 
 @socketio.on('list_conversations')
