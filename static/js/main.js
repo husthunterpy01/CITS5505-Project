@@ -20,6 +20,151 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  const notificationMenu = document.getElementById("notification-menu");
+  if (!notificationMenu) return;
+
+  const notificationList = notificationMenu.querySelector(".notification-list");
+  if (!notificationList) return;
+  const MAX_NOTIFICATIONS = 5;
+
+  let badge = document.getElementById("notification-badge");
+  const markAllButton = document.getElementById("mark-all-notifications-read");
+  let unreadCount = badge ? Number(badge.textContent || "0") : 0;
+  const backendOrigin = `${window.location.protocol}//${window.location.hostname}:5000`;
+  const socket = window.io
+    ? io(backendOrigin, {
+        path: "/socket.io",
+        transports: ["polling"],
+      })
+    : null;
+
+  const ensureBadge = () => {
+    if (badge) return badge;
+    const button = notificationMenu.querySelector(".notification-button");
+    if (!button) return null;
+    badge = document.createElement("span");
+    badge.id = "notification-badge";
+    badge.className = "notification-badge";
+    button.appendChild(badge);
+    return badge;
+  };
+
+  const renderNotificationItem = (notification) => {
+    const safeTitle = String(notification.title || "");
+    const safeMessage = String(notification.message || "");
+    const date = notification.created_at
+      ? new Date(notification.created_at)
+      : new Date();
+    const displayDate = `${String(date.getDate()).padStart(2, "0")} ${date.toLocaleString("en", {
+      month: "short",
+    })} ${String(date.getHours()).padStart(2, "0")}:${String(
+      date.getMinutes(),
+    ).padStart(2, "0")}`;
+
+    const item = document.createElement("a");
+    item.href = notification.action_url || "#";
+    item.className = `notification-item ${
+      notification.is_read ? "" : "notification-unread"
+    }`;
+    item.setAttribute("data-notification-id", String(notification.notification_id));
+    item.innerHTML = `
+      <p class="notification-item-title"></p>
+      <p class="notification-item-message"></p>
+      <p class="notification-item-time"></p>
+    `;
+    item.querySelector(".notification-item-title").textContent = safeTitle;
+    item.querySelector(".notification-item-message").textContent = safeMessage;
+    item.querySelector(".notification-item-time").textContent = displayDate;
+    return item;
+  };
+
+  const markNotificationRead = (notificationId) =>
+    new Promise((resolve) => {
+      if (!socket) {
+        resolve({ ok: false });
+        return;
+      }
+      const payload = notificationId ? { notification_id: notificationId } : {};
+      socket.emit("mark_notification_read", payload, (response) => {
+        resolve(response || { ok: false });
+      });
+    });
+
+  const updateBadge = () => {
+    if (unreadCount <= 0) {
+      if (badge) {
+        badge.remove();
+        badge = null;
+      }
+      return;
+    }
+    ensureBadge();
+    if (!badge) return;
+    badge.textContent = String(unreadCount);
+  };
+
+  const bindNotificationClick = (item) => {
+    item.addEventListener("click", async (event) => {
+      const targetHref = item.getAttribute("href");
+      const notificationId = item.getAttribute("data-notification-id");
+      if (!notificationId || !targetHref) return;
+
+      event.preventDefault();
+      await markNotificationRead(Number(notificationId));
+      if (item.classList.contains("notification-unread")) {
+        item.classList.remove("notification-unread");
+        unreadCount = Math.max(0, unreadCount - 1);
+      }
+      updateBadge();
+      window.location.href = targetHref;
+    });
+  };
+
+  const trimNotificationList = () => {
+    const items = notificationList.querySelectorAll(".notification-item");
+    if (items.length <= MAX_NOTIFICATIONS) return;
+    for (let index = MAX_NOTIFICATIONS; index < items.length; index += 1) {
+      items[index].remove();
+    }
+  };
+
+  notificationMenu
+    .querySelectorAll(".notification-item")
+    .forEach((item) => bindNotificationClick(item));
+  trimNotificationList();
+
+  if (markAllButton) {
+    markAllButton.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await markNotificationRead(null);
+      notificationMenu
+        .querySelectorAll(".notification-item.notification-unread")
+        .forEach((item) => item.classList.remove("notification-unread"));
+      unreadCount = 0;
+      updateBadge();
+    });
+  }
+
+  if (socket) {
+    socket.on("notification_created", (notification) => {
+      if (!notification || !notification.notification_id) return;
+
+      const emptyState = notificationList.querySelector(".notification-empty");
+      if (emptyState) emptyState.remove();
+      if (markAllButton) markAllButton.classList.remove("hidden");
+
+      const item = renderNotificationItem(notification);
+      bindNotificationClick(item);
+      notificationList.prepend(item);
+      trimNotificationList();
+
+      unreadCount += 1;
+      updateBadge();
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
   const termsCheckbox = document.getElementById("terms-accepted-checkbox");
   const signupButton = document.getElementById("signup-submit-btn");
   const legalOverlay = document.getElementById("legal-modal-overlay");
