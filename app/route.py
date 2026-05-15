@@ -11,7 +11,7 @@ from app.service.productlistingservice import serialize_product_for_listing, sea
 from app.service.geolocationservice import GeoLocationService
 from app.utils import user_roles
 from app.forms import CreateProductForm
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import os
 from uuid import uuid4
 from werkzeug.utils import secure_filename
@@ -407,7 +407,12 @@ def admin_home_page():
     total_users = User.query.count()
     total_products = Product.query.count()
     reported_users = User.query.filter_by(is_report=True).count()
-    pending_products = Product.query.filter_by(status='pending').count()
+    pending_products = Product.query.filter(
+        or_(
+            Product.status == 'pending',
+            Product.is_legit.is_(False),
+        )
+    ).count()
 
     recent_users = (
         User.query
