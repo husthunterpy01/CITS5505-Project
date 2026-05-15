@@ -409,7 +409,13 @@ def admin_home_page():
     reported_users = User.query.filter_by(is_report=True).count()
     pending_products = Product.query.filter_by(status='pending').count()
 
-    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    recent_users = (
+        User.query
+        .filter(User.role != 'admin')
+        .order_by(User.created_at.desc())
+        .limit(5)
+        .all()
+    )
     recent_products = Product.query.order_by(Product.created_at.desc()).limit(5).all()
 
     # Dashboard preview: only show latest five entries in each moderation tab
@@ -546,11 +552,21 @@ def admin_home_page():
 @main.route('/admin/activity', methods=['GET'])
 @AuthService.role_accepted('admin')
 def admin_activity_page():
+    current_admin_id = session.get('user_id')
     raw_actor_id = (request.args.get('actor_id') or '').strip()
     raw_action = (request.args.get('action') or '').strip().lower()
     raw_target_type = (request.args.get('target_type') or '').strip().lower()
 
     query = Logging.query
+    # Admins should not see activity entries created by other admins.
+    query = query.filter(
+        ~Logging.user_id.in_(
+            db.session.query(User.user_id).filter(
+                User.role == 'admin',
+                User.user_id != current_admin_id,
+            )
+        )
+    )
     if raw_actor_id:
         try:
             actor_id = int(raw_actor_id)
@@ -630,7 +646,12 @@ def admin_activity_page():
             'reason': log.reason or '-',
         })
 
-    all_users = User.query.order_by(User.first_name.asc(), User.last_name.asc()).all()
+    all_users = (
+        User.query
+        .filter((User.role != 'admin') | (User.user_id == current_admin_id))
+        .order_by(User.first_name.asc(), User.last_name.asc())
+        .all()
+    )
     all_actions = [
         row.action
         for row in db.session.query(Logging.action).distinct().order_by(Logging.action.asc()).all()
@@ -796,6 +817,11 @@ def admin_user_activity(user_id):
     target_user = User.query.get(user_id)
     if not target_user:
         return jsonify({'ok': False, 'message': 'User not found.'}), 404
+
+    # Admins can only view their own admin activity.
+    current_admin_id = session.get('user_id')
+    if target_user.role == 'admin' and target_user.user_id != current_admin_id:
+        return jsonify({'ok': False, 'message': 'Access denied.'}), 403
 
     activity_query = Logging.query.filter(
         (Logging.user_id == user_id) |
