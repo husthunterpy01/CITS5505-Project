@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import session
 from app.extensions import db
-from app.models import Conversation, ConversationParticipant, Message, Product, User, Notification
+from app.models import Conversation, ConversationParticipant, Message, Product, ProductImage, User, Notification
 from app.service.notificationservice import NotificationService
 
 
@@ -37,6 +37,22 @@ class ChatService:
     def _default_product_id():
         first_product = Product.query.order_by(Product.product_id.asc()).first()
         return first_product.product_id if first_product else None
+
+    @staticmethod
+    def _primary_image_for_product(product_id):
+        if not product_id:
+            return None
+        primary = ProductImage.query.filter_by(
+            product_id=product_id,
+            is_primary=True,
+        ).first()
+        if primary and primary.image_url:
+            return primary.image_url
+
+        fallback = ProductImage.query.filter_by(product_id=product_id).order_by(
+            ProductImage.image_id.asc(),
+        ).first()
+        return fallback.image_url if fallback and fallback.image_url else None
 
     def register_connection(self, sid):
         try:
@@ -321,6 +337,7 @@ class ChatService:
             out.append({
                 'conversation_id': shared_conv.conversation_id if shared_conv else None,
                 'product_id': shared_conv.product_id if shared_conv else None,
+                'product_image_url': self._primary_image_for_product(shared_conv.product_id) if shared_conv else None,
                 'other_participant': {
                     'user_id': contact.user_id,
                     'first_name': contact.first_name,

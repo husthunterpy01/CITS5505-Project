@@ -9,12 +9,20 @@ from app.service.productqueryservice import ProductQueryService
 from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
 from app.service.geolocationservice import GeoLocationService
 from app.utils import user_roles
-from app.forms import CreateProductForm
+from app.forms import CreateProductForm, SignInForm, SignUpForm
 from sqlalchemy import func
 import os
 from uuid import uuid4
 from werkzeug.utils import secure_filename
 main = Blueprint('main', __name__)
+
+
+def _to_public_image_url(raw_url):
+    if not raw_url:
+        return None
+    if raw_url.startswith('http://') or raw_url.startswith('https://') or raw_url.startswith('/'):
+        return raw_url
+    return url_for('static', filename=raw_url)
 
 @main.route('/')
 def home_page():
@@ -33,14 +41,15 @@ def signin_page():
         flash('You are already signed in.', 'error')
         return redirect(url_for('main.home_page'))
 
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+    form = SignInForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        password = form.password.data
 
         existing_user, error = AuthService.signin_user(email, password)
         if error:
             flash(error, 'error')
-            return render_template('signinpage.html')
+            return render_template('signinpage.html', form=form)
 
         AuthService.login_user(existing_user)
 
@@ -49,7 +58,12 @@ def signin_page():
             return redirect(url_for('main.admin_home_page'))
         return redirect(url_for('main.home_page'))
 
-    return render_template('signinpage.html')
+    if request.method == 'POST':
+        for field_errors in form.errors.values():
+            for err in field_errors:
+                flash(err, 'error')
+
+    return render_template('signinpage.html', form=form)
 
 
 @main.route('/signup', methods=['POST', 'GET'])
@@ -58,28 +72,29 @@ def signup_page():
         flash('You are already signed in', 'error')
         return redirect(url_for('main.home_page'))
 
-    if request.method == 'POST':
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        terms_accepted = request.form.get('terms_accepted') == 'on'
-
-        if not terms_accepted:
-            flash('Please agree to the Terms of Service and Privacy Policy before signing up.', 'error')
-            return render_template('signuppage.html')
+    form = SignUpForm()
+    if form.validate_on_submit():
+        first_name = form.first_name.data.strip()
+        last_name = form.last_name.data.strip()
+        email = form.email.data.strip().lower()
+        password = form.password.data
 
         new_user, error = AuthService.signup_user(first_name, last_name, email, password)
         if error:
             flash(error, 'error')
-            return render_template('signuppage.html')
+            return render_template('signuppage.html', form=form)
 
         AuthService.login_user(new_user)
 
         flash('Account created successfully.', 'success')
         return redirect(url_for('main.home_page'))
 
-    return render_template('signuppage.html')
+    if request.method == 'POST':
+        for field_errors in form.errors.values():
+            for err in field_errors:
+                flash(err, 'error')
+
+    return render_template('signuppage.html', form=form)
 
 
 @main.route('/logout')
@@ -188,13 +203,7 @@ def browse_page():
         cat = getattr(product, 'category', None)
         category_name = cat.category_name if cat else ''
 
-        image_src = primary_image
-        if image_src and not (
-            image_src.startswith('http://') or
-            image_src.startswith('https://') or
-            image_src.startswith('/')
-        ):
-            image_src = url_for('static', filename=image_src)
+        image_src = _to_public_image_url(primary_image)
 
         products.append({
             'product_id': product.product_id,
@@ -213,6 +222,46 @@ def browse_page():
         })
 
     return render_template('browse.html', products=products, categories=categories)
+
+
+@main.route('/products/<int:product_id>')
+def product_detail_page(product_id):
+    product = Product.query.get_or_404(product_id)
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
+
+    sorted_images = sorted(
+        product.images,
+        key=lambda image: (not bool(image.is_primary), image.image_id),
+    )
+    image_urls = [
+        _to_public_image_url(image.image_url)
+        for image in sorted_images
+        if image.image_url
+    ]
+    if not image_urls:
+        image_urls = [_to_public_image_url(default_img)]
+
+    seller = getattr(product, 'seller', None)
+    location = getattr(product, 'location', None)
+    category = getattr(product, 'category', None)
+
+    product_data = {
+        'product_id': product.product_id,
+        'title': product.product_name,
+        'description': product.description or '',
+        'price': product.price,
+        'status': product.status,
+        'created_at': product.created_at,
+        'seller_id': product.seller_id,
+        'seller_name': f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller',
+        'category_name': category.category_name if category else 'Uncategorized',
+        'location_name': location.location_name if location else 'Unknown Location',
+        'latitude': float(location.latitude) if location else None,
+        'longitude': float(location.longitude) if location else None,
+        'images': image_urls,
+    }
+
+    return render_template('productdetail.html', product=product_data)
 
 
 @main.route('/api/products/search', methods=['GET'])
