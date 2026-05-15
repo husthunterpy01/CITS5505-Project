@@ -44,6 +44,9 @@
         </select>
       </div>
       <div class="flex gap-2">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
+        <input type="hidden" name="sort" value="{{ sort_by }}">
+        <input type="hidden" name="direction" value="{{ sort_direction }}">
         <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">Apply</button>
         <a href="{{ url_for('main.admin_activity_page') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Reset</a>
       </div>
@@ -52,13 +55,30 @@
 
   <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
     <div class="overflow-x-auto">
+      {% set next_direction = 'asc' if sort_direction == 'desc' else 'desc' %}
       <table class="w-full text-left text-sm">
         <thead class="bg-slate-100 text-slate-700">
           <tr>
-            <th class="px-4 py-3 font-semibold">Time</th>
-            <th class="px-4 py-3 font-semibold">Actor</th>
-            <th class="px-4 py-3 font-semibold">Action</th>
-            <th class="px-4 py-3 font-semibold">Target</th>
+            <th class="px-4 py-3 font-semibold">
+              <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, page=1, sort='created_at', direction=next_direction if sort_by == 'created_at' else 'desc') }}" class="hover:text-blue-700">
+                Time {% if sort_by == 'created_at' %}{{ '▲' if sort_direction == 'asc' else '▼' }}{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 font-semibold">
+              <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, page=1, sort='actor', direction=next_direction if sort_by == 'actor' else 'asc') }}" class="hover:text-blue-700">
+                Actor {% if sort_by == 'actor' %}{{ '▲' if sort_direction == 'asc' else '▼' }}{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 font-semibold">
+              <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, page=1, sort='action', direction=next_direction if sort_by == 'action' else 'asc') }}" class="hover:text-blue-700">
+                Action {% if sort_by == 'action' %}{{ '▲' if sort_direction == 'asc' else '▼' }}{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 font-semibold">
+              <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, page=1, sort='target_type', direction=next_direction if sort_by == 'target_type' else 'asc') }}" class="hover:text-blue-700">
+                Target {% if sort_by == 'target_type' %}{{ '▲' if sort_direction == 'asc' else '▼' }}{% endif %}
+              </a>
+            </th>
             <th class="px-4 py-3 font-semibold">Reason</th>
           </tr>
         </thead>
@@ -80,6 +100,36 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </div>
+  <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm text-slate-500">
+      Showing {{ pagination.start_item }}-{{ pagination.end_item }} of {{ pagination.total_items }}
+    </p>
+    <div class="flex flex-wrap items-center gap-2">
+      <form method="GET">
+        <input type="hidden" name="actor_id" value="{{ selected_actor_id }}">
+        <input type="hidden" name="action" value="{{ selected_action }}">
+        <input type="hidden" name="target_type" value="{{ selected_target_type }}">
+        <input type="hidden" name="sort" value="{{ sort_by }}">
+        <input type="hidden" name="direction" value="{{ sort_direction }}">
+        <input type="hidden" name="page" value="1">
+        <select name="per_page" onchange="this.form.submit()" class="rounded border border-slate-300 px-2 py-1 text-xs">
+          <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+          <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+          <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+      </form>
+      {% if pagination.page > 1 %}
+      <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, sort=sort_by, direction=sort_direction, page=pagination.page - 1) }}" class="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100">Prev</a>
+      {% endif %}
+      {% for n in pagination.page_numbers %}
+      <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, sort=sort_by, direction=sort_direction, page=n) }}" class="rounded px-3 py-1 text-sm {% if n == pagination.page %}bg-blue-700 text-white{% else %}border border-slate-300 text-slate-700 hover:bg-slate-100{% endif %}">{{ n }}</a>
+      {% endfor %}
+      {% if pagination.page < pagination.total_pages %}
+      <a href="{{ url_for('main.admin_activity_page', actor_id=selected_actor_id, action=selected_action, target_type=selected_target_type, per_page=per_page, sort=sort_by, direction=sort_direction, page=pagination.page + 1) }}" class="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100">Next</a>
+      {% endif %}
     </div>
   </div>
 </section>

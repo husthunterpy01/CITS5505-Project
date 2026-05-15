@@ -1,6 +1,17 @@
 let usersData = [];
 let pendingReportUserId = null;
 
+function redirectToReportedView() {
+  const params = new URLSearchParams(window.location.search || '');
+  const currentPerPage = params.get('per_page') || '10';
+  params.set('view', 'reported');
+  params.set('sort', 'status');
+  params.set('direction', 'desc');
+  params.set('page', '1');
+  params.set('per_page', currentPerPage);
+  window.location.href = `/admin/users?${params.toString()}`;
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -197,7 +208,7 @@ function setupEventListeners() {
             }
             return;
           }
-          window.location.reload();
+          redirectToReportedView();
         })
         .catch(() => {
           if (errorLabel) {
@@ -284,7 +295,7 @@ function viewUserDetails(userId) {
       <div>
         <p class="text-sm font-medium text-slate-600">Status</p>
         <p class="text-slate-900 mt-1">
-          ${user.isReport ? '<span class="user-status-badge status-reported">🚩 Reported</span>' : '<span class="user-status-badge status-active">✓ Active</span>'}
+          ${user.isReport ? '<span class="user-status-badge status-reported">Reported</span>' : '<span class="user-status-badge status-active">Active</span>'}
         </p>
       </div>
       

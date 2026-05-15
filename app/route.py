@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import Product, User, Category, Location, ProductImage, Notification, Logging
 from app.service.authservice import AuthService
 from app.service.logservice import LoggingService
 from app.service.notificationservice import NotificationService
+from app.service.paginationservice import PaginationService
 from app.service.productqueryservice import ProductQueryService
 from app.service.productlistingservice import serialize_product_for_listing, search_products_for_listing
 from app.service.geolocationservice import GeoLocationService
@@ -412,9 +412,21 @@ def admin_home_page():
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     recent_products = Product.query.order_by(Product.created_at.desc()).limit(5).all()
 
-    # Fetch reported users and suspicious products separately
-    reported_users_list = User.query.filter_by(is_report=True).all()
-    suspicious_products_list = Product.query.filter_by(is_legit=False).all()
+    # Dashboard preview: only show latest five entries in each moderation tab
+    reported_users_list = (
+        User.query
+        .filter_by(is_report=True)
+        .order_by(User.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    suspicious_products_list = (
+        Product.query
+        .filter_by(is_legit=False)
+        .order_by(Product.created_at.desc())
+        .limit(5)
+        .all()
+    )
 
     # Analytics from current database records (no synthetic data)
     utc_today = datetime.utcnow().date()
@@ -553,7 +565,31 @@ def admin_activity_page():
     if raw_target_type:
         query = query.filter(Logging.target_type == raw_target_type)
 
-    logs = query.order_by(Logging.created_at.desc()).limit(200).all()
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    sort_by = (request.args.get('sort') or 'created_at').strip().lower()
+    direction = (request.args.get('direction') or 'desc').strip().lower()
+    if page < 1:
+        page = 1
+    if per_page not in (10, 20, 50, 100):
+        per_page = 20
+    if direction not in ('asc', 'desc'):
+        direction = 'desc'
+
+    total_items = query.count()
+    sort_map = {
+        'created_at': Logging.created_at,
+        'action': Logging.action,
+        'actor': Logging.user_id,
+        'target_type': Logging.target_type,
+    }
+    sort_column = sort_map.get(sort_by, Logging.created_at)
+    query = query.order_by(sort_column.asc() if direction == 'asc' else sort_column.desc())
+
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    logs = query.offset((page - 1) * per_page).limit(per_page).all()
 
     actor_ids = sorted({log.user_id for log in logs if log.user_id})
     actor_rows = User.query.filter(User.user_id.in_(actor_ids)).all() if actor_ids else []
@@ -609,6 +645,18 @@ def admin_activity_page():
         selected_actor_id=raw_actor_id,
         selected_action=raw_action,
         selected_target_type=raw_target_type,
+        sort_by=sort_by,
+        sort_direction=direction,
+        per_page=per_page,
+        pagination={
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages,
+            'total_items': total_items,
+            'start_item': 0 if total_items == 0 else ((page - 1) * per_page + 1),
+            'end_item': min(page * per_page, total_items),
+            'page_numbers': PaginationService.build_page_numbers(page, total_pages),
+        },
     )
 
 
@@ -675,8 +723,71 @@ def admin_users_page():
             'is_report': target_user.is_report,
         })
 
-    all_users = User.query.all()
-    return render_template('usermanager.html', users=all_users)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    sort_by = (request.args.get('sort') or 'created_at').strip().lower()
+    direction = (request.args.get('direction') or 'desc').strip().lower()
+    view = (request.args.get('view') or 'all').strip().lower()
+    if page < 1:
+        page = 1
+    if per_page not in (5, 10, 20, 50):
+        per_page = 10
+    if direction not in ('asc', 'desc'):
+        direction = 'desc'
+    if view not in ('all', 'reported', 'active', 'admin'):
+        view = 'all'
+
+    base_query = User.query
+    if view == 'reported':
+        base_query = base_query.filter(User.is_report.is_(True))
+    elif view == 'active':
+        base_query = base_query.filter(User.is_report.is_(False), User.role != 'admin')
+    elif view == 'admin':
+        base_query = base_query.filter(User.role == 'admin')
+
+    sort_map = {
+        'name': (User.first_name, User.last_name),
+        'email': (User.email,),
+        'created_at': (User.created_at,),
+        'role': (User.role,),
+        'status': (User.is_report,),
+    }
+    sort_columns = sort_map.get(sort_by, sort_map['created_at'])
+    for column in sort_columns:
+        base_query = base_query.order_by(
+            column.asc() if direction == 'asc' else column.desc()
+        )
+
+    total_items = base_query.order_by(None).count()
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    users = (
+        base_query
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    return render_template(
+        'usermanager.html',
+        users=users,
+        selected_user_filter=view,
+        sort_by=sort_by,
+        sort_direction=direction,
+        per_page=per_page,
+        pagination={
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages,
+            'total_items': total_items,
+            'start_item': 0 if total_items == 0 else ((page - 1) * per_page + 1),
+            'end_item': min(page * per_page, total_items),
+            'page_numbers': PaginationService.build_page_numbers(page, total_pages),
+        },
+        summary_total_users=User.query.count(),
+        summary_reported_users=User.query.filter(User.is_report.is_(True)).count(),
+        summary_admin_users=User.query.filter_by(role='admin').count(),
+    )
 
 
 @main.route('/admin/users/<int:user_id>/activity', methods=['GET'])
@@ -795,8 +906,59 @@ def admin_reports_page():
             product.is_legit = True
         db.session.commit()
 
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
-    return render_template('postmanager.html', products=all_products)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    sort_by = (request.args.get('sort') or 'created_at').strip().lower()
+    direction = (request.args.get('direction') or 'desc').strip().lower()
+    if page < 1:
+        page = 1
+    if per_page not in (5, 10, 20, 50):
+        per_page = 10
+    if direction not in ('asc', 'desc'):
+        direction = 'desc'
+
+    base_query = Product.query
+    sort_map = {
+        'name': Product.product_name,
+        'seller': Product.seller_id,
+        'price': Product.price,
+        'status': Product.status,
+        'created_at': Product.created_at,
+    }
+    sort_column = sort_map.get(sort_by, Product.created_at)
+    base_query = base_query.order_by(
+        sort_column.asc() if direction == 'asc' else sort_column.desc()
+    )
+
+    total_items = base_query.order_by(None).count()
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    products = (
+        base_query
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    return render_template(
+        'postmanager.html',
+        products=products,
+        sort_by=sort_by,
+        sort_direction=direction,
+        per_page=per_page,
+        pagination={
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages,
+            'total_items': total_items,
+            'start_item': 0 if total_items == 0 else ((page - 1) * per_page + 1),
+            'end_item': min(page * per_page, total_items),
+            'page_numbers': PaginationService.build_page_numbers(page, total_pages),
+        },
+        summary_total_posts=Product.query.count(),
+        summary_suspicious_posts=Product.query.filter(Product.is_legit.is_(False)).count(),
+        summary_legit_posts=Product.query.filter(Product.is_legit.is_(True)).count(),
+    )
 
 
 @main.route('/notifications/mark-read', methods=['POST'])
