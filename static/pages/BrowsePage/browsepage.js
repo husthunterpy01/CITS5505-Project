@@ -128,26 +128,54 @@ document.addEventListener("DOMContentLoaded", function () {
   function bindChatDelegation(container) {
     container.addEventListener("click", function (e) {
       const button = e.target.closest(".chat-seller-btn");
-      if (!button) return;
-      const sellerName = button.dataset.sellerName;
-      const productTitle = button.dataset.productTitle;
-      const productId = button.dataset.productId;
-      const sellerId = Number(button.dataset.sellerId || 0);
-      if (!sellerId) {
-        alert("Unable to open chat for this seller.");
+      if (button) {
+        // Prevent this click from reaching the global document handler
+        // that closes the chat popup on outside clicks.
+        e.preventDefault();
+        e.stopPropagation();
+        const sellerName = button.dataset.sellerName;
+        const productTitle = button.dataset.productTitle;
+        const productId = button.dataset.productId;
+        const sellerId = Number(button.dataset.sellerId || 0);
+        const productImageUrl =
+          button.closest("article.browse-product-card")?.querySelector("img")
+            ?.src || "";
+        if (!sellerId) {
+          alert("Unable to open chat for this seller.");
+          return;
+        }
+
+        document.dispatchEvent(
+          new CustomEvent("swanflip:chat-start", {
+            detail: {
+              targetUserId: sellerId,
+              productId: Number(productId || 0) || null,
+              displayName: sellerName || productTitle || "Seller",
+              productImageUrl,
+              role: "standard_user",
+            },
+          }),
+        );
         return;
       }
 
-      document.dispatchEvent(
-        new CustomEvent("swanflip:chat-start", {
-          detail: {
-            targetUserId: sellerId,
-            productId: Number(productId || 0) || null,
-            displayName: sellerName || productTitle || "Seller",
-            role: "standard_user",
-          },
-        }),
-      );
+      const card = e.target.closest("article.browse-product-card[data-product-id]");
+      if (!card || !container.contains(card)) return;
+      const productUrl = card.dataset.productUrl;
+      if (productUrl) {
+        window.location.href = productUrl;
+      }
+    });
+
+    container.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest("article.browse-product-card[data-product-id]");
+      if (!card || !container.contains(card)) return;
+      e.preventDefault();
+      const productUrl = card.dataset.productUrl;
+      if (productUrl) {
+        window.location.href = productUrl;
+      }
     });
   }
 

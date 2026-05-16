@@ -31,44 +31,37 @@ block content %}
       action="{{ url_for('main.signup_page') }}"
       class="flex flex-col space-y-6"
     >
-      <input
-        name="first_name"
-        placeholder="Enter your first name"
-        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        required
-      />
+      {{ form.hidden_tag() }}
+      {{ form.first_name(
+        placeholder="Enter your first name",
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800",
+        required=true
+      ) }}
 
-      <input
-        name="last_name"
-        placeholder="Enter your last name"
-        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        required
-      />
+      {{ form.last_name(
+        placeholder="Enter your last name",
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800",
+        required=true
+      ) }}
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Enter your email"
-        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        required
-      />
+      {{ form.email(
+        placeholder="Enter your email",
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800",
+        required=true
+      ) }}
 
-      <input
-        type="password"
-        name="password"
-        placeholder="Enter your password"
-        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        required
-      />
+      {{ form.password(
+        placeholder="Enter your password",
+        class="w-full max-w-sm rounded-lg border border-gray-600 p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-800",
+        required=true
+      ) }}
 
       <div class="w-full max-w-sm rounded-lg border border-slate-300 bg-slate-50 p-3">
         <div class="flex items-start gap-3">
-          <input
-            id="terms-accepted-checkbox"
-            type="checkbox"
-            name="terms_accepted"
+          {{ form.terms_accepted(
+            id="terms-accepted-checkbox",
             class="mt-1 h-4 w-4 rounded border-gray-400 text-blue-800 focus:ring-blue-700"
-          />
+          ) }}
           <label for="terms-accepted-checkbox" class="text-sm leading-6 text-slate-700">
             I agree to the
             <button
@@ -100,14 +93,11 @@ block content %}
         instead.
       </p>
 
-      <button
-        type="submit"
-        id="signup-submit-btn"
-        disabled
+      {{ form.submit(
+        id="signup-submit-btn",
+        disabled=true,
         class="w-fit rounded-lg bg-[#3D3A9E] px-10 py-3 font-medium text-white transition-all hover:scale-105 hover:bg-blue-900"
-      >
-        Sign up
-      </button>
+      ) }}
     </form>
   </div>
 </div>

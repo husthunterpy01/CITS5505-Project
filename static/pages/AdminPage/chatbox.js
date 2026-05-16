@@ -21,6 +21,32 @@
     return Number(root && root.dataset ? root.dataset.currentUserId : 0);
   }
 
+  function normalizeImageUrl(rawUrl) {
+    const url = String(rawUrl || '').trim();
+    if (!url) return '';
+    if (
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('/')
+    ) {
+      return url;
+    }
+    return `/static/${url.replace(/^\/+/, '')}`;
+  }
+
+  function setChatHeaderProductImage(rawUrl) {
+    const avatar = document.getElementById('chatbox-product-avatar');
+    if (!avatar) return;
+    const imageUrl = normalizeImageUrl(rawUrl);
+    if (!imageUrl) {
+      avatar.src = '';
+      avatar.classList.add('hidden');
+      return;
+    }
+    avatar.src = imageUrl;
+    avatar.classList.remove('hidden');
+  }
+
   function openChatboxPopup() {
     const chatboxPopup = document.getElementById('chatbox-popup');
     const tabButtons = document.querySelectorAll('.chatbox-tab-btn');
@@ -42,6 +68,7 @@
     if (!normalizedTargetUserId) return;
 
     const requestedProductId = options.productId ? Number(options.productId) : null;
+    const productImageUrl = options.productImageUrl || '';
     const displayName = options.displayName || '';
     const fallbackRole = options.role || 'standard_user';
     const matched = allContacts.find(
@@ -55,6 +82,9 @@
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
+    setChatHeaderProductImage(
+      productImageUrl || (matched ? matched.product_image_url : ''),
+    );
 
     if (matched && matched.conversation_id) {
       openConversation(
@@ -70,6 +100,7 @@
       targetUserId: normalizedTargetUserId,
       panelPrefix,
       displayName,
+      productImageUrl: productImageUrl || (matched ? matched.product_image_url : ''),
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', {
@@ -217,6 +248,9 @@
       card.setAttribute('data-conversation-id', conv.conversation_id);
     }
     if (conv.product_id) card.setAttribute('data-product-id', conv.product_id);
+    if (conv.product_image_url) {
+      card.setAttribute('data-product-image', conv.product_image_url);
+    }
     card.setAttribute('data-has-history', conv.has_history ? 'true' : 'false');
     const messagePreview = `Last message: ${conv.last_message_preview || '-'}`;
     card.innerHTML = `<p class="font-medium text-sm text-slate-900">${other.first_name} ${other.last_name}</p>
@@ -448,6 +482,7 @@
     if (chatboxPopup) chatboxPopup.classList.remove('chat-in-thread');
     if (chatboxBack) chatboxBack.classList.add('hidden');
     if (title) title.textContent = 'Chat';
+    setChatHeaderProductImage('');
     if (adminsContainer) adminsContainer.classList.add('hidden');
     if (usersContainer) usersContainer.classList.add('hidden');
     if (messageLoadTimeout) {
@@ -568,11 +603,13 @@
     const panelPrefix = getPanelPrefix(card.closest('.chatbox-tab-panel'));
     const conversationId = card.getAttribute('data-conversation-id');
     const productId = card.getAttribute('data-product-id');
+    const productImage = card.getAttribute('data-product-image');
     const chatboxTitle = document.getElementById('chatbox-title');
     const displayName = card.getAttribute('data-name');
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
+    setChatHeaderProductImage(productImage || '');
     if (conversationId) {
       openConversation(
         Number(conversationId),
@@ -589,6 +626,7 @@
     startConversationWithUser(detail.targetUserId, {
       productId: detail.productId,
       displayName: detail.displayName,
+      productImageUrl: detail.productImageUrl,
       role: detail.role,
     });
   });
@@ -616,6 +654,7 @@
     const panelPrefix = getPanelPrefixFromRole(conv.other_participant.role);
     const chatboxTitle = document.getElementById('chatbox-title');
     if (chatboxTitle) chatboxTitle.textContent = displayName;
+    setChatHeaderProductImage(conv.product_image_url || '');
 
     const searchInput = document.getElementById('chatbox-search');
     const suggestions = document.getElementById('chatbox-search-suggestions');
@@ -636,6 +675,7 @@
       targetUserId,
       panelPrefix,
       displayName,
+      productImageUrl: conv.product_image_url || '',
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', { target_user_id: targetUserId });
@@ -782,6 +822,14 @@
         matched.conversation_id = data.conversation_id;
         matched.product_id = data.product_id || matched.product_id || null;
         matched.has_history = true;
+      }
+      if (
+        pendingConversationStart &&
+        pendingConversationStart.targetUserId === targetUserId
+      ) {
+        setChatHeaderProductImage(pendingConversationStart.productImageUrl || '');
+      } else if (matched && matched.product_image_url) {
+        setChatHeaderProductImage(matched.product_image_url);
       }
 
       openConversation(

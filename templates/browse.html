@@ -131,10 +131,13 @@
       <article
         data-product-id="{{ product.product_id }}"
         data-product-name="{{ product.title }}"
+        data-product-url="{{ url_for('main.product_detail_page', product_id=product.product_id) }}"
         data-category-id="{{ product.category_id }}"
         data-price="{{ product.price }}"
         data-rank="{{ loop.index0 }}"
-        class="browse-product-card flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+        class="browse-product-card flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+        role="link"
+        tabindex="0"
       >
         <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
           <img src="{{ product.image }}" alt="{{ product.title }}" class="h-full w-full object-cover" />
@@ -178,6 +181,7 @@
             class="chat-seller-btn mt-5 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
             data-product-id="{{ product.product_id }}"
             data-seller-name="{{ product.seller_name }}"
+            data-seller-id="{{ product.seller_id }}"
             data-product-title="{{ product.title }}"
             data-product-status="{{ product.status }}"
           >
