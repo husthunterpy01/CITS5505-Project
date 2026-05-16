@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const applyFiltersBtn = document.getElementById("browse-apply-filters");
   const clearFiltersBtn = document.getElementById("browse-clear-filters");
   const sortSelect = document.getElementById("browse-sort-select");
+  const favoriteToggleUrl = root ? root.dataset.favoriteToggleUrl : "";
+  const csrfToken =
+    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const productCards = Array.from(
     grid ? grid.querySelectorAll("article.browse-product-card[data-product-id]") : [],
   );
@@ -126,32 +129,119 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function bindChatDelegation(container) {
     container.addEventListener("click", function (e) {
+      if (e.target.closest(".favorite-toggle-btn")) {
+        return;
+      }
       const button = e.target.closest(".chat-seller-btn");
-      if (!button) return;
-      const sellerName = button.dataset.sellerName;
-      const productTitle = button.dataset.productTitle;
-      const productId = button.dataset.productId;
-      const sellerId = Number(button.dataset.sellerId || 0);
-      if (!sellerId) {
-        alert("Unable to open chat for this seller.");
+      if (button) {
+        // Prevent this click from reaching the global document handler
+        // that closes the chat popup on outside clicks.
+        e.preventDefault();
+        e.stopPropagation();
+        const sellerName = button.dataset.sellerName;
+        const productTitle = button.dataset.productTitle;
+        const productId = button.dataset.productId;
+        const sellerId = Number(button.dataset.sellerId || 0);
+        const productImageUrl =
+          button.closest("article.browse-product-card")?.querySelector("img")
+            ?.src || "";
+        if (!sellerId) {
+          alert("Unable to open chat for this seller.");
+          return;
+        }
+
+        document.dispatchEvent(
+          new CustomEvent("swanflip:chat-start", {
+            detail: {
+              targetUserId: sellerId,
+              productId: Number(productId || 0) || null,
+              displayName: sellerName || productTitle || "Seller",
+              productImageUrl,
+              role: "standard_user",
+            },
+          }),
+        );
         return;
       }
 
-      document.dispatchEvent(
-        new CustomEvent("swanflip:chat-start", {
-          detail: {
-            targetUserId: sellerId,
-            productId: Number(productId || 0) || null,
-            displayName: sellerName || productTitle || "Seller",
-            role: "standard_user",
+      const card = e.target.closest("article.browse-product-card[data-product-id]");
+      if (!card || !container.contains(card)) return;
+      const productUrl = card.dataset.productUrl;
+      if (productUrl) {
+        window.location.href = productUrl;
+      }
+    });
+
+    container.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest("article.browse-product-card[data-product-id]");
+      if (!card || !container.contains(card)) return;
+      e.preventDefault();
+      const productUrl = card.dataset.productUrl;
+      if (productUrl) {
+        window.location.href = productUrl;
+      }
+    });
+  }
+
+  function setFavoriteButtonState(button, isFavorite) {
+    button.dataset.isFavorite = isFavorite ? "true" : "false";
+    button.title = isFavorite ? "Remove from favorites" : "Add to favorites";
+    button.classList.remove(
+      "border-rose-200",
+      "bg-rose-50",
+      "text-rose-600",
+      "hover:bg-rose-100",
+      "border-slate-200",
+      "bg-white",
+      "text-slate-400",
+      "hover:bg-slate-50",
+    );
+    if (isFavorite) {
+      button.classList.add("border-rose-200", "bg-rose-50", "text-rose-600", "hover:bg-rose-100");
+    } else {
+      button.classList.add("border-slate-200", "bg-white", "text-slate-400", "hover:bg-slate-50");
+    }
+  }
+
+  function bindFavoriteDelegation(container) {
+    if (!favoriteToggleUrl) return;
+    container.addEventListener("click", async function (e) {
+      const button = e.target.closest(".favorite-toggle-btn");
+      if (!button) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const productId = Number(button.dataset.productId || 0);
+      if (!productId) return;
+
+      button.disabled = true;
+      try {
+        const response = await fetch(favoriteToggleUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-CSRFToken": csrfToken,
           },
-        }),
-      );
+          body: JSON.stringify({ product_id: productId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || "Unable to update favorites.");
+        }
+        setFavoriteButtonState(button, !!data.is_favorite);
+      } catch (error) {
+        alert(error.message || "Unable to update favorites.");
+      } finally {
+        button.disabled = false;
+      }
     });
   }
 
   if (grid || root) {
     bindChatDelegation(grid || root);
+    bindFavoriteDelegation(grid || root);
   }
 
   if (!root || !grid) {
@@ -206,29 +296,13 @@ document.addEventListener("DOMContentLoaded", function () {
     return data;
   }
 
-  async function applyVisibleProducts(visibleProductIds) {
-    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
-    productCards.forEach((card) => {
-      const id = card.dataset.productId;
-      const currentlyVisible = !card.classList.contains("hidden");
-      const nextVisible = visibleProductIds.has(id);
-      if (currentlyVisible && !nextVisible) {
-        card.classList.add("is-hiding");
-      }
-    });
-    await wait(170);
-
+  function applyVisibleProducts(visibleProductIds) {
     let visibleCount = 0;
     productCards.forEach((card) => {
       const id = card.dataset.productId;
       const visible = visibleProductIds.has(id);
-      card.classList.remove("is-hiding");
       card.classList.toggle("hidden", !visible);
-      if (visible) {
-        visibleCount += 1;
-        card.classList.add("is-showing");
-        window.setTimeout(() => card.classList.remove("is-showing"), 240);
-      }
+      if (visible) visibleCount += 1;
     });
     setEmptyState(visibleCount === 0);
     applySort();
@@ -255,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function applyBrowseFilters() {
     if (!hasActiveFilters()) {
       setFeedback("", false);
-      await applyVisibleProducts(defaultVisibleIds);
+      applyVisibleProducts(defaultVisibleIds);
       return;
     }
 
@@ -274,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setFeedback("", false);
       }
       const visibleIds = new Set(items.map((item) => String(item.product_id)));
-      await applyVisibleProducts(visibleIds);
+      applyVisibleProducts(visibleIds);
     } catch (err) {
       setFeedback(err.message || "Something went wrong. Please try again.", true);
       setEmptyState(false);
@@ -283,14 +357,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function clearAllFilters() {
+  function clearAllFilters() {
     geoCoords = null;
     if (searchInput) searchInput.value = "";
     if (locationInput) locationInput.value = "";
     if (distanceSelect) distanceSelect.value = "";
     if (categorySelect) categorySelect.value = "";
     setFeedback("", false);
-    await applyVisibleProducts(defaultVisibleIds);
+    applyVisibleProducts(defaultVisibleIds);
   }
 
   document.addEventListener("swanflip:browse-search", async function (ev) {
@@ -421,8 +495,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener("click", async () => {
-      await clearAllFilters();
+    clearFiltersBtn.addEventListener("click", () => {
+      clearAllFilters();
     });
   }
 

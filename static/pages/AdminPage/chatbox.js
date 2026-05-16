@@ -15,12 +15,46 @@
   let messageLoadTimeout = null;
   let allContacts = [];
   let pendingConversationStart = null;
-  let typingStopTimeout = null;
-  let typingStarted = false;
 
   function getCurrentUserId() {
     const root = document.getElementById('admin-chatbox');
     return Number(root && root.dataset ? root.dataset.currentUserId : 0);
+  }
+
+  function normalizeImageUrl(rawUrl) {
+    const url = String(rawUrl || '').trim();
+    if (!url) return '';
+    if (
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('/')
+    ) {
+      return url;
+    }
+    return `/static/${url.replace(/^\/+/, '')}`;
+  }
+
+  function setChatHeaderProductImage(rawUrl) {
+    const avatar = document.getElementById('chatbox-product-avatar');
+    if (!avatar) return;
+    const imageUrl = normalizeImageUrl(rawUrl);
+    if (!imageUrl) {
+      avatar.src = '';
+      avatar.classList.add('hidden');
+      return;
+    }
+    avatar.src = imageUrl;
+    avatar.classList.remove('hidden');
+  }
+
+  function productImageForTargetRole(rawUrl, targetRole) {
+    const normalizedTargetRole = String(targetRole || '').toLowerCase();
+    const normalizedCurrentRole = getCurrentUserRole();
+    // Hide listing image for any admin-involved conversation.
+    if (normalizedTargetRole === 'admin' || normalizedCurrentRole === 'admin') {
+      return '';
+    }
+    return rawUrl;
   }
 
   function openChatboxPopup() {
@@ -44,6 +78,7 @@
     if (!normalizedTargetUserId) return;
 
     const requestedProductId = options.productId ? Number(options.productId) : null;
+    const productImageUrl = options.productImageUrl || '';
     const displayName = options.displayName || '';
     const fallbackRole = options.role || 'standard_user';
     const matched = allContacts.find(
@@ -52,11 +87,20 @@
     const panelPrefix = matched
       ? getPanelPrefixFromRole(matched.other_participant.role)
       : getPanelPrefixFromRole(fallbackRole);
+    const targetRole = matched
+      ? String(matched.other_participant.role || '').toLowerCase()
+      : String(fallbackRole || '').toLowerCase();
 
     const chatboxTitle = document.getElementById('chatbox-title');
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
+    setChatHeaderProductImage(
+      productImageForTargetRole(
+        productImageUrl || (matched ? matched.product_image_url : ''),
+        targetRole,
+      ),
+    );
 
     if (matched && matched.conversation_id) {
       openConversation(
@@ -72,6 +116,11 @@
       targetUserId: normalizedTargetUserId,
       panelPrefix,
       displayName,
+      targetRole,
+      productImageUrl: productImageForTargetRole(
+        productImageUrl || (matched ? matched.product_image_url : ''),
+        targetRole,
+      ),
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', {
@@ -206,50 +255,6 @@
     if (messagesList && statusText) {
       messagesList.innerHTML = `<div class="text-xs text-slate-400 p-2">${statusText}</div>`;
     }
-    setTypingIndicatorVisible(panelPrefix, false);
-  }
-
-  function ensureTypingIndicator(panelPrefix) {
-    const container = document.getElementById(`${panelPrefix}-messages-container`);
-    if (!container) return null;
-    const inputArea = container.querySelector('.msger-inputarea');
-    let indicator = container.querySelector('.chat-typing-indicator');
-    if (indicator) return indicator;
-    indicator = document.createElement('div');
-    indicator.className = 'chat-typing-indicator hidden';
-    indicator.innerHTML = `<span>Someone is typing</span><span class="typing-dots"><i></i><i></i><i></i></span>`;
-    if (inputArea) {
-      container.insertBefore(indicator, inputArea);
-    } else {
-      container.appendChild(indicator);
-    }
-    return indicator;
-  }
-
-  function setTypingIndicatorVisible(panelPrefix, visible) {
-    const indicator = ensureTypingIndicator(panelPrefix);
-    if (!indicator) return;
-    indicator.classList.toggle('hidden', !visible);
-  }
-
-  function emitTypingState(active) {
-    if (!socket || !currentConversationId) return;
-    if (active) {
-      if (typingStarted) return;
-      typingStarted = true;
-      socket.emit('typing_start', { conversation_id: currentConversationId });
-      return;
-    }
-    if (!typingStarted) return;
-    typingStarted = false;
-    socket.emit('typing_stop', { conversation_id: currentConversationId });
-  }
-
-  function scheduleTypingStop() {
-    if (typingStopTimeout) clearTimeout(typingStopTimeout);
-    typingStopTimeout = setTimeout(() => {
-      emitTypingState(false);
-    }, 1200);
   }
 
   function createContactCard(conv, roleLabel) {
@@ -259,10 +264,14 @@
       'chat-contact-card p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200';
     card.setAttribute('data-contact-id', other.user_id);
     card.setAttribute('data-name', `${other.first_name} ${other.last_name}`);
+    card.setAttribute('data-role', other.role || roleLabel || 'standard_user');
     if (conv.conversation_id) {
       card.setAttribute('data-conversation-id', conv.conversation_id);
     }
     if (conv.product_id) card.setAttribute('data-product-id', conv.product_id);
+    if (conv.product_image_url) {
+      card.setAttribute('data-product-image', conv.product_image_url);
+    }
     card.setAttribute('data-has-history', conv.has_history ? 'true' : 'false');
     const messagePreview = `Last message: ${conv.last_message_preview || '-'}`;
     card.innerHTML = `<p class="font-medium text-sm text-slate-900">${other.first_name} ${other.last_name}</p>
@@ -406,10 +415,6 @@
   }
 
   function openConversation(conversationId, productId, panelPrefix) {
-    if (typingStarted && socket && currentConversationId) {
-      socket.emit('typing_stop', { conversation_id: currentConversationId });
-      typingStarted = false;
-    }
     currentConversationId = conversationId;
     currentProductId = productId || null;
     showThreadPanel(panelPrefix, 'Loading messages...');
@@ -498,6 +503,7 @@
     if (chatboxPopup) chatboxPopup.classList.remove('chat-in-thread');
     if (chatboxBack) chatboxBack.classList.add('hidden');
     if (title) title.textContent = 'Chat';
+    setChatHeaderProductImage('');
     if (adminsContainer) adminsContainer.classList.add('hidden');
     if (usersContainer) usersContainer.classList.add('hidden');
     if (messageLoadTimeout) {
@@ -508,11 +514,6 @@
     currentProductId = null;
     messagesList = null;
     pendingConversationStart = null;
-    if (typingStopTimeout) {
-      clearTimeout(typingStopTimeout);
-      typingStopTimeout = null;
-    }
-    emitTypingState(false);
     if (socket && socket.connected) {
       socket.emit('set_active_conversation', { conversation_id: null });
     }
@@ -623,11 +624,16 @@
     const panelPrefix = getPanelPrefix(card.closest('.chatbox-tab-panel'));
     const conversationId = card.getAttribute('data-conversation-id');
     const productId = card.getAttribute('data-product-id');
+    const productImage = card.getAttribute('data-product-image');
+    const targetRole = card.getAttribute('data-role') || 'standard_user';
     const chatboxTitle = document.getElementById('chatbox-title');
     const displayName = card.getAttribute('data-name');
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
+    setChatHeaderProductImage(
+      productImageForTargetRole(productImage || '', targetRole),
+    );
     if (conversationId) {
       openConversation(
         Number(conversationId),
@@ -644,6 +650,7 @@
     startConversationWithUser(detail.targetUserId, {
       productId: detail.productId,
       displayName: detail.displayName,
+      productImageUrl: detail.productImageUrl,
       role: detail.role,
     });
   });
@@ -669,8 +676,12 @@
 
     const displayName = `${conv.other_participant.first_name} ${conv.other_participant.last_name}`;
     const panelPrefix = getPanelPrefixFromRole(conv.other_participant.role);
+    const targetRole = String(conv.other_participant.role || '').toLowerCase();
     const chatboxTitle = document.getElementById('chatbox-title');
     if (chatboxTitle) chatboxTitle.textContent = displayName;
+    setChatHeaderProductImage(
+      productImageForTargetRole(conv.product_image_url || '', targetRole),
+    );
 
     const searchInput = document.getElementById('chatbox-search');
     const suggestions = document.getElementById('chatbox-search-suggestions');
@@ -691,6 +702,11 @@
       targetUserId,
       panelPrefix,
       displayName,
+      targetRole,
+      productImageUrl: productImageForTargetRole(
+        conv.product_image_url || '',
+        targetRole,
+      ),
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', { target_user_id: targetUserId });
@@ -708,7 +724,6 @@
     if (!input || !socket) return;
     const content = input.value.trim();
     if (!content || !currentConversationId) return;
-    emitTypingState(false);
 
     socket.emit('send_message', {
       conversation_id: currentConversationId,
@@ -732,27 +747,6 @@
     const panelPrefix = target.id.startsWith('admins') ? 'admins' : 'users';
     const sendBtn = document.querySelector(`.${panelPrefix}-send-btn`);
     if (sendBtn) sendBtn.click();
-  });
-
-  document.addEventListener('input', function (e) {
-    const target = e.target;
-    if (
-      !target ||
-      target.tagName !== 'INPUT' ||
-      !target.id ||
-      !target.id.endsWith('-message-input')
-    ) {
-      return;
-    }
-    if (!currentConversationId) return;
-    const value = target.value.trim();
-    if (!value) {
-      emitTypingState(false);
-      if (typingStopTimeout) clearTimeout(typingStopTimeout);
-      return;
-    }
-    emitTypingState(true);
-    scheduleTypingStop();
   });
 
   if (socket) {
@@ -805,10 +799,6 @@
         messagesList &&
         String(data.conversation_id) === String(currentConversationId)
       ) {
-        const panelPrefix = data.conversation_id && document.getElementById('admins-messages-container') && !document.getElementById('admins-messages-container').classList.contains('hidden')
-          ? 'admins'
-          : 'users';
-        setTypingIndicatorVisible(panelPrefix, false);
         appendMessageToList(data);
       }
       requestConversations();
@@ -816,38 +806,6 @@
 
     socket.on('conversation_updated', (_data) => {
       requestConversations();
-    });
-
-    socket.on('typing_started', (data) => {
-      if (
-        !data ||
-        String(data.conversation_id || '') !== String(currentConversationId || '') ||
-        data.sender_sid === socket.id
-      ) {
-        return;
-      }
-      const panelPrefix =
-        document.getElementById('admins-messages-container') &&
-        !document.getElementById('admins-messages-container').classList.contains('hidden')
-          ? 'admins'
-          : 'users';
-      setTypingIndicatorVisible(panelPrefix, true);
-    });
-
-    socket.on('typing_stopped', (data) => {
-      if (
-        !data ||
-        String(data.conversation_id || '') !== String(currentConversationId || '') ||
-        data.sender_sid === socket.id
-      ) {
-        return;
-      }
-      const panelPrefix =
-        document.getElementById('admins-messages-container') &&
-        !document.getElementById('admins-messages-container').classList.contains('hidden')
-          ? 'admins'
-          : 'users';
-      setTypingIndicatorVisible(panelPrefix, false);
     });
 
     socket.on('messages_read', (data) => {
@@ -890,11 +848,29 @@
                 ? matched.other_participant.role
                 : 'standard_user',
             );
+      const targetRole = matched && matched.other_participant
+        ? String(matched.other_participant.role || '').toLowerCase()
+        : (pendingConversationStart && pendingConversationStart.targetRole) || 'standard_user';
 
       if (matched) {
         matched.conversation_id = data.conversation_id;
         matched.product_id = data.product_id || matched.product_id || null;
         matched.has_history = true;
+      }
+      if (
+        pendingConversationStart &&
+        pendingConversationStart.targetUserId === targetUserId
+      ) {
+        setChatHeaderProductImage(
+          productImageForTargetRole(
+            pendingConversationStart.productImageUrl || '',
+            targetRole,
+          ),
+        );
+      } else if (matched && matched.product_image_url) {
+        setChatHeaderProductImage(
+          productImageForTargetRole(matched.product_image_url, targetRole),
+        );
       }
 
       openConversation(

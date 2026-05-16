@@ -1,6 +1,6 @@
 import os
 from flask import Flask, session
-from app.extensions import db, socketio
+from app.extensions import db, socketio, csrf
 from app.config import Config
 from app.route import main
 from app.chat import chat
@@ -25,6 +25,7 @@ app.config.from_object(Config)
 
 # Register database and migration extensions.
 db.init_app(app)
+csrf.init_app(app)
 if Migrate is not None:
     migrate = Migrate(app, db)
 

@@ -104,7 +104,6 @@
                             >
                                 <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All listings</option>
                                 <option value="available" {% if filter_status == 'available' %}selected{% endif %}>Active</option>
-                                <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
                                 <option value="sold" {% if filter_status == 'sold' %}selected{% endif %}>Sold</option>
                             </select>
                             <input type="hidden" name="sort" value="{{ sort_by }}">
@@ -176,8 +175,8 @@
                                     </td>
                                     <td class="px-4 py-3 font-semibold text-blue-600">${{ '%.2f'|format(product.price) }}</td>
                                     <td class="px-4 py-3">
-                                        <span class="inline-block rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'available' %}bg-green-100 text-green-700{% elif product.status == 'sold' %}bg-red-100 text-red-700{% elif product.status == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">
-                                            {% if product.status == 'available' %}Active{% elif product.status == 'pending' %}Pending{% elif product.status == 'sold' %}Sold{% else %}{{ product.status|capitalize }}{% endif %}
+                                        <span class="inline-block rounded-full px-3 py-1 text-xs font-semibold {% if product.status == 'sold' %}bg-red-100 text-red-700{% elif product.status in ['available', 'pending'] %}bg-green-100 text-green-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                                            {% if product.status == 'sold' %}Sold{% elif product.status in ['available', 'pending'] %}Active{% else %}{{ product.status|capitalize }}{% endif %}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600">{{ product.created_at.strftime('%d %b') if product.created_at else '-' }}</td>
@@ -186,9 +185,20 @@
                                             <a href="{{ url_for('main.edit_product_page', product_id=product.product_id) }}" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs font-semibold">
                                                 Edit ↗
                                             </a>
-                                            <button type="button" class="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 transition text-xs font-semibold">
+                                            {% if product.status != 'sold' %}
+                                            <button
+                                                type="button"
+                                                class="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700 transition text-xs font-semibold mark-sold-btn"
+                                                data-product-id="{{ product.product_id }}"
+                                                data-product-name="{{ product.product_name }}"
+                                            >
                                                 Sold ↗
                                             </button>
+                                            {% else %}
+                                            <span class="px-3 py-1 rounded bg-slate-200 text-slate-600 text-xs font-semibold">
+                                                Sold
+                                            </span>
+                                            {% endif %}
                                             <button type="button" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition text-xs font-semibold delete-product-btn" data-product-id="{{ product.product_id }}" data-product-name="{{ product.product_name }}">
                                                 Delete ✕
                                             </button>
@@ -274,6 +284,7 @@
         <!-- Profile section -->
         <div id="profile-tab" class="profile-tab-panel {% if not is_admin_profile %}hidden{% endif %}" role="tabpanel">
             <form id="profileEditForm" method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="form_type" value="profile_update">
                 <div>
                     <label for="first-name" class="mb-1 block text-sm font-medium text-slate-700">First Name</label>
@@ -294,6 +305,7 @@
         <!-- Password section -->
         <div id="security-tab" class="profile-tab-panel hidden" role="tabpanel">
             <form id="changePasswordForm" method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="form_type" value="password_update">
                 <div>
                     <label for="current-password" class="mb-1 block text-sm font-medium text-slate-700">Enter current password</label>
