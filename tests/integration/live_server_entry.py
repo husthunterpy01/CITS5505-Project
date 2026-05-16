@@ -1,10 +1,3 @@
-"""Entry point for subprocess: live Flask app + isolated DB for Selenium tests.
-
-Usage (from repo root):
-    python tests/integration/live_server_entry.py <port> <absolute_path_to_sqlite.db>
-
-Set DATABASE_URL before importing the app so SQLAlchemy binds to the temp file.
-"""
 
 from __future__ import annotations
 
