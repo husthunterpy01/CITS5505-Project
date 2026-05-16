@@ -180,7 +180,12 @@ def personal_profile_page():
 
 @main.route('/browse', methods=['POST', 'GET'])
 def browse_page():
-    all_products = Product.query.order_by(Product.created_at.desc()).all()
+    all_products = (
+        Product.query
+        .filter_by(status='available')
+        .order_by(Product.created_at.desc())
+        .all()
+    )
     categories = Category.query.order_by(Category.category_name).all()
     default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
