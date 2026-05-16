@@ -146,6 +146,11 @@ def personal_profile_page():
                 commit=False,
             )
             db.session.commit()
+            # Keep session identity synced with profile edits so header/chat show latest name.
+            session['user_name'] = user_profile.first_name
+            first_initial = (user_profile.first_name or '')[:1]
+            last_initial = (user_profile.last_name or '')[:1]
+            session['user_initials'] = f"{first_initial}{last_initial}".upper() or "U"
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('main.personal_profile_page'))
 

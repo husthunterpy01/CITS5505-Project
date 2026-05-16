@@ -206,13 +206,29 @@ document.addEventListener("DOMContentLoaded", function () {
     return data;
   }
 
-  function applyVisibleProducts(visibleProductIds) {
+  async function applyVisibleProducts(visibleProductIds) {
+    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    productCards.forEach((card) => {
+      const id = card.dataset.productId;
+      const currentlyVisible = !card.classList.contains("hidden");
+      const nextVisible = visibleProductIds.has(id);
+      if (currentlyVisible && !nextVisible) {
+        card.classList.add("is-hiding");
+      }
+    });
+    await wait(170);
+
     let visibleCount = 0;
     productCards.forEach((card) => {
       const id = card.dataset.productId;
       const visible = visibleProductIds.has(id);
+      card.classList.remove("is-hiding");
       card.classList.toggle("hidden", !visible);
-      if (visible) visibleCount += 1;
+      if (visible) {
+        visibleCount += 1;
+        card.classList.add("is-showing");
+        window.setTimeout(() => card.classList.remove("is-showing"), 240);
+      }
     });
     setEmptyState(visibleCount === 0);
     applySort();
@@ -239,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function applyBrowseFilters() {
     if (!hasActiveFilters()) {
       setFeedback("", false);
-      applyVisibleProducts(defaultVisibleIds);
+      await applyVisibleProducts(defaultVisibleIds);
       return;
     }
 
@@ -258,7 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setFeedback("", false);
       }
       const visibleIds = new Set(items.map((item) => String(item.product_id)));
-      applyVisibleProducts(visibleIds);
+      await applyVisibleProducts(visibleIds);
     } catch (err) {
       setFeedback(err.message || "Something went wrong. Please try again.", true);
       setEmptyState(false);
@@ -267,14 +283,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function clearAllFilters() {
+  async function clearAllFilters() {
     geoCoords = null;
     if (searchInput) searchInput.value = "";
     if (locationInput) locationInput.value = "";
     if (distanceSelect) distanceSelect.value = "";
     if (categorySelect) categorySelect.value = "";
     setFeedback("", false);
-    applyVisibleProducts(defaultVisibleIds);
+    await applyVisibleProducts(defaultVisibleIds);
   }
 
   document.addEventListener("swanflip:browse-search", async function (ev) {
@@ -405,8 +421,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener("click", () => {
-      clearAllFilters();
+    clearFiltersBtn.addEventListener("click", async () => {
+      await clearAllFilters();
     });
   }
 

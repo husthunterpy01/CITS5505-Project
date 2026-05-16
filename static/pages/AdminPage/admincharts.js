@@ -20,6 +20,22 @@ document.addEventListener('DOMContentLoaded', function () {
     return safeArray(values).some((value) => Number(value) > 0);
   }
 
+  function getChartAnimationOptions() {
+    return {
+      animation: {
+        duration: 900,
+        easing: 'easeOutQuart',
+      },
+      transitions: {
+        active: {
+          animation: {
+            duration: 250,
+          },
+        },
+      },
+    };
+  }
+
   function renderTrendChart() {
     const canvas = document.getElementById('adminTrendChart');
     if (!canvas) return;
@@ -58,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
       },
       options: {
+        ...getChartAnimationOptions(),
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -98,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
       },
       options: {
+        ...getChartAnimationOptions(),
         responsive: true,
         maintainAspectRatio: false,
         plugins: {

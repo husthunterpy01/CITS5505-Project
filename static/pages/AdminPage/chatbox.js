@@ -15,6 +15,8 @@
   let messageLoadTimeout = null;
   let allContacts = [];
   let pendingConversationStart = null;
+  let typingStopTimeout = null;
+  let typingStarted = false;
 
   function getCurrentUserId() {
     const root = document.getElementById('admin-chatbox');
@@ -204,6 +206,50 @@
     if (messagesList && statusText) {
       messagesList.innerHTML = `<div class="text-xs text-slate-400 p-2">${statusText}</div>`;
     }
+    setTypingIndicatorVisible(panelPrefix, false);
+  }
+
+  function ensureTypingIndicator(panelPrefix) {
+    const container = document.getElementById(`${panelPrefix}-messages-container`);
+    if (!container) return null;
+    const inputArea = container.querySelector('.msger-inputarea');
+    let indicator = container.querySelector('.chat-typing-indicator');
+    if (indicator) return indicator;
+    indicator = document.createElement('div');
+    indicator.className = 'chat-typing-indicator hidden';
+    indicator.innerHTML = `<span>Someone is typing</span><span class="typing-dots"><i></i><i></i><i></i></span>`;
+    if (inputArea) {
+      container.insertBefore(indicator, inputArea);
+    } else {
+      container.appendChild(indicator);
+    }
+    return indicator;
+  }
+
+  function setTypingIndicatorVisible(panelPrefix, visible) {
+    const indicator = ensureTypingIndicator(panelPrefix);
+    if (!indicator) return;
+    indicator.classList.toggle('hidden', !visible);
+  }
+
+  function emitTypingState(active) {
+    if (!socket || !currentConversationId) return;
+    if (active) {
+      if (typingStarted) return;
+      typingStarted = true;
+      socket.emit('typing_start', { conversation_id: currentConversationId });
+      return;
+    }
+    if (!typingStarted) return;
+    typingStarted = false;
+    socket.emit('typing_stop', { conversation_id: currentConversationId });
+  }
+
+  function scheduleTypingStop() {
+    if (typingStopTimeout) clearTimeout(typingStopTimeout);
+    typingStopTimeout = setTimeout(() => {
+      emitTypingState(false);
+    }, 1200);
   }
 
   function createContactCard(conv, roleLabel) {
@@ -360,6 +406,10 @@
   }
 
   function openConversation(conversationId, productId, panelPrefix) {
+    if (typingStarted && socket && currentConversationId) {
+      socket.emit('typing_stop', { conversation_id: currentConversationId });
+      typingStarted = false;
+    }
     currentConversationId = conversationId;
     currentProductId = productId || null;
     showThreadPanel(panelPrefix, 'Loading messages...');
@@ -458,6 +508,11 @@
     currentProductId = null;
     messagesList = null;
     pendingConversationStart = null;
+    if (typingStopTimeout) {
+      clearTimeout(typingStopTimeout);
+      typingStopTimeout = null;
+    }
+    emitTypingState(false);
     if (socket && socket.connected) {
       socket.emit('set_active_conversation', { conversation_id: null });
     }
@@ -653,6 +708,7 @@
     if (!input || !socket) return;
     const content = input.value.trim();
     if (!content || !currentConversationId) return;
+    emitTypingState(false);
 
     socket.emit('send_message', {
       conversation_id: currentConversationId,
@@ -676,6 +732,27 @@
     const panelPrefix = target.id.startsWith('admins') ? 'admins' : 'users';
     const sendBtn = document.querySelector(`.${panelPrefix}-send-btn`);
     if (sendBtn) sendBtn.click();
+  });
+
+  document.addEventListener('input', function (e) {
+    const target = e.target;
+    if (
+      !target ||
+      target.tagName !== 'INPUT' ||
+      !target.id ||
+      !target.id.endsWith('-message-input')
+    ) {
+      return;
+    }
+    if (!currentConversationId) return;
+    const value = target.value.trim();
+    if (!value) {
+      emitTypingState(false);
+      if (typingStopTimeout) clearTimeout(typingStopTimeout);
+      return;
+    }
+    emitTypingState(true);
+    scheduleTypingStop();
   });
 
   if (socket) {
@@ -728,6 +805,10 @@
         messagesList &&
         String(data.conversation_id) === String(currentConversationId)
       ) {
+        const panelPrefix = data.conversation_id && document.getElementById('admins-messages-container') && !document.getElementById('admins-messages-container').classList.contains('hidden')
+          ? 'admins'
+          : 'users';
+        setTypingIndicatorVisible(panelPrefix, false);
         appendMessageToList(data);
       }
       requestConversations();
@@ -735,6 +816,38 @@
 
     socket.on('conversation_updated', (_data) => {
       requestConversations();
+    });
+
+    socket.on('typing_started', (data) => {
+      if (
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '') ||
+        data.sender_sid === socket.id
+      ) {
+        return;
+      }
+      const panelPrefix =
+        document.getElementById('admins-messages-container') &&
+        !document.getElementById('admins-messages-container').classList.contains('hidden')
+          ? 'admins'
+          : 'users';
+      setTypingIndicatorVisible(panelPrefix, true);
+    });
+
+    socket.on('typing_stopped', (data) => {
+      if (
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '') ||
+        data.sender_sid === socket.id
+      ) {
+        return;
+      }
+      const panelPrefix =
+        document.getElementById('admins-messages-container') &&
+        !document.getElementById('admins-messages-container').classList.contains('hidden')
+          ? 'admins'
+          : 'users';
+      setTypingIndicatorVisible(panelPrefix, false);
     });
 
     socket.on('messages_read', (data) => {

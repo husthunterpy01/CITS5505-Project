@@ -305,8 +305,6 @@ const drawPieFallback = (canvas, labels, values) => {
 
 // Pour data into profile page and render charts
 const renderProfile = (profile) => {
-  setText('profile-username', profile.user.username);
-
   setValue('first-name', profile.user.firstName);
   setValue('last-name', profile.user.lastName);
   setValue('email', profile.user.email);

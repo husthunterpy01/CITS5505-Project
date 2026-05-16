@@ -21,8 +21,9 @@
                 </svg>
             </div>
             {% endif %}
-            {% if username %}
-            <p class="text-lg font-semibold text-slate-700" id="profile-username">Hello, {{ username }}</p>
+            {% set header_name = session.get('user_name') %}
+            {% if header_name or username %}
+            <p class="text-lg font-semibold text-slate-700" id="profile-username">Hello, {{ header_name or username }}</p>
             {% else %}
             <p class="text-sm text-slate-600" id="profile-username">Invalid User</p>
             {% endif %}

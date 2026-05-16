@@ -98,6 +98,32 @@ def handle_set_active_conversation(payload):
     return {'ok': True, 'conversation_id': result.get('conversation_id')}
 
 
+@socketio.on('typing_start')
+def handle_typing_start(payload):
+    conversation_id = payload.get('conversation_id') if isinstance(payload, dict) else None
+    try:
+        conversation_id = int(conversation_id)
+    except (TypeError, ValueError):
+        return
+    emit('typing_started', {
+        'conversation_id': conversation_id,
+        'sender_sid': request.sid,
+    }, room=f"conv:{conversation_id}")
+
+
+@socketio.on('typing_stop')
+def handle_typing_stop(payload):
+    conversation_id = payload.get('conversation_id') if isinstance(payload, dict) else None
+    try:
+        conversation_id = int(conversation_id)
+    except (TypeError, ValueError):
+        return
+    emit('typing_stopped', {
+        'conversation_id': conversation_id,
+        'sender_sid': request.sid,
+    }, room=f"conv:{conversation_id}")
+
+
 @socketio.on('disconnect')
 def handle_disconnect():
     if chat_service.unregister_connection(request.sid):
