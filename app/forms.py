@@ -1,7 +1,15 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import MultipleFileField
-from wtforms import DecimalField, SelectField, StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, ValidationError
+from wtforms import (
+    BooleanField,
+    DecimalField,
+    PasswordField,
+    SelectField,
+    StringField,
+    SubmitField,
+    TextAreaField,
+)
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, ValidationError
 
 
 class CreateProductForm(FlaskForm):
@@ -35,4 +43,22 @@ class CreateProductForm(FlaskForm):
 
             if size > max_size:
                 raise ValidationError('Each image must be 5MB or smaller.')
+
+
+class SignInForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Sign in')
+
+
+class SignUpForm(FlaskForm):
+    first_name = StringField('First Name', validators=[DataRequired(), Length(max=100)])
+    last_name = StringField('Last Name', validators=[DataRequired(), Length(max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired()])
+    terms_accepted = BooleanField(
+        'I agree to the Terms of Service and Privacy Policy',
+        validators=[DataRequired(message='Please agree to the Terms of Service and Privacy Policy before signing up.')],
+    )
+    submit = SubmitField('Sign up')
 

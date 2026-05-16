@@ -19,6 +19,7 @@ class User(db.Model):
     loggings      = db.relationship('Logging', backref='user', lazy=True, foreign_keys='Logging.user_id')
     sent_messages = db.relationship('Message', backref='sender', lazy=True, foreign_keys='Message.sender_id')
     notifications = db.relationship('Notification', backref='recipient', lazy=True, foreign_keys='Notification.recipient_id')
+    favorites = db.relationship('Favorite', backref='user', lazy=True, foreign_keys='Favorite.user_id', cascade='all, delete-orphan')
 
 
 class Category(db.Model):
@@ -57,6 +58,7 @@ class Product(db.Model):
 
     images        = db.relationship('ProductImage', backref='product', lazy=True, foreign_keys='ProductImage.product_id')
     conversations = db.relationship('Conversation', backref='product', lazy=True, foreign_keys='Conversation.product_id')
+    favorites     = db.relationship('Favorite', backref='product', lazy=True, foreign_keys='Favorite.product_id', cascade='all, delete-orphan')
 
 
 class ProductImage(db.Model):
@@ -128,3 +130,16 @@ class Notification(db.Model):
     reference_id = db.Column(db.Integer, nullable=True)
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+
+    favorite_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'product_id', name='uq_favorite_user_product'),
+    )
