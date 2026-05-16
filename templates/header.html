@@ -16,7 +16,8 @@
 
         {% if session.get('user_role') == 'admin' %}
         <li class="ml-auto"><a class="hover:underline nav-link" href="{{ url_for('main.admin_users_page') }}">Users</a></li>
-        <li><a class="hover:underline nav-link" href="{{ url_for('main.admin_reports_page') }}">Reports</a></li>
+        <li><a class="hover:underline nav-link" href="{{ url_for('main.admin_reports_page') }}">Products</a></li>
+        <li><a class="hover:underline nav-link" href="{{ url_for('main.admin_activity_page') }}">Tracing</a></li>
         {% else %}
         <li class="ml-auto"><a class="hover:underline nav-link" href="{{ url_for('main.browse_page') }}">Browse</a></li>
         <li><a class="hover:underline nav-link" href="{{ url_for('main.about_page') }}">About</a></li>
