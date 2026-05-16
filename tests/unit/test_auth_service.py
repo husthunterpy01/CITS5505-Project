@@ -3,18 +3,9 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import Flask
 from werkzeug.security import generate_password_hash
 
 from app.service.authservice import AuthService
-
-
-@pytest.fixture
-def app_ctx():
-    app = Flask(__name__)
-    app.secret_key = "test-secret"
-    with app.test_request_context():
-        yield app
 
 
 class TestNormalizeRole:
@@ -35,7 +26,7 @@ class TestSigninUser:
         assert user is None
         assert err == "Please fill in all the fields."
 
-        user, err = AuthService.signin_user("a@b.com", "")
+        user, err = AuthService.signin_user("alice.nguyen@student.uwa.edu.au", "")
         assert user is None
         assert err == "Please fill in all the fields."
 
@@ -44,7 +35,7 @@ class TestSigninUser:
         q.first.return_value = None
         with patch("app.service.authservice.User.query") as uq:
             uq.filter_by.return_value = q
-            user, err = AuthService.signin_user("nobody@example.com", "x")
+            user, err = AuthService.signin_user("nobody99999@student.uwa.edu.au", "x")
         assert user is None
         assert err == "User does not exist"
 
@@ -55,7 +46,7 @@ class TestSigninUser:
         q.first.return_value = existing
         with patch("app.service.authservice.User.query") as uq:
             uq.filter_by.return_value = q
-            user, err = AuthService.signin_user("someone@example.com", "wrong")
+            user, err = AuthService.signin_user("someone.user@student.uwa.edu.au", "wrong")
         assert user is None
         assert err == "Incorrect password"
 
@@ -66,16 +57,19 @@ class TestSigninUser:
         q.first.return_value = existing
         with patch("app.service.authservice.User.query") as uq:
             uq.filter_by.return_value = q
-            user, err = AuthService.signin_user("Someone@Example.COM", "correct")
+            user, err = AuthService.signin_user(
+                "Someone.User@Student.UWA.EDU.AU",
+                "correct",
+            )
         assert user is existing
         assert err is None
-        uq.filter_by.assert_called_once_with(email="someone@example.com")
+        uq.filter_by.assert_called_once_with(email="someone.user@student.uwa.edu.au")
 
 
 @pytest.mark.usefixtures("flask_app_ctx")
 class TestSignupUser:
     def test_rejects_blank_fields(self):
-        user, err = AuthService.signup_user("", "Last", "e@e.com", "pw")
+        user, err = AuthService.signup_user("", "Last", "eva.lim@student.uwa.edu.au", "pw")
         assert user is None
         assert err == "Please fill in all the fields."
 
@@ -84,7 +78,7 @@ class TestSignupUser:
         q.first.return_value = MagicMock()
         with patch("app.service.authservice.User.query") as uq:
             uq.filter_by.return_value = q
-            user, err = AuthService.signup_user("A", "B", "dup@example.com", "pw")
+            user, err = AuthService.signup_user("A", "B", "duplicate.user@student.uwa.edu.au", "pw")
         assert user is None
         assert err == "An account with that email already exists."
 
@@ -103,7 +97,7 @@ class TestSignupUser:
             user, err = AuthService.signup_user(
                 "  Ada ",
                 " Lovelace ",
-                " Ada@Example.COM ",
+                " Ada.Lovelace@student.uwa.edu.au ",
                 "secret123",
             )
 
@@ -113,7 +107,7 @@ class TestSignupUser:
         session_mock.commit.assert_called_once()
         UserCls.assert_called_once()
         kwargs = UserCls.call_args.kwargs
-        assert kwargs["email"] == "ada@example.com"
+        assert kwargs["email"] == "ada.lovelace@student.uwa.edu.au"
         assert kwargs["first_name"] == "Ada"
         assert kwargs["last_name"] == "Lovelace"
         assert kwargs["role"] == "standard_user"
