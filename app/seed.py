@@ -41,18 +41,19 @@ def seed_database(force_reset: bool = False):
             Category.query.delete()
             db.session.commit()
 
+        # UWA-style emails: students use @student.uwa.edu.au; staff admins use @uwa.edu.au
         user_seed_data = [
-            ("Alice", "Nguyen", "alice@example.com", "password123", "standard_user"),
-            ("Ben", "Lee", "ben@example.com", "password123", "standard_user"),
-            ("Carol", "Tan", "carol@example.com", "admin123", "admin"),
-            ("David", "Wong", "david@example.com", "password123", "standard_user"),
-            ("Eva", "Lim", "eva@example.com", "password123", "standard_user"),
-            ("Farah", "Hassan", "farah@example.com", "password123", "standard_user"),
-            ("George", "Tan", "george@example.com", "password123", "standard_user"),
-            ("Hannah", "Yeo", "hannah@example.com", "password123", "standard_user"),
-            ("Ivan", "Koh", "ivan@example.com", "password123", "standard_user"),
-            ("Jasmine", "Teo", "jasmine@example.com", "password123", "standard_user"),
-            ("Nora", "Admin", "nora.admin@example.com", "admin123", "admin"),
+            ("Alice", "Nguyen", "alice.nguyen@student.uwa.edu.au", "password123", "standard_user"),
+            ("Ben", "Lee", "ben.lee@student.uwa.edu.au", "password123", "standard_user"),
+            ("Carol", "Tan", "carol.tan@uwa.edu.au", "admin123", "admin"),
+            ("David", "Wong", "david.wong@student.uwa.edu.au", "password123", "standard_user"),
+            ("Eva", "Lim", "eva.lim@student.uwa.edu.au", "password123", "standard_user"),
+            ("Farah", "Hassan", "farah.hassan@student.uwa.edu.au", "password123", "standard_user"),
+            ("George", "Tan", "george.tan@student.uwa.edu.au", "password123", "standard_user"),
+            ("Hannah", "Yeo", "hannah.yeo@student.uwa.edu.au", "password123", "standard_user"),
+            ("Ivan", "Koh", "ivan.koh@student.uwa.edu.au", "password123", "standard_user"),
+            ("Jasmine", "Teo", "jasmine.teo@student.uwa.edu.au", "password123", "standard_user"),
+            ("Nora", "Admin", "nora.admin@uwa.edu.au", "admin123", "admin"),
         ]
         
 
