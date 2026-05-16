@@ -1,9 +1,3 @@
-"""
-Selenium integration tests against a live Flask server.
-
-Uses seeded credentials from app.seed (UWA-style emails):
-  alice.nguyen@student.uwa.edu.au / password123
-"""
 
 from __future__ import annotations
 
