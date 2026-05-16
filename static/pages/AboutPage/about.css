@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Fraunces:ital,wght@0,700;1,700&display=swap');
+@import url('../shared/common-marketing.css');
 
 .about-container {
     max-width: 900px;
@@ -13,32 +14,6 @@
     animation: fadeIn .6s ease both;
 }
 
-.hero-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(61, 58, 158, 0.1);
-    color: var(--primary);
-    padding: 6px 14px;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 1.25rem;
-    font-family: var(--sans);
-}
-
-.kicker-dot {
-    width: 7px;
-    height: 7px;
-    background: var(--primary);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: .3; }
-}
 
 .hero-logo {
     display: flex;
@@ -176,9 +151,6 @@
     margin: 0 auto;
 }
 
-.bg-lav  { background: #EDEAFF; }
-.bg-gold { background: #FFF3D0; }
-.bg-mint { background: #E0FAF5; }
 
 .register-section {
     margin-top: 3rem;
@@ -289,9 +261,4 @@
         width: 60px;
         height: 60px;
     }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
 }
