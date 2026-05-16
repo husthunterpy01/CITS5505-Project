@@ -9,3 +9,4 @@ eventlet==0.33.3
 Flask-WTF==1.2.2
 WTForms==3.2.1
 selenium==4.27.1
+pytest==9.0.2
