@@ -1,10 +1,4 @@
-"""Integration tests: live Flask server + Selenium (Chrome).
 
-Run from repo root:
-    python -m pytest tests/integration -v
-
-Chrome must be installed. Set SELENIUM_HEADLESS=0 to watch the browser locally.
-"""
 
 from __future__ import annotations
 
