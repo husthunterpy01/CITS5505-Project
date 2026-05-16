@@ -1,5 +1,3 @@
-"""Unit tests for product listing helpers with Product.query mocked."""
-
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 

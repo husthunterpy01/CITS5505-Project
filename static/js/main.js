@@ -1,13 +1,36 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const pageContent = document.getElementById("page-content");
   const flashContainer = document.getElementById("flash-container");
+
+  if (pageContent) {
+    window.requestAnimationFrame(() => {
+      pageContent.classList.add("page-fade-active");
+    });
+
+    document.addEventListener("click", (event) => {
+      const anchor = event.target.closest("a[href]");
+      if (!anchor) return;
+      if (anchor.target === "_blank") return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+      if (anchor.dataset.noPageFade === "true") return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const nextUrl = new URL(anchor.href, window.location.origin);
+      if (nextUrl.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      pageContent.classList.add("page-fade-exit");
+      window.setTimeout(() => {
+        window.location.href = nextUrl.href;
+      }, 150);
+    });
+  }
 
   if (flashContainer) {
     window.setTimeout(() => {
-      flashContainer.classList.add("opacity-0");
-
-      window.setTimeout(() => {
-        flashContainer.remove();
-      }, 500);
+      const flashes = flashContainer.querySelectorAll(".flash-message");
+      flashes.forEach((flash) => flash.classList.add("is-exiting"));
+      window.setTimeout(() => flashContainer.remove(), 260);
     }, 5000);
   }
 

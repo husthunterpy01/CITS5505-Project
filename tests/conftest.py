@@ -1,5 +1,3 @@
-"""Shared pytest fixtures for unit and integration tests."""
-
 import pytest
 from flask import Flask
 

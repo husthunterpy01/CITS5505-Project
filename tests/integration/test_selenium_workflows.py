@@ -1,6 +1,4 @@
-
 from __future__ import annotations
-
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -11,7 +9,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def base(driver):
-    return driver.live_server_url  # type: ignore[attr-defined]
+    return driver.live_server_url 
 
 
 class TestPublicPages:
@@ -31,7 +29,7 @@ class TestSignInFlow:
         driver.get(f"{base}/signin")
         driver.find_element(By.NAME, "email").send_keys("not.registered.user@student.uwa.edu.au")
         driver.find_element(By.NAME, "password").send_keys("password123")
-        driver.find_element(By.XPATH, "//button[@type='submit' and contains(., 'Sign in')]").click()
+        driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']").click()
 
         flash = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "#flash-container .flash-message"))
@@ -42,7 +40,7 @@ class TestSignInFlow:
         driver.get(f"{base}/signin")
         driver.find_element(By.NAME, "email").send_keys("alice.nguyen@student.uwa.edu.au")
         driver.find_element(By.NAME, "password").send_keys("wrong-password-not-real")
-        driver.find_element(By.XPATH, "//button[@type='submit' and contains(., 'Sign in')]").click()
+        driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']").click()
 
         flash = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "#flash-container .flash-message"))
@@ -53,7 +51,7 @@ class TestSignInFlow:
         driver.get(f"{base}/signin")
         driver.find_element(By.NAME, "email").send_keys("alice.nguyen@student.uwa.edu.au")
         driver.find_element(By.NAME, "password").send_keys("password123")
-        driver.find_element(By.XPATH, "//button[@type='submit' and contains(., 'Sign in')]").click()
+        driver.find_element(By.CSS_SELECTOR, "input[type='submit'], button[type='submit']").click()
 
         WebDriverWait(driver, 10).until(
             lambda d: d.current_url.startswith(base) and "/signin" not in d.current_url
