@@ -20,6 +20,9 @@
         <li><a class="hover:underline nav-link" href="{{ url_for('main.admin_activity_page') }}">Tracing</a></li>
         {% else %}
         <li class="ml-auto"><a class="hover:underline nav-link" href="{{ url_for('main.browse_page') }}">Browse</a></li>
+        {% if session.get('user_role') == 'standard_user' %}
+        <li><a class="hover:underline nav-link" href="{{ url_for('main.favorites_page') }}">My Favorites</a></li>
+        {% endif %}
         <li><a class="hover:underline nav-link" href="{{ url_for('main.about_page') }}">About</a></li>
         {% endif %}
 

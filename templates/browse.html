@@ -6,6 +6,7 @@
   id="browse-root"
   class="w-full px-4 py-3 sm:px-6 lg:px-8"
   data-search-url="{{ url_for('main.api_products_search') }}"
+  data-favorite-toggle-url="{{ url_for('main.toggle_favorite') if session.get('user_role') == 'standard_user' else '' }}"
 >
   <div class="mx-auto w-full max-w-7xl">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -142,6 +143,18 @@
           <img src="{{ product.image }}" alt="{{ product.title }}" class="h-full w-full object-cover" />
         </div>
         <div class="flex flex-1 flex-col p-5">
+          {% if session.get('user_role') == 'standard_user' %}
+          <button
+            type="button"
+            class="favorite-toggle-btn ml-auto mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full border transition {{ 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100' if product.is_favorite else 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50' }}"
+            data-product-id="{{ product.product_id }}"
+            data-is-favorite="{{ 'true' if product.is_favorite else 'false' }}"
+            aria-label="Toggle favorite"
+            title="{{ 'Remove from favorites' if product.is_favorite else 'Add to favorites' }}"
+          >
+            <span class="text-base leading-none">&#10084;</span>
+          </button>
+          {% endif %}
           <h2 class="text-lg font-semibold text-slate-800">{{ product.title }}</h2>
           {% if product.category_name %}
           <p class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{{ product.category_name }}</p>

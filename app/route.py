@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, flash, request, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
-from app.models import Product, User, Category, Location, ProductImage, Notification, Logging
+from app.models import Product, User, Category, Location, ProductImage, Notification, Logging, Favorite
 from app.service.authservice import AuthService
 from app.service.logservice import LoggingService
 from app.service.notificationservice import NotificationService
@@ -250,6 +250,13 @@ def browse_page():
     default_img = current_app.config['LISTING_DEFAULT_IMAGE']
 
     products = []
+    favorite_product_ids = set()
+    current_user_id = session.get('user_id')
+    if current_user_id and session.get('user_role') == 'standard_user':
+        favorite_product_ids = {
+            row.product_id
+            for row in Favorite.query.filter_by(user_id=current_user_id).all()
+        }
 
     for product in all_products:
         primary_image = None
@@ -284,9 +291,102 @@ def browse_page():
             'seller_id': product.seller_id,
             'seller_name': seller_name,
             'image': image_src,
+            'is_favorite': product.product_id in favorite_product_ids,
         })
 
-    return render_template('browse.html', products=products, categories=categories)
+    return render_template(
+        'browse.html',
+        products=products,
+        categories=categories,
+        favorite_product_ids=list(favorite_product_ids),
+    )
+
+
+@main.route('/favorites', methods=['GET'])
+@AuthService.role_accepted('standard_user')
+def favorites_page():
+    current_user_id = session.get('user_id')
+    default_img = current_app.config['LISTING_DEFAULT_IMAGE']
+    favorite_rows = (
+        Favorite.query
+        .filter_by(user_id=current_user_id)
+        .order_by(Favorite.created_at.desc())
+        .all()
+    )
+
+    favorite_products = []
+    for favorite in favorite_rows:
+        product = favorite.product
+        if not product:
+            continue
+
+        primary_image = None
+        for image in product.images:
+            if image.is_primary:
+                primary_image = image.image_url
+                break
+        if not primary_image:
+            primary_image = default_img
+
+        seller = getattr(product, 'seller', None)
+        seller_name = f"{seller.first_name} {seller.last_name}".strip() if seller else 'Unknown Seller'
+        category_name = product.category.category_name if product.category else ''
+
+        image_src = primary_image
+        if image_src and not (
+            image_src.startswith('http://') or
+            image_src.startswith('https://') or
+            image_src.startswith('/')
+        ):
+            image_src = url_for('static', filename=image_src)
+
+        favorite_products.append({
+            'product_id': product.product_id,
+            'title': product.product_name,
+            'description': product.description,
+            'price': product.price,
+            'status': product.status,
+            'location': product.location.location_name if product.location else 'Unknown Location',
+            'seller_name': seller_name,
+            'category_name': category_name,
+            'image': image_src,
+            'saved_at': favorite.created_at,
+        })
+
+    return render_template('favorites.html', products=favorite_products)
+
+
+@main.route('/api/favorites/toggle', methods=['POST'])
+@AuthService.role_accepted('standard_user')
+def toggle_favorite():
+    current_user_id = session.get('user_id')
+    payload = request.get_json(silent=True) or request.form
+    raw_product_id = payload.get('product_id')
+
+    if not raw_product_id:
+        return jsonify({'ok': False, 'message': 'Missing product_id.'}), 400
+    try:
+        product_id = int(raw_product_id)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Invalid product_id.'}), 400
+
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({'ok': False, 'message': 'Product not found.'}), 404
+
+    existing = Favorite.query.filter_by(
+        user_id=current_user_id,
+        product_id=product_id,
+    ).first()
+    if existing:
+        db.session.delete(existing)
+        is_favorite = False
+    else:
+        db.session.add(Favorite(user_id=current_user_id, product_id=product_id))
+        is_favorite = True
+
+    db.session.commit()
+    return jsonify({'ok': True, 'is_favorite': is_favorite})
 
 
 @main.route('/products/<int:product_id>')
