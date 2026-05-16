@@ -29,89 +29,127 @@ This project is built using a client-server architecture with the following core
 ## Project Structure
 ```
 CITS5505-Project/
-├── app/                          Flask application package
-│   ├── __init__.py               App factory and blueprint registration
-│   ├── config.py                Configuration values
-│   ├── extensions.py            Shared Flask extensions
-│   ├── models.py                Database models
-│   ├── route.py                 Application routes
-│   └── service/                 Domain services and business logic
-├── docs/                        Project documentation
-├── instance/                    Local runtime files such as the SQLite database
-├── migrations/                  Alembic migration history
-├── static/                      CSS, JavaScript, images, and other static assets
+├── app/                               Flask application package
+│   ├── __init__.py                    App setup, blueprint registration, context processors
+│   ├── chat/
+│   │   ├── __init__.py
+│   │   └── chat.py                    SocketIO chat event handlers
+│   ├── config.py                      Environment-based configuration
+│   ├── extensions.py                  SQLAlchemy, Migrate, SocketIO, CSRF instances
+│   ├── forms.py                       Flask-WTF forms
+│   ├── models.py                      SQLAlchemy models
+│   ├── route.py                       Main web/API routes
+│   ├── seed.py                        Seed data generator
+│   ├── service/                       Business/domain services
+│   │   ├── authservice.py
+│   │   ├── chatservice.py
+│   │   ├── geolocationservice.py
+│   │   ├── logservice.py
+│   │   ├── notificationservice.py
+│   │   ├── paginationservice.py
+│   │   ├── productlistingservice.py
+│   │   └── productqueryservice.py
+│   └── utils.py
+├── docs/
+├── migrations/
+│   └── versions/                      Alembic migration history
+├── static/
 │   ├── assets/
+│   ├── components/
 │   ├── js/
-│   ├── pages/
 │   ├── mock_userdata.json
+│   ├── pages/                         Page-level CSS/JS (AdminPage, BrowsePage, etc.)
 │   └── style.css
-├── templates/                   Jinja templates rendered by Flask
-├── tests/                       Automated tests
-├── requirements.txt             Python dependencies
-├── run.py                       Application entry point
-└── README.md                    Project overview and setup guide
+├── templates/                         Jinja templates (base, auth, browse, admin, profile, chat)
+├── tests/
+│   ├── conftest.py
+│   ├── integration/                   Selenium live-server tests
+│   │   ├── conftest.py
+│   │   ├── live_server_entry.py
+│   │   └── test_selenium_workflows.py
+│   └── unit/                          Service/unit tests
+│       ├── test_auth_service.py
+│       ├── test_geolocation_service.py
+│       └── test_product_listing_service.py
+├── pytest.ini
+├── requirements.txt
+├── run.py                             SocketIO-enabled app entry point
+└── README.md
 ```
 
 The main split is simple: `app/` contains the backend logic, `templates/` holds rendered HTML, and `static/` stores the frontend assets served by Flask.
 
 ## Application launching
-### Client side
 
-The frontend is served directly by Flask templates and static assets, so there is no separate client build step.
+The frontend is served directly by Flask templates/static files, so there is no separate client build step.
 
-### Server side
-The first step is to connect the server side to the database. To execute, follow these steps:
-1. Create and activate a virtual environment
-```
+### 1) Create and activate a virtual environment
+```bash
 # Create
 python -m venv venv
 
-# Activate (Windows)
+# Activate (Windows PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# Activate (Windows CMD)
 .\venv\Scripts\activate
 
 # Activate (Mac/Linux)
 source venv/bin/activate
 ```
-2. Install the dependencies to run the server side
-```
+
+### 2) Install dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-3. Configure environment variables
+### 3) Configure environment variables
 
-Create a **.env** file in the project root as follows:
+Create a `.env` file in the project root:
+```env
+SECRET_KEY=your-secret-key
+DATABASE_URL=sqlite:///instance/app.db
+GEOAPIFY_API_KEY=your-geoapify-api-key
 ```
-FLASK_APP=run.py
-FLASK_ENV=development
-FLASK_DEBUG=1
-SECRET_KEY="your-secret-key"
-```
 
-4. Create the database and tables for SQLite
-
-Run the following commands:
-```
-# Initialise migrations folder (first time only)
-flask --app run.py db init
-
-# Generate migration script
-flask --app run.py db migrate -m "<your_message>"
-
-# Apply migration and create tables
+### 4) Apply migrations
+```bash
 flask --app run.py db upgrade
 ```
 
-To test the query on the database, we can access to sqlite3 using the following commands:
-```
-sqlite3 instance/app.db
-```
-5. Execute the server side
-```
-flask --app run.py run
+### 5) Start the app (SocketIO + Flask)
+
+Use the project entry file:
+```bash
+python run.py
 ```
 
-The server will be available at `http://127.0.0.1:5000`.
+`run.py` starts the app via `socketio.run(...)`, so websocket features (chat/notifications) are enabled.
 
-
+The app runs at: `http://127.0.0.1:5000`
 
 ## Testing running
+
+### Run all tests
+```bash
+pytest
+```
+
+### Run unit tests only
+```bash
+pytest tests/unit -q
+```
+
+### Run Selenium integration tests only
+```bash
+pytest tests/integration -q
+```
+
+Notes:
+- Selenium tests automatically start a temporary live server and test database via `tests/integration/conftest.py`.
+- You do **not** need to manually run `python run.py` before Selenium tests.
+- To run Selenium with visible browser (not headless) on PowerShell:
+  ```powershell
+  $env:SELENIUM_HEADLESS="0"
+  pytest tests/integration -q
+  ```

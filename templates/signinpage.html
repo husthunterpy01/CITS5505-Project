@@ -25,6 +25,7 @@ block content %}
   <div class="flex h-full w-[45%] flex-col justify-center px-16 lg:px-24">
     <h1 class="mb-10 text-5xl font-semibold text-black">Sign In</h1>
     <form
+      id="signin-form"
       method="POST"
       action="{{ url_for('main.signin_page') }}"
       class="flex flex-col space-y-6"
@@ -57,4 +58,14 @@ block content %}
     </form>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('signin-form');
+    const flashError = document.querySelector('#flash-container .flash-message.border-red-300');
+    if (form && flashError) {
+      form.classList.add('signin-shake');
+      setTimeout(() => form.classList.remove('signin-shake'), 400);
+    }
+  });
+</script>
 {% endblock %}

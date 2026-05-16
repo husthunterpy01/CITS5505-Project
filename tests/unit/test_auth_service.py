@@ -1,7 +1,4 @@
-"""Unit tests for AuthService with database and session dependencies mocked."""
-
 from unittest.mock import MagicMock, patch
-
 import pytest
 from werkzeug.security import generate_password_hash
 
@@ -90,6 +87,7 @@ class TestSignupUser:
         with (
             patch("app.service.authservice.User") as UserCls,
             patch("app.service.authservice.db.session", session_mock),
+            patch("app.service.authservice.LoggingService.log_action") as log_action_mock,
         ):
             UserCls.query.filter_by.return_value = q
             UserCls.return_value = MagicMock()
@@ -105,6 +103,7 @@ class TestSignupUser:
         assert user is UserCls.return_value
         session_mock.add.assert_called_once_with(user)
         session_mock.commit.assert_called_once()
+        log_action_mock.assert_called_once()
         UserCls.assert_called_once()
         kwargs = UserCls.call_args.kwargs
         assert kwargs["email"] == "ada.lovelace@student.uwa.edu.au"

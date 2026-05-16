@@ -51,4 +51,94 @@ html, body {
     transform: translateY(-1px);
 }
 
+/* Toast + form animations */
+.flash-toast {
+    opacity: 0;
+    transform: translateX(28px) translateY(-8px);
+    animation: toast-slide-in 280ms ease forwards;
+}
+
+.flash-toast.is-exiting {
+    animation: toast-slide-out 240ms ease forwards;
+}
+
+@keyframes toast-slide-in {
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+}
+
+@keyframes toast-slide-out {
+    to {
+        opacity: 0;
+        transform: translateX(24px) translateY(-6px);
+    }
+}
+
+.signin-shake {
+    animation: signin-shake 320ms ease;
+}
+
+@keyframes signin-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+}
+
+/* Browse filtering animation helpers */
+.browse-product-card {
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.browse-product-card.is-hiding {
+    opacity: 0;
+    transform: scale(0.98);
+    pointer-events: none;
+}
+
+.browse-product-card.is-showing {
+    animation: browse-card-in 220ms ease;
+}
+
+@keyframes browse-card-in {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Page transition */
+.page-fade-enter {
+    opacity: 0;
+    transform: translateY(4px);
+}
+
+.page-fade-active {
+    animation: page-fade-in 240ms ease forwards;
+}
+
+.page-fade-exit {
+    opacity: 0.12;
+    transform: translateY(4px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+@keyframes page-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 

@@ -64,7 +64,7 @@ def signin_page():
         flash("Login Successful", 'success')
         if existing_user.role == 'admin':
             return redirect(url_for('main.admin_home_page'))
-        return redirect(url_for('main.home_page'))
+        return redirect(url_for('main.browse_page'))
 
     if request.method == 'POST':
         for field_errors in form.errors.values():
@@ -307,10 +307,46 @@ def browse_page():
 def favorites_page():
     current_user_id = session.get('user_id')
     default_img = current_app.config['LISTING_DEFAULT_IMAGE']
-    favorite_rows = (
+    # Keep favorites clean: sold listings should not stay in favorites.
+    sold_favorite_rows = (
         Favorite.query
-        .filter_by(user_id=current_user_id)
+        .join(Product, Favorite.product_id == Product.product_id)
+        .filter(
+            Favorite.user_id == current_user_id,
+            Product.status == 'sold',
+        )
+        .all()
+    )
+    if sold_favorite_rows:
+        for sold_row in sold_favorite_rows:
+            db.session.delete(sold_row)
+        db.session.commit()
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 8, type=int)
+    if page < 1:
+        page = 1
+    if per_page not in (4, 8, 12, 16):
+        per_page = 8
+
+    base_query = (
+        Favorite.query
+        .join(Product, Favorite.product_id == Product.product_id)
+        .filter(
+            Favorite.user_id == current_user_id,
+            Product.status != 'sold',
+        )
         .order_by(Favorite.created_at.desc())
+    )
+    total_items = base_query.order_by(None).count()
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+
+    favorite_rows = (
+        base_query
+        .offset((page - 1) * per_page)
+        .limit(per_page)
         .all()
     )
 
@@ -353,7 +389,20 @@ def favorites_page():
             'saved_at': favorite.created_at,
         })
 
-    return render_template('favorites.html', products=favorite_products)
+    return render_template(
+        'favorites.html',
+        products=favorite_products,
+        per_page=per_page,
+        pagination={
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages,
+            'total_items': total_items,
+            'start_item': 0 if total_items == 0 else ((page - 1) * per_page + 1),
+            'end_item': min(page * per_page, total_items),
+        },
+        page_numbers=PaginationService.build_page_numbers(page, total_pages),
+    )
 
 
 @main.route('/api/favorites/toggle', methods=['POST'])
@@ -373,6 +422,8 @@ def toggle_favorite():
     product = Product.query.get(product_id)
     if not product:
         return jsonify({'ok': False, 'message': 'Product not found.'}), 404
+    if product.status == 'sold':
+        return jsonify({'ok': False, 'message': 'Sold products cannot be added to favorites.'}), 400
 
     existing = Favorite.query.filter_by(
         user_id=current_user_id,
@@ -1385,6 +1436,33 @@ def delete_product(product_id):
     db.session.commit()
 
     flash('Product deleted successfully.', 'success')
+    return redirect(url_for('main.personal_profile_page'))
+
+
+@main.route('/products/<int:product_id>/mark-sold', methods=['POST'])
+@AuthService.role_accepted('standard_user')
+def mark_product_sold(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.seller_id != session.get('user_id'):
+        flash('You do not have permission to update this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    if product.status == 'sold':
+        flash('This product is already marked as sold.', 'success')
+        return redirect(url_for('main.personal_profile_page'))
+
+    product.status = 'sold'
+    LoggingService.log_action(
+        user_id=session.get('user_id'),
+        target_type='product',
+        target_id=product.product_id,
+        action='mark_product_sold',
+        reason='User marked a product listing as sold.',
+        commit=False,
+    )
+    db.session.commit()
+
+    flash('Product marked as sold.', 'success')
     return redirect(url_for('main.personal_profile_page'))
 
 

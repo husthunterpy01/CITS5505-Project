@@ -61,6 +61,9 @@ class ProductQueryService:
         direction='desc',
     ):
         status    = (status    or 'all').strip().lower()
+        allowed_statuses = {'all', 'available', 'sold'}
+        if status not in allowed_statuses:
+            status = 'all'
         query     = (query     or '').strip()
         sort_by   = (sort_by   or 'posted').strip().lower()
         direction = (direction or 'desc').strip().lower()

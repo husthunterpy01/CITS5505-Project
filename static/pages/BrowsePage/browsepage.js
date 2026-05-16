@@ -15,6 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const clearFiltersBtn = document.getElementById("browse-clear-filters");
   const sortSelect = document.getElementById("browse-sort-select");
   const favoriteToggleUrl = root ? root.dataset.favoriteToggleUrl : "";
+  const csrfToken =
+    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const productCards = Array.from(
     grid ? grid.querySelectorAll("article.browse-product-card[data-product-id]") : [],
   );
@@ -127,6 +129,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function bindChatDelegation(container) {
     container.addEventListener("click", function (e) {
+      if (e.target.closest(".favorite-toggle-btn")) {
+        return;
+      }
       const button = e.target.closest(".chat-seller-btn");
       if (button) {
         // Prevent this click from reaching the global document handler
@@ -204,6 +209,8 @@ document.addEventListener("DOMContentLoaded", function () {
     container.addEventListener("click", async function (e) {
       const button = e.target.closest(".favorite-toggle-btn");
       if (!button) return;
+      e.preventDefault();
+      e.stopPropagation();
 
       const productId = Number(button.dataset.productId || 0);
       if (!productId) return;
@@ -215,6 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
+            "X-CSRFToken": csrfToken,
           },
           body: JSON.stringify({ product_id: productId }),
         });

@@ -1,5 +1,3 @@
-"""Unit tests for GeoLocationService (pure helpers, API mocked)."""
-
 from unittest.mock import MagicMock, patch
 from urllib.error import URLError
 

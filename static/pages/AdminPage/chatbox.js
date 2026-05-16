@@ -47,6 +47,16 @@
     avatar.classList.remove('hidden');
   }
 
+  function productImageForTargetRole(rawUrl, targetRole) {
+    const normalizedTargetRole = String(targetRole || '').toLowerCase();
+    const normalizedCurrentRole = getCurrentUserRole();
+    // Hide listing image for any admin-involved conversation.
+    if (normalizedTargetRole === 'admin' || normalizedCurrentRole === 'admin') {
+      return '';
+    }
+    return rawUrl;
+  }
+
   function openChatboxPopup() {
     const chatboxPopup = document.getElementById('chatbox-popup');
     const tabButtons = document.querySelectorAll('.chatbox-tab-btn');
@@ -77,13 +87,19 @@
     const panelPrefix = matched
       ? getPanelPrefixFromRole(matched.other_participant.role)
       : getPanelPrefixFromRole(fallbackRole);
+    const targetRole = matched
+      ? String(matched.other_participant.role || '').toLowerCase()
+      : String(fallbackRole || '').toLowerCase();
 
     const chatboxTitle = document.getElementById('chatbox-title');
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
     setChatHeaderProductImage(
-      productImageUrl || (matched ? matched.product_image_url : ''),
+      productImageForTargetRole(
+        productImageUrl || (matched ? matched.product_image_url : ''),
+        targetRole,
+      ),
     );
 
     if (matched && matched.conversation_id) {
@@ -100,7 +116,11 @@
       targetUserId: normalizedTargetUserId,
       panelPrefix,
       displayName,
-      productImageUrl: productImageUrl || (matched ? matched.product_image_url : ''),
+      targetRole,
+      productImageUrl: productImageForTargetRole(
+        productImageUrl || (matched ? matched.product_image_url : ''),
+        targetRole,
+      ),
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', {
@@ -244,6 +264,7 @@
       'chat-contact-card p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition border border-slate-200';
     card.setAttribute('data-contact-id', other.user_id);
     card.setAttribute('data-name', `${other.first_name} ${other.last_name}`);
+    card.setAttribute('data-role', other.role || roleLabel || 'standard_user');
     if (conv.conversation_id) {
       card.setAttribute('data-conversation-id', conv.conversation_id);
     }
@@ -604,12 +625,15 @@
     const conversationId = card.getAttribute('data-conversation-id');
     const productId = card.getAttribute('data-product-id');
     const productImage = card.getAttribute('data-product-image');
+    const targetRole = card.getAttribute('data-role') || 'standard_user';
     const chatboxTitle = document.getElementById('chatbox-title');
     const displayName = card.getAttribute('data-name');
     if (chatboxTitle && displayName) {
       chatboxTitle.textContent = displayName;
     }
-    setChatHeaderProductImage(productImage || '');
+    setChatHeaderProductImage(
+      productImageForTargetRole(productImage || '', targetRole),
+    );
     if (conversationId) {
       openConversation(
         Number(conversationId),
@@ -652,9 +676,12 @@
 
     const displayName = `${conv.other_participant.first_name} ${conv.other_participant.last_name}`;
     const panelPrefix = getPanelPrefixFromRole(conv.other_participant.role);
+    const targetRole = String(conv.other_participant.role || '').toLowerCase();
     const chatboxTitle = document.getElementById('chatbox-title');
     if (chatboxTitle) chatboxTitle.textContent = displayName;
-    setChatHeaderProductImage(conv.product_image_url || '');
+    setChatHeaderProductImage(
+      productImageForTargetRole(conv.product_image_url || '', targetRole),
+    );
 
     const searchInput = document.getElementById('chatbox-search');
     const suggestions = document.getElementById('chatbox-search-suggestions');
@@ -675,7 +702,11 @@
       targetUserId,
       panelPrefix,
       displayName,
-      productImageUrl: conv.product_image_url || '',
+      targetRole,
+      productImageUrl: productImageForTargetRole(
+        conv.product_image_url || '',
+        targetRole,
+      ),
     };
     showThreadPanel(panelPrefix, 'Creating conversation...');
     socket.emit('start_conversation', { target_user_id: targetUserId });
@@ -817,6 +848,9 @@
                 ? matched.other_participant.role
                 : 'standard_user',
             );
+      const targetRole = matched && matched.other_participant
+        ? String(matched.other_participant.role || '').toLowerCase()
+        : (pendingConversationStart && pendingConversationStart.targetRole) || 'standard_user';
 
       if (matched) {
         matched.conversation_id = data.conversation_id;
@@ -827,9 +861,16 @@
         pendingConversationStart &&
         pendingConversationStart.targetUserId === targetUserId
       ) {
-        setChatHeaderProductImage(pendingConversationStart.productImageUrl || '');
+        setChatHeaderProductImage(
+          productImageForTargetRole(
+            pendingConversationStart.productImageUrl || '',
+            targetRole,
+          ),
+        );
       } else if (matched && matched.product_image_url) {
-        setChatHeaderProductImage(matched.product_image_url);
+        setChatHeaderProductImage(
+          productImageForTargetRole(matched.product_image_url, targetRole),
+        );
       }
 
       openConversation(

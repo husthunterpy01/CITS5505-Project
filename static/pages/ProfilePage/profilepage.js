@@ -6,6 +6,9 @@ const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 let currentProductId = null;
 
+const csrfToken =
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
 // Define active tab in profile page
 const activateTab = (targetId) => {
   tabPanels.forEach((panel) => {
@@ -305,8 +308,6 @@ const drawPieFallback = (canvas, labels, values) => {
 
 // Pour data into profile page and render charts
 const renderProfile = (profile) => {
-  setText('profile-username', profile.user.username);
-
   setValue('first-name', profile.user.firstName);
   setValue('last-name', profile.user.lastName);
   setValue('email', profile.user.email);
@@ -519,6 +520,32 @@ document.querySelectorAll('.delete-product-btn').forEach((btn) => {
   });
 });
 
+document.querySelectorAll('.mark-sold-btn').forEach((btn) => {
+  btn.addEventListener('click', function () {
+    const productId = this.dataset.productId;
+    const productName = this.dataset.productName || 'this product';
+    if (!productId) return;
+    const confirmed = window.confirm(
+      `Mark "${productName}" as sold? This will move the listing to Sold status.`,
+    );
+    if (!confirmed) return;
+
+    const markSoldUrl = `/products/${productId}/mark-sold`;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = markSoldUrl;
+    if (csrfToken) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = 'csrf_token';
+      csrfInput.value = csrfToken;
+      form.appendChild(csrfInput);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  });
+});
+
 // Close modal when cancel button is clicked
 if (cancelDeleteBtn && deleteProductModal) {
   cancelDeleteBtn.addEventListener('click', function () {
@@ -545,6 +572,13 @@ if (confirmDeleteBtn) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = deleteUrl;
+      if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+      }
       document.body.appendChild(form);
       form.submit();
     }
