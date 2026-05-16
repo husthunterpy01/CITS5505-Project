@@ -24,9 +24,11 @@ const activateTab = (targetId) => {
 };
 
 // Hide/show password input and toggle button text on profile page
-tabButtons.forEach((button) => {
-  button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
-});
+if (tabButtons.length) {
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
+  });
+}
 
 const setupPasswordVisibilityToggles = () => {
   const toggleButtons = document.querySelectorAll('[data-toggle-password]');
@@ -509,6 +511,7 @@ setupPasswordVisibilityToggles();
 // Open modal when delete button is clicked
 document.querySelectorAll('.delete-product-btn').forEach((btn) => {
   btn.addEventListener('click', function () {
+    if (!deleteProductModal || !modalProductName) return;
     currentProductId = this.dataset.productId;
     const productName = this.dataset.productName;
     modalProductName.textContent = productName;
@@ -517,34 +520,44 @@ document.querySelectorAll('.delete-product-btn').forEach((btn) => {
 });
 
 // Close modal when cancel button is clicked
-cancelDeleteBtn.addEventListener('click', function () {
-  deleteProductModal.classList.add('hidden');
-  currentProductId = null;
-});
-
-// Close modal when clicking outside the modal
-deleteProductModal.addEventListener('click', function (e) {
-  if (e.target === this) {
+if (cancelDeleteBtn && deleteProductModal) {
+  cancelDeleteBtn.addEventListener('click', function () {
     deleteProductModal.classList.add('hidden');
     currentProductId = null;
-  }
-});
+  });
+}
+
+// Close modal when clicking outside the modal
+if (deleteProductModal) {
+  deleteProductModal.addEventListener('click', function (e) {
+    if (e.target === this) {
+      deleteProductModal.classList.add('hidden');
+      currentProductId = null;
+    }
+  });
+}
 
 // Submit delete form when confirm button is clicked
-confirmDeleteBtn.addEventListener('click', function () {
-  if (currentProductId) {
-    const deleteUrl = `/products/${currentProductId}/delete`;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = deleteUrl;
-    document.body.appendChild(form);
-    form.submit();
-  }
-});
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener('click', function () {
+    if (currentProductId) {
+      const deleteUrl = `/products/${currentProductId}/delete`;
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = deleteUrl;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  });
+}
 
 // Close modal when Escape key is pressed
 document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape' && !deleteProductModal.classList.contains('hidden')) {
+  if (
+    deleteProductModal &&
+    e.key === 'Escape' &&
+    !deleteProductModal.classList.contains('hidden')
+  ) {
     deleteProductModal.classList.add('hidden');
     currentProductId = null;
   }
