@@ -127,7 +127,7 @@ def seed_database(force_reset: bool = False):
             ("Road Bike", "Lightweight frame, recently serviced.", "Bikes & Transport", 300.0, "Fremantle", "available", 9),
             ("Electric Scooter", "Up to 25km range, includes charger.", "Bikes & Transport", 380.0, "Perth", "available", 0),
             ("Skateboard", "Street deck with upgraded bearings.", "Bikes & Transport", 65.0, "Subiaco", "available", 1),
-            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Crawley", "available", 2),
+            ("Air Fryer", "5L capacity, used for 6 months.", "Kitchen", 70.0, "Crawley", "available", 6),
             ("Rice Cooker", "Reliable cooker with steamer tray.", "Kitchen", 35.0, "Nedlands", "available", 3),
             ("Jacket", "Warm winter jacket, size M.", "Clothing", 55.0, "Perth", "available", 4),
             ("Denim Jeans", "Slim fit jeans, size 32.", "Clothing", 30.0, "Subiaco", "available", 5)

@@ -64,6 +64,7 @@
     <main id="page-content" class="flex flex-1 flex-col overflow-y-auto page-fade-enter">
       {% block content %}{% endblock %}
     </main>
+    {% block overlays %}{% endblock %}
     {% include 'footer.html' %}
     {% if session.get('user_id') %}
       {% include 'chatbox.html' %}

@@ -3,6 +3,11 @@ let pendingReportUserId = null;
 const csrfToken =
   document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+function updateAdminModalScrollLock() {
+  const anyOpen = document.querySelector('.admin-modal:not(.hidden)');
+  document.body.classList.toggle('overflow-hidden', Boolean(anyOpen));
+}
+
 function redirectToReportedView() {
   const params = new URLSearchParams(window.location.search || '');
   const currentPerPage = params.get('per_page') || '10';
@@ -152,24 +157,16 @@ function setupEventListeners() {
     });
   }
 
-  // Close modal when clicking outside
-  const modal = document.getElementById('user-modal');
-  if (modal) {
-    modal.addEventListener('click', function (e) {
-      if (e.target === this) {
+  document.querySelectorAll('.admin-modal-backdrop').forEach((backdrop) => {
+    backdrop.addEventListener('click', function () {
+      const modal = backdrop.closest('.admin-modal');
+      if (modal?.id === 'user-modal') {
         closeModal();
-      }
-    });
-  }
-
-  const reportModal = document.getElementById('report-modal');
-  if (reportModal) {
-    reportModal.addEventListener('click', function (e) {
-      if (e.target === this) {
+      } else if (modal?.id === 'report-modal') {
         closeReportReasonModal();
       }
     });
-  }
+  });
 
   const reportCancelBtn = document.getElementById('report-cancel');
   if (reportCancelBtn) {
@@ -243,6 +240,7 @@ function openReportReasonModal(userId) {
 
   if (reportModal) {
     reportModal.classList.remove('hidden');
+    updateAdminModalScrollLock();
   }
 }
 
@@ -251,6 +249,7 @@ function closeReportReasonModal() {
   const reportModal = document.getElementById('report-modal');
   if (reportModal) {
     reportModal.classList.add('hidden');
+    updateAdminModalScrollLock();
   }
 }
 
@@ -308,14 +307,13 @@ function viewUserDetails(userId) {
         <p class="text-sm font-medium text-slate-600">Joined</p>
         <p class="text-slate-900 mt-1">${user.createdAt}</p>
       </div>
-      
+      ${
+        user.role.toLowerCase() !== 'admin'
+          ? `
       <div>
         <p class="text-sm font-medium text-slate-600">Products Listed</p>
         <p class="text-slate-900 mt-1">${user.productCount}</p>
       </div>
-      ${
-        user.role.toLowerCase() !== 'admin'
-          ? `
       <div>
         <p class="text-sm font-medium text-slate-600">Recent Activity</p>
         <div id="user-activity-feed" class="activity-trace mt-2">
@@ -329,6 +327,7 @@ function viewUserDetails(userId) {
   `;
 
   modal.classList.remove('hidden');
+  updateAdminModalScrollLock();
   const activityFeed = document.getElementById('user-activity-feed');
   if (activityFeed) {
     fetchUserActivities(userId)
@@ -384,6 +383,7 @@ function viewUserDetails(userId) {
 function closeModal() {
   const modal = document.getElementById('user-modal');
   modal.classList.add('hidden');
+  updateAdminModalScrollLock();
 }
 
 function reportUser(userId) {

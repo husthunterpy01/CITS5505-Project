@@ -1,6 +1,11 @@
 const csrfToken =
 	document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+function updateAdminModalScrollLock() {
+	const anyOpen = document.querySelector('.admin-modal:not(.hidden)');
+	document.body.classList.toggle('overflow-hidden', Boolean(anyOpen));
+}
+
 function updatePostButtonState(activeBtn) {
 	document.querySelectorAll('.post-filter-btn').forEach(function (btn) {
 		btn.classList.remove('bg-blue-700', 'border-blue-700', 'text-white');
@@ -82,11 +87,13 @@ function openPostReportModal(productId) {
 		input.value = '';
 		hidden.value = productId;
 		document.getElementById('post-report-modal').classList.remove('hidden');
+		updateAdminModalScrollLock();
 	}
 }
 
 function closePostReportModal() {
 	document.getElementById('post-report-modal').classList.add('hidden');
+	updateAdminModalScrollLock();
 }
 
 function submitPostReport() {
@@ -188,10 +195,12 @@ function viewPostDetails(productId) {
 	`;
 
 	document.getElementById('post-modal').classList.remove('hidden');
+	updateAdminModalScrollLock();
 }
 
 function closePostModal() {
 	document.getElementById('post-modal').classList.add('hidden');
+	updateAdminModalScrollLock();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -207,12 +216,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		searchInput.addEventListener('keyup', applyPostFilters);
 	}
 
-	const modal = document.getElementById('post-modal');
-	if (modal) {
-		modal.addEventListener('click', function (e) {
-			if (e.target === modal) {
+	document.querySelectorAll('.admin-modal-backdrop').forEach(function (backdrop) {
+		backdrop.addEventListener('click', function () {
+			const modal = backdrop.closest('.admin-modal');
+			if (modal?.id === 'post-modal') {
 				closePostModal();
+			} else if (modal?.id === 'post-report-modal') {
+				closePostReportModal();
 			}
 		});
-	}
+	});
 });
