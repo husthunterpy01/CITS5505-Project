@@ -14,9 +14,23 @@
     </div>
 
     {% if products %}
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div id="favorites-grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {% for product in products %}
-      <article class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <article
+        class="favorite-card relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+        data-product-id="{{ product.product_id }}"
+      >
+        <button
+          type="button"
+          class="favorite-remove-btn absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-red-500 shadow-md ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+          title="Remove from favorites"
+          aria-label="Remove from favorites"
+          data-product-id="{{ product.product_id }}"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+            <path d="M12 21s-7.5-4.6-9.6-9.2C.7 8.2 2.7 4.5 6.3 4.5c2 0 3.4 1.1 4.2 2.5h0.9c0.9-1.4 2.3-2.5 4.3-2.5 3.5 0 5.6 3.7 3.9 7.3C19.5 16.4 12 21 12 21z"/>
+          </svg>
+        </button>
         <div class="aspect-[4/3] w-full overflow-hidden bg-slate-100">
           <img src="{{ product.image }}" alt="{{ product.title }}" class="h-full w-full object-cover" />
         </div>
@@ -40,6 +54,13 @@
         </div>
       </article>
       {% endfor %}
+    </div>
+    <div
+      id="favorites-empty-state"
+      class="hidden rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-slate-600"
+    >
+      <p class="text-lg font-semibold text-slate-700">No favorites yet</p>
+      <p class="mt-2 text-sm">Start browsing and click the heart icon to save listings.</p>
     </div>
     <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
@@ -100,4 +121,6 @@
     {% endif %}
   </div>
 </section>
+
+<script src="{{ url_for('static', filename='pages/FavoritesPage/favoritespage.js') }}" defer></script>
 {% endblock %}
