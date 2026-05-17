@@ -1,4 +1,5 @@
 from functools import update_wrapper
+import re
 
 from flask import flash, redirect, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -9,6 +10,19 @@ from app.service.logservice import LoggingService
 
 
 class AuthService:
+    _STUDENT_EMAIL_PATTERN = re.compile(r'^\d{8}@student\.uwa\.edu\.au$')
+
+    @staticmethod
+    def _is_uwa_email(email):
+        normalized = (email or '').strip().lower()
+        _, _, domain = normalized.partition('@')
+        return bool(domain) and (domain == 'uwa.edu.au' or domain.endswith('.uwa.edu.au'))
+
+    @staticmethod
+    def _is_student_uwa_email(email):
+        normalized = (email or '').strip().lower()
+        return bool(AuthService._STUDENT_EMAIL_PATTERN.fullmatch(normalized))
+
     @staticmethod
     def signin_user(email, password):
         """Validate credentials and return (user, error_message)."""
@@ -35,6 +49,8 @@ class AuthService:
 
         if not cleaned_first_name or not cleaned_last_name or not normalized_email or not password:
             return None, 'Please fill in all the fields.'
+        if not AuthService._is_student_uwa_email(normalized_email):
+            return None, 'Use UWA student email format: 8digits@student.uwa.edu.au.'
 
         existing_user = User.query.filter_by(email=normalized_email).first()
         if existing_user:

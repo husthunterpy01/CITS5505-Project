@@ -44,16 +44,16 @@ def seed_database(force_reset: bool = False):
 
         # UWA-style emails: students use @student.uwa.edu.au; staff admins use @uwa.edu.au
         user_seed_data = [
-            ("Alice", "Nguyen", "alice.nguyen@student.uwa.edu.au", "password123", "standard_user"),
-            ("Ben", "Lee", "ben.lee@student.uwa.edu.au", "password123", "standard_user"),
+            ("Alice", "Nguyen", "20000002@student.uwa.edu.au", "password123", "standard_user"),
+            ("Ben", "Lee", "20000003@student.uwa.edu.au", "password123", "standard_user"),
             ("Carol", "Tan", "carol.tan@uwa.edu.au", "admin123", "admin"),
-            ("David", "Wong", "david.wong@student.uwa.edu.au", "password123", "standard_user"),
-            ("Eva", "Lim", "eva.lim@student.uwa.edu.au", "password123", "standard_user"),
-            ("Farah", "Hassan", "farah.hassan@student.uwa.edu.au", "password123", "standard_user"),
-            ("George", "Tan", "george.tan@student.uwa.edu.au", "password123", "standard_user"),
-            ("Hannah", "Yeo", "hannah.yeo@student.uwa.edu.au", "password123", "standard_user"),
-            ("Ivan", "Koh", "ivan.koh@student.uwa.edu.au", "password123", "standard_user"),
-            ("Jasmine", "Teo", "jasmine.teo@student.uwa.edu.au", "password123", "standard_user"),
+            ("David", "Wong", "20000004@student.uwa.edu.au", "password123", "standard_user"),
+            ("Eva", "Lim", "20000005@student.uwa.edu.au", "password123", "standard_user"),
+            ("Farah", "Hassan", "20000006@student.uwa.edu.au", "password123", "standard_user"),
+            ("George", "Tan", "20000007@student.uwa.edu.au", "password123", "standard_user"),
+            ("Hannah", "Yeo", "20000008@student.uwa.edu.au", "password123", "standard_user"),
+            ("Ivan", "Koh", "20000009@student.uwa.edu.au", "password123", "standard_user"),
+            ("Jasmine", "Teo", "20000010@student.uwa.edu.au", "password123", "standard_user"),
             ("Nora", "Admin", "nora.admin@uwa.edu.au", "admin123", "admin"),
         ]
         

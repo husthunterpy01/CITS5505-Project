@@ -66,7 +66,7 @@ class TestSigninUser:
 @pytest.mark.usefixtures("flask_app_ctx")
 class TestSignupUser:
     def test_rejects_blank_fields(self):
-        user, err = AuthService.signup_user("", "Last", "eva.lim@student.uwa.edu.au", "pw")
+        user, err = AuthService.signup_user("", "Last", "22345678@student.uwa.edu.au", "pw")
         assert user is None
         assert err == "Please fill in all the fields."
 
@@ -75,9 +75,14 @@ class TestSignupUser:
         q.first.return_value = MagicMock()
         with patch("app.service.authservice.User.query") as uq:
             uq.filter_by.return_value = q
-            user, err = AuthService.signup_user("A", "B", "duplicate.user@student.uwa.edu.au", "pw")
+            user, err = AuthService.signup_user("A", "B", "27654321@student.uwa.edu.au", "pw")
         assert user is None
         assert err == "An account with that email already exists."
+
+    def test_rejects_non_student_uwa_email(self):
+        user, err = AuthService.signup_user("A", "B", "user@gmail.com", "pw")
+        assert user is None
+        assert err == "Use UWA student email format: 8digits@student.uwa.edu.au."
 
     def test_creates_user_and_commits_when_email_free(self):
         q = MagicMock()
@@ -95,7 +100,7 @@ class TestSignupUser:
             user, err = AuthService.signup_user(
                 "  Ada ",
                 " Lovelace ",
-                " Ada.Lovelace@student.uwa.edu.au ",
+                " 22344321@student.uwa.edu.au ",
                 "secret123",
             )
 
@@ -106,7 +111,7 @@ class TestSignupUser:
         log_action_mock.assert_called_once()
         UserCls.assert_called_once()
         kwargs = UserCls.call_args.kwargs
-        assert kwargs["email"] == "ada.lovelace@student.uwa.edu.au"
+        assert kwargs["email"] == "22344321@student.uwa.edu.au"
         assert kwargs["first_name"] == "Ada"
         assert kwargs["last_name"] == "Lovelace"
         assert kwargs["role"] == "standard_user"

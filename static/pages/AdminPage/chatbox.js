@@ -15,6 +15,8 @@
   let messageLoadTimeout = null;
   let allContacts = [];
   let pendingConversationStart = null;
+  let typingStopTimeout = null;
+  let typingStarted = false;
 
   function getCurrentUserId() {
     const root = document.getElementById('admin-chatbox');
@@ -238,6 +240,7 @@
 
     const chatboxPopup = document.getElementById('chatbox-popup');
     const chatboxBack = document.getElementById('chatbox-back');
+    // Toggle thread mode class so CSS can expand the active message panel.
     if (chatboxPopup) chatboxPopup.classList.add('chat-in-thread');
     if (chatboxBack) chatboxBack.classList.remove('hidden');
 
@@ -255,6 +258,61 @@
     if (messagesList && statusText) {
       messagesList.innerHTML = `<div class="text-xs text-slate-400 p-2">${statusText}</div>`;
     }
+    setTypingIndicatorVisible(panelPrefix, false);
+  }
+
+  function ensureTypingIndicator(panelPrefix) {
+    const container = document.getElementById(`${panelPrefix}-messages-container`);
+    if (!container) return null;
+    let indicator = container.querySelector('.chat-typing-indicator');
+    if (indicator) return indicator;
+    const inputArea = container.querySelector('.msger-inputarea');
+    indicator = document.createElement('div');
+    indicator.className = 'chat-typing-indicator hidden';
+    indicator.innerHTML = `<span>Someone is typing</span><span class="typing-dots"><i></i><i></i><i></i></span>`;
+    // Keep typing feedback just above the input row like a lightweight bubble.
+    if (inputArea) {
+      container.insertBefore(indicator, inputArea);
+    } else {
+      container.appendChild(indicator);
+    }
+    return indicator;
+  }
+
+  function setTypingIndicatorVisible(panelPrefix, visible) {
+    const indicator = ensureTypingIndicator(panelPrefix);
+    if (!indicator) return;
+    indicator.classList.toggle('hidden', !visible);
+  }
+
+  function activeThreadPanelPrefix() {
+    const adminsContainer = document.getElementById('admins-messages-container');
+    if (adminsContainer && !adminsContainer.classList.contains('hidden')) {
+      return 'admins';
+    }
+    return 'users';
+  }
+
+  function emitTypingState(active) {
+    if (!socket || !currentConversationId) return;
+    if (active) {
+      // Avoid noisy duplicate emits while user is continuously typing.
+      if (typingStarted) return;
+      typingStarted = true;
+      socket.emit('typing_start', { conversation_id: currentConversationId });
+      return;
+    }
+    if (!typingStarted) return;
+    typingStarted = false;
+    socket.emit('typing_stop', { conversation_id: currentConversationId });
+  }
+
+  function scheduleTypingStop() {
+    if (typingStopTimeout) clearTimeout(typingStopTimeout);
+    // Debounce typing-stop so the indicator does not flicker between keystrokes.
+    typingStopTimeout = setTimeout(() => {
+      emitTypingState(false);
+    }, 1200);
   }
 
   function createContactCard(conv, roleLabel) {
@@ -415,8 +473,13 @@
   }
 
   function openConversation(conversationId, productId, panelPrefix) {
+    if (typingStarted && socket && currentConversationId) {
+      socket.emit('typing_stop', { conversation_id: currentConversationId });
+      typingStarted = false;
+    }
     currentConversationId = conversationId;
     currentProductId = productId || null;
+    // Immediate status text improves perceived responsiveness while socket round-trip completes.
     showThreadPanel(panelPrefix, 'Loading messages...');
 
     if (socket) {
@@ -430,6 +493,7 @@
         socket.connect();
       }
       if (messageLoadTimeout) clearTimeout(messageLoadTimeout);
+      // Fallback guard in case socket server is slow or temporarily unreachable.
       messageLoadTimeout = setTimeout(() => {
         if (!messagesList) return;
         messagesList.innerHTML =
@@ -473,6 +537,7 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
+    // Message bubble layout supports read-state updates via data-message-id lookup.
     const el = document.createElement('div');
     el.className = `msg ${sideClass}`;
     if (message.message_id) {
@@ -488,6 +553,7 @@
                       <div class="msg-text">${safeText}</div>
                     </div>`;
     messagesList.appendChild(el);
+    // Keep latest message visible after render.
     messagesList.scrollTop = messagesList.scrollHeight;
   }
 
@@ -500,6 +566,7 @@
     );
     const usersContainer = document.getElementById('users-messages-container');
 
+    // Revert all thread-only UI states when user goes back to conversation list.
     if (chatboxPopup) chatboxPopup.classList.remove('chat-in-thread');
     if (chatboxBack) chatboxBack.classList.add('hidden');
     if (title) title.textContent = 'Chat';
@@ -514,6 +581,11 @@
     currentProductId = null;
     messagesList = null;
     pendingConversationStart = null;
+    if (typingStopTimeout) {
+      clearTimeout(typingStopTimeout);
+      typingStopTimeout = null;
+    }
+    emitTypingState(false);
     if (socket && socket.connected) {
       socket.emit('set_active_conversation', { conversation_id: null });
     }
@@ -724,6 +796,7 @@
     if (!input || !socket) return;
     const content = input.value.trim();
     if (!content || !currentConversationId) return;
+    emitTypingState(false);
 
     socket.emit('send_message', {
       conversation_id: currentConversationId,
@@ -749,9 +822,31 @@
     if (sendBtn) sendBtn.click();
   });
 
+  document.addEventListener('input', function (e) {
+    const target = e.target;
+    if (
+      !target ||
+      target.tagName !== 'INPUT' ||
+      !target.id ||
+      !target.id.endsWith('-message-input')
+    ) {
+      return;
+    }
+    if (!currentConversationId) return;
+    const value = target.value.trim();
+    if (!value) {
+      emitTypingState(false);
+      if (typingStopTimeout) clearTimeout(typingStopTimeout);
+      return;
+    }
+    emitTypingState(true);
+    scheduleTypingStop();
+  });
+
   if (socket) {
     socket.on('connect', () => {
       console.log('Chat socket connected:', socket.id);
+      // Restore the current thread on reconnect, otherwise refresh conversation list.
       if (currentConversationId) {
         socket.emit('set_active_conversation', {
           conversation_id: currentConversationId,
@@ -791,6 +886,7 @@
       if (!messages.length) {
         return;
       }
+      // History arrives oldest->newest from backend response mapping.
       messages.forEach((m) => appendMessageToList(m));
     });
 
@@ -799,6 +895,8 @@
         messagesList &&
         String(data.conversation_id) === String(currentConversationId)
       ) {
+        // Receiving a message naturally ends remote typing state for this thread.
+        setTypingIndicatorVisible(activeThreadPanelPrefix(), false);
         appendMessageToList(data);
       }
       requestConversations();
@@ -806,6 +904,28 @@
 
     socket.on('conversation_updated', (_data) => {
       requestConversations();
+    });
+
+    socket.on('typing_started', (data) => {
+      if (
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '') ||
+        data.sender_sid === socket.id
+      ) {
+        return;
+      }
+      setTypingIndicatorVisible(activeThreadPanelPrefix(), true);
+    });
+
+    socket.on('typing_stopped', (data) => {
+      if (
+        !data ||
+        String(data.conversation_id || '') !== String(currentConversationId || '') ||
+        data.sender_sid === socket.id
+      ) {
+        return;
+      }
+      setTypingIndicatorVisible(activeThreadPanelPrefix(), false);
     });
 
     socket.on('messages_read', (data) => {

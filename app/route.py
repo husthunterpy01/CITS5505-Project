@@ -151,6 +151,22 @@ def personal_profile_page():
             if last_name:
                 user_profile.last_name = last_name
             if email:
+                existing_email_user = User.query.filter(
+                    User.email == email,
+                    User.user_id != current_user_id,
+                ).first()
+                if existing_email_user:
+                    flash('An account with that email already exists.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
+                if user_profile.role != 'admin' and not AuthService._is_student_uwa_email(email):
+                    flash('Use UWA student email format: 8digits@student.uwa.edu.au.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
+                if user_profile.role == 'admin' and not AuthService._is_uwa_email(email):
+                    flash('Admin email must be a UWA address.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
                 user_profile.email = email
             LoggingService.log_action(
                 user_id=current_user_id,

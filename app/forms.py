@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+import re
 from flask_wtf.file import MultipleFileField
 from wtforms import (
     BooleanField,
@@ -61,4 +62,10 @@ class SignUpForm(FlaskForm):
         validators=[DataRequired(message='Please agree to the Terms of Service and Privacy Policy before signing up.')],
     )
     submit = SubmitField('Sign up')
+    _student_email_pattern = re.compile(r'^\d{8}@student\.uwa\.edu\.au$')
+
+    def validate_email(self, field):
+        normalized = (field.data or '').strip().lower()
+        if not self._student_email_pattern.fullmatch(normalized):
+            raise ValidationError('Use UWA student email format: 8digits@student.uwa.edu.au.')
 
