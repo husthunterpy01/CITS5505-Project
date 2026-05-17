@@ -31,10 +31,6 @@
                 <p class="text-lg font-semibold text-slate-800" id="profile-username">
                     Hello, {{ full_name or session.get('user_name') or 'Friend' }}
                 </p>
-                {% if user %}
-                <p class="mt-0.5 text-sm text-slate-600" id="profile-fullname">{{ full_name or 'Unnamed user' }}</p>
-                <p class="text-sm text-slate-500 truncate" id="profile-email">{{ user.email or 'No email on file' }}</p>
-                {% endif %}
             </div>
         </div>
         
@@ -367,40 +363,5 @@
 {% endif %}
 
 <script src="{{ url_for('static', filename='pages/ProfilePage/profilepage.js') }}"></script>
-<script>
-  (function () {
-    const firstNameInput = document.getElementById("first-name");
-    const lastNameInput = document.getElementById("last-name");
-    const emailInput = document.getElementById("email");
-    const avatarEl = document.getElementById("profile-avatar");
-    const greetingEl = document.getElementById("profile-username");
-    const fullNameEl = document.getElementById("profile-fullname");
-    const emailEl = document.getElementById("profile-email");
-
-    if (!firstNameInput || !lastNameInput) return;
-
-    const computeInitials = (firstName, lastName) => {
-      const first = (firstName || "").trim().charAt(0).toUpperCase();
-      const last = (lastName || "").trim().charAt(0).toUpperCase();
-      return (first + last) || "U";
-    };
-
-    const updatePreview = () => {
-      const firstName = firstNameInput.value;
-      const lastName = lastNameInput.value;
-      const fullName = `${firstName} ${lastName}`.trim();
-      const email = emailInput ? emailInput.value.trim() : "";
-
-      if (avatarEl) avatarEl.textContent = computeInitials(firstName, lastName);
-      if (greetingEl) greetingEl.textContent = `Hello, ${fullName || "Friend"}`;
-      if (fullNameEl) fullNameEl.textContent = fullName || "Unnamed user";
-      if (emailEl) emailEl.textContent = email || "No email on file";
-    };
-
-    firstNameInput.addEventListener("input", updatePreview);
-    lastNameInput.addEventListener("input", updatePreview);
-    if (emailInput) emailInput.addEventListener("input", updatePreview);
-  })();
-</script>
 
 {% endblock %}
