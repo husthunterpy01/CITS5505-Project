@@ -187,9 +187,18 @@
                                     <td class="px-4 py-3 text-slate-600">{{ product.created_at.strftime('%d %b') if product.created_at else '-' }}</td>
                                     <td class="px-4 py-3">
                                         <div class="flex gap-2 justify-center">
+                                            {% if product.status != 'sold' %}
                                             <a href="{{ url_for('main.edit_product_page', product_id=product.product_id) }}" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs font-semibold">
                                                 Edit ↗
                                             </a>
+                                            {% else %}
+                                            <span
+                                                class="px-3 py-1 rounded bg-slate-200 text-slate-400 text-xs font-semibold cursor-not-allowed"
+                                                title="Sold listings cannot be edited"
+                                            >
+                                                Edit ↗
+                                            </span>
+                                            {% endif %}
                                             {% if product.status != 'sold' %}
                                             <button
                                                 type="button"

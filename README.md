@@ -152,9 +152,20 @@ python -m app.seed --force-reset
 
 ## Testing running
 
+### Quick reference
+
+| Goal | Command |
+|------|---------|
+| Run all tests (unit + integration) | `python -m pytest -v` |
+| Run unit tests only | `python -m pytest tests/unit -v` |
+| Run Selenium integration tests only (headless) | `python -m pytest tests/integration -v` |
+| Run Selenium integration tests with a visible browser | `python -m pytest tests/integration -v --headful` |
+| Force headless even if env says otherwise | `python -m pytest tests/integration -v --headless` |
+| Run a single test | `python -m pytest tests/unit/test_auth_service.py::TestSignupUser -v` |
+
 ### Run all tests
 ```bash
-pytest
+python -m pytest -v
 ```
 
 ### Run unit tests only

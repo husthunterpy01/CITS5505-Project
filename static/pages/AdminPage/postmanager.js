@@ -1,3 +1,6 @@
+const csrfToken =
+	document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
 function updatePostButtonState(activeBtn) {
 	document.querySelectorAll('.post-filter-btn').forEach(function (btn) {
 		btn.classList.remove('bg-blue-700', 'border-blue-700', 'text-white');
@@ -45,6 +48,9 @@ function moderatePost(productId, action) {
 	const xhr = new XMLHttpRequest();
 	xhr.open('POST', '/admin/reports', true);
 	xhr.setRequestHeader('Content-Type', 'application/json');
+	if (csrfToken) {
+		xhr.setRequestHeader('X-CSRFToken', csrfToken);
+	}
 
 	xhr.onload = function () {
 		try {
@@ -101,6 +107,9 @@ function submitPostReport() {
 	const xhr = new XMLHttpRequest();
 	xhr.open('POST', '/admin/reports', true);
 	xhr.setRequestHeader('Content-Type', 'application/json');
+	if (csrfToken) {
+		xhr.setRequestHeader('X-CSRFToken', csrfToken);
+	}
 
 	xhr.onload = function () {
 		try {
@@ -121,7 +130,7 @@ function submitPostReport() {
 
 	xhr.send(JSON.stringify({
 		action: 'flag',
-		product_id: productId,
+		product_id: Number(productId),
 		reason: reason
 	}));
 }

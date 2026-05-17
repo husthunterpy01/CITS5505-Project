@@ -1,5 +1,7 @@
 let usersData = [];
 let pendingReportUserId = null;
+const csrfToken =
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 function redirectToReportedView() {
   const params = new URLSearchParams(window.location.search || '');
@@ -60,6 +62,9 @@ function updateUserReportStatus(userId, action, reason) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/admin/users', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRFToken', csrfToken);
+    }
 
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -307,11 +312,6 @@ function viewUserDetails(userId) {
       <div>
         <p class="text-sm font-medium text-slate-600">Products Listed</p>
         <p class="text-slate-900 mt-1">${user.productCount}</p>
-      </div>
-      
-      <div>
-        <p class="text-sm font-medium text-slate-600">Notes</p>
-        <p class="text-slate-900 mt-1 text-sm bg-slate-50 p-2 rounded">${user.review}</p>
       </div>
       ${
         user.role.toLowerCase() !== 'admin'

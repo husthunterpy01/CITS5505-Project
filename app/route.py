@@ -1113,13 +1113,10 @@ def admin_reports_page():
         admin_user_id = session.get('user_id')
         if action == 'approve':
             target_product.is_legit = True
-            # clear previous review when approving
-            target_product.review = None
         elif action == 'flag':
             if not reason:
                 return jsonify({'ok': False, 'message': 'Reason is required when flagging a post.'}), 400
             target_product.is_legit = False
-            target_product.review = reason
             created_notification = NotificationService.create_notification(
                 recipient_id=target_product.seller_id,
                 notification_type='post_banned',
@@ -1333,6 +1330,10 @@ def edit_product_page(product_id):
 
     if product.seller_id != session.get('user_id'):
         flash('You do not have permission to edit this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    if product.status == 'sold':
+        flash('This product has been marked as sold and can no longer be edited.', 'error')
         return redirect(url_for('main.personal_profile_page'))
 
     form = CreateProductForm()
