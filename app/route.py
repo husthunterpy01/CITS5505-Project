@@ -615,8 +615,7 @@ def api_products_search():
         },
         'products': items,
     }
-    if (q or category_id is not None or min_price is not None or max_price is not None or user_coords or distance_km is not None) and not items:
-        payload['message'] = 'No products matched your search.'
+    # Empty-state message is rendered by the browse page itself; no extra banner needed here.
     return jsonify(payload)
 
 
