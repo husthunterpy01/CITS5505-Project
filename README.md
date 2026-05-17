@@ -127,6 +127,29 @@ python run.py
 
 The app runs at: `http://127.0.0.1:5000`
 
+### Seeded mock users
+
+`app/seed.py` populates the database with the following accounts for local testing and Selenium runs. Student emails follow the `8digits@student.uwa.edu.au` format; admin emails use `@uwa.edu.au`.
+
+| Role          | Name           | Email                              | Password      |
+|---------------|----------------|------------------------------------|---------------|
+| Standard user | Alice Nguyen   | `20000002@student.uwa.edu.au`      | `password123` |
+| Standard user | Ben Lee        | `20000003@student.uwa.edu.au`      | `password123` |
+| Admin         | Carol Tan      | `carol.tan@uwa.edu.au`             | `admin123`    |
+| Standard user | David Wong     | `20000004@student.uwa.edu.au`      | `password123` |
+| Standard user | Eva Lim        | `20000005@student.uwa.edu.au`      | `password123` |
+| Standard user | Farah Hassan   | `20000006@student.uwa.edu.au`      | `password123` |
+| Standard user | George Tan     | `20000007@student.uwa.edu.au`      | `password123` |
+| Standard user | Hannah Yeo     | `20000008@student.uwa.edu.au`      | `password123` |
+| Standard user | Ivan Koh       | `20000009@student.uwa.edu.au`      | `password123` |
+| Standard user | Jasmine Teo    | `20000010@student.uwa.edu.au`      | `password123` |
+| Admin         | Nora Admin     | `nora.admin@uwa.edu.au`            | `admin123`    |
+
+To reset and reseed the database:
+```bash
+python -m app.seed --force-reset
+```
+
 ## Testing running
 
 ### Run all tests
