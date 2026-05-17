@@ -148,6 +148,13 @@ const setValue = (id, value) => {
   }
 };
 
+// Only override form values when the API actually returned content,
+// so server-rendered DB values are never blanked out.
+const setValueIfPresent = (id, value) => {
+  if (value === undefined || value === null || value === '') return;
+  setValue(id, value);
+};
+
 // Define placeholder for charts for new users with no data
 const toggleChartPlaceholder = (canvasId, placeholderId, showPlaceholder) => {
   const canvas = document.getElementById(canvasId);
@@ -308,9 +315,9 @@ const drawPieFallback = (canvas, labels, values) => {
 
 // Pour data into profile page and render charts
 const renderProfile = (profile) => {
-  setValue('first-name', profile.user.firstName);
-  setValue('last-name', profile.user.lastName);
-  setValue('email', profile.user.email);
+  setValueIfPresent('first-name', profile.user.firstName);
+  setValueIfPresent('last-name', profile.user.lastName);
+  setValueIfPresent('email', profile.user.email);
 
   setText('stat-total-transactions', profile.user.stats.totalTransactions);
   setText(

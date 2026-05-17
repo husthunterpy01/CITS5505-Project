@@ -334,6 +334,7 @@ class ChatService:
                     .order_by(Message.sent_at.desc()) \
                     .first()
 
+            last_message_sent_at = last_msg.sent_at if last_msg and last_msg.sent_at else None
             out.append({
                 'conversation_id': shared_conv.conversation_id if shared_conv else None,
                 'product_id': shared_conv.product_id if shared_conv else None,
@@ -345,8 +346,15 @@ class ChatService:
                     'role': contact.role,
                 },
                 'last_message_preview': last_msg.content[:30] if last_msg else None,
+                'last_message_sent_at': last_message_sent_at.isoformat() if last_message_sent_at else None,
                 'has_history': bool(last_msg),
             })
+
+        out.sort(
+            key=lambda item: f"{(item.get('other_participant') or {}).get('first_name', '')} {(item.get('other_participant') or {}).get('last_name', '')}".strip().lower(),
+        )
+        out.sort(key=lambda item: item.get('last_message_sent_at') or '', reverse=True)
+        out.sort(key=lambda item: item.get('has_history', False), reverse=True)
 
         return {'ok': True, 'conversations': out}
 

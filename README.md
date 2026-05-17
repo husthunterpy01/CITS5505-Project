@@ -15,7 +15,6 @@ This project is proposed by the following members:
 |-----------|--------------|---------------|
 | 24715379  | Martin Dang  | [husthunterpy01](https://github.com/husthunterpy01) |
 | 25054008  | Adarsh Sharma   | [aspoudel](https://github.com/aspoudel)   |
-| 21941306  | Daniel Collier  | [nathanielcollenstein-cmd](https://github.com/nathanielcollenstein-cmd) |
 | 24819852 |Roshan Shanker | [roshss2508](https://github.com/Roshss2508) |
 
 ## Technologies
@@ -128,28 +127,106 @@ python run.py
 
 The app runs at: `http://127.0.0.1:5000`
 
+### Seeded mock users
+
+`app/seed.py` populates the database with the following accounts for local testing and Selenium runs. Student emails follow the `8digits@student.uwa.edu.au` format; admin emails use `@uwa.edu.au`.
+
+| Role          | Name           | Email                              | Password      |
+|---------------|----------------|------------------------------------|---------------|
+| Standard user | Alice Nguyen   | `20000002@student.uwa.edu.au`      | `password123` |
+| Standard user | Ben Lee        | `20000003@student.uwa.edu.au`      | `password123` |
+| Admin         | Carol Tan      | `carol.tan@uwa.edu.au`             | `admin123`    |
+| Standard user | David Wong     | `20000004@student.uwa.edu.au`      | `password123` |
+| Standard user | Eva Lim        | `20000005@student.uwa.edu.au`      | `password123` |
+| Standard user | Farah Hassan   | `20000006@student.uwa.edu.au`      | `password123` |
+| Standard user | George Tan     | `20000007@student.uwa.edu.au`      | `password123` |
+| Standard user | Hannah Yeo     | `20000008@student.uwa.edu.au`      | `password123` |
+| Standard user | Ivan Koh       | `20000009@student.uwa.edu.au`      | `password123` |
+| Standard user | Jasmine Teo    | `20000010@student.uwa.edu.au`      | `password123` |
+| Admin         | Nora Admin     | `nora.admin@uwa.edu.au`            | `admin123`    |
+
+To reset and reseed the database:
+```bash
+python -m app.seed --force-reset
+```
+
 ## Testing running
+
+### Quick reference
+
+| Goal | Command |
+|------|---------|
+| Run all tests (unit + integration) | `python -m pytest -v` |
+| Run unit tests only | `python -m pytest tests/unit -v` |
+| Run Selenium integration tests only (headless) | `python -m pytest tests/integration -v` |
+| Run Selenium integration tests with a visible browser | `python -m pytest tests/integration -v --headful` |
+| Force headless even if env says otherwise | `python -m pytest tests/integration -v --headless` |
+| Run a single test | `python -m pytest tests/unit/test_auth_service.py::TestSignupUser -v` |
 
 ### Run all tests
 ```bash
-pytest
+python -m pytest -v
 ```
 
 ### Run unit tests only
 ```bash
-pytest tests/unit -q
+python -m pytest tests/unit -v
 ```
 
 ### Run Selenium integration tests only
 ```bash
-pytest tests/integration -q
+python -m pytest tests/integration -v
+```
+
+By default, Selenium runs **headless** (no visible browser window).
+
+#### Headful vs Headless
+
+Selenium mode can be controlled via pytest CLI flags or an environment variable.
+
+**Option A — pytest CLI flags (preferred):**
+```bash
+# Default (headless)
+python -m pytest tests/integration -v
+
+# Watch the browser (headful)
+python -m pytest tests/integration -v --headful
+
+# Force headless (overrides --headful and env)
+python -m pytest tests/integration -v --headless
+```
+
+**Option B — Environment variable:**
+```powershell
+# PowerShell - run headful
+$env:SELENIUM_HEADLESS="0"
+python -m pytest tests/integration -v
+
+# PowerShell - back to headless
+Remove-Item Env:SELENIUM_HEADLESS
+```
+
+```bash
+# Mac/Linux - run headful
+SELENIUM_HEADLESS=0 python -m pytest tests/integration -v
+```
+
+Priority order (highest first): `--headless` → `--headful` → `SELENIUM_HEADLESS` env → default headless.
+
+#### Step delay (visual pacing)
+
+When running headful, each Selenium action pauses briefly so you can follow along. Tune via `SELENIUM_STEP_DELAY` (seconds):
+
+```powershell
+# Slow it right down to 2s per step
+$env:SELENIUM_STEP_DELAY="2"
+python -m pytest tests/integration -v --headful
+
+# Speed it up for CI (no pauses)
+$env:SELENIUM_STEP_DELAY="0"
+python -m pytest tests/integration -v
 ```
 
 Notes:
 - Selenium tests automatically start a temporary live server and test database via `tests/integration/conftest.py`.
 - You do **not** need to manually run `python run.py` before Selenium tests.
-- To run Selenium with visible browser (not headless) on PowerShell:
-  ```powershell
-  $env:SELENIUM_HEADLESS="0"
-  pytest tests/integration -q
-  ```

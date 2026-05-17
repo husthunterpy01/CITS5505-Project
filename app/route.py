@@ -151,6 +151,22 @@ def personal_profile_page():
             if last_name:
                 user_profile.last_name = last_name
             if email:
+                existing_email_user = User.query.filter(
+                    User.email == email,
+                    User.user_id != current_user_id,
+                ).first()
+                if existing_email_user:
+                    flash('An account with that email already exists.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
+                if user_profile.role != 'admin' and not AuthService._is_student_uwa_email(email):
+                    flash('Use UWA student email format: 8digits@student.uwa.edu.au.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
+                if user_profile.role == 'admin' and not AuthService._is_uwa_email(email):
+                    flash('Admin email must be a UWA address.', 'error')
+                    return redirect(url_for('main.personal_profile_page'))
+
                 user_profile.email = email
             LoggingService.log_action(
                 user_id=current_user_id,
@@ -599,8 +615,7 @@ def api_products_search():
         },
         'products': items,
     }
-    if (q or category_id is not None or min_price is not None or max_price is not None or user_coords or distance_km is not None) and not items:
-        payload['message'] = 'No products matched your search.'
+    # Empty-state message is rendered by the browse page itself; no extra banner needed here.
     return jsonify(payload)
 
 
@@ -1098,13 +1113,10 @@ def admin_reports_page():
         admin_user_id = session.get('user_id')
         if action == 'approve':
             target_product.is_legit = True
-            # clear previous review when approving
-            target_product.review = None
         elif action == 'flag':
             if not reason:
                 return jsonify({'ok': False, 'message': 'Reason is required when flagging a post.'}), 400
             target_product.is_legit = False
-            target_product.review = reason
             created_notification = NotificationService.create_notification(
                 recipient_id=target_product.seller_id,
                 notification_type='post_banned',
@@ -1318,6 +1330,10 @@ def edit_product_page(product_id):
 
     if product.seller_id != session.get('user_id'):
         flash('You do not have permission to edit this listing.', 'error')
+        return redirect(url_for('main.personal_profile_page'))
+
+    if product.status == 'sold':
+        flash('This product has been marked as sold and can no longer be edited.', 'error')
         return redirect(url_for('main.personal_profile_page'))
 
     form = CreateProductForm()

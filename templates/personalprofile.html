@@ -7,6 +7,10 @@
 <section class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <!-- Avatar handling -->
+        {% set first_initial = (user.first_name[:1] if user and user.first_name else '') %}
+        {% set last_initial = (user.last_name[:1] if user and user.last_name else '') %}
+        {% set initials = (first_initial ~ last_initial)|upper %}
+        {% set full_name = ((user.first_name or '') ~ ' ' ~ (user.last_name or ''))|trim %}
         <div class="mb-5 flex items-center gap-4">
             {% if avatar_url %}
             <img
@@ -15,18 +19,19 @@
                 class="h-16 w-16 rounded-full border border-slate-300 bg-slate-50 object-cover"
             >
             {% else %}
-            <div class="flex h-16 w-16 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-slate-500">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                </svg>
+            <div
+                id="profile-avatar"
+                class="flex h-16 w-16 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-xl font-bold uppercase text-blue-700"
+                aria-label="Profile initials"
+            >
+                {{ initials or 'U' }}
             </div>
             {% endif %}
-            {% set header_name = session.get('user_name') %}
-            {% if header_name or username %}
-            <p class="text-lg font-semibold text-slate-700" id="profile-username">Hello, {{ header_name or username }}</p>
-            {% else %}
-            <p class="text-sm text-slate-600" id="profile-username">Invalid User</p>
-            {% endif %}
+            <div class="min-w-0">
+                <p class="text-lg font-semibold text-slate-800" id="profile-username">
+                    Hello, {{ full_name or session.get('user_name') or 'Friend' }}
+                </p>
+            </div>
         </div>
         
         <!-- Profile tab -->
@@ -182,9 +187,18 @@
                                     <td class="px-4 py-3 text-slate-600">{{ product.created_at.strftime('%d %b') if product.created_at else '-' }}</td>
                                     <td class="px-4 py-3">
                                         <div class="flex gap-2 justify-center">
+                                            {% if product.status != 'sold' %}
                                             <a href="{{ url_for('main.edit_product_page', product_id=product.product_id) }}" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs font-semibold">
                                                 Edit ↗
                                             </a>
+                                            {% else %}
+                                            <span
+                                                class="px-3 py-1 rounded bg-slate-200 text-slate-400 text-xs font-semibold cursor-not-allowed"
+                                                title="Sold listings cannot be edited"
+                                            >
+                                                Edit ↗
+                                            </span>
+                                            {% endif %}
                                             {% if product.status != 'sold' %}
                                             <button
                                                 type="button"
@@ -358,5 +372,4 @@
 {% endif %}
 
 <script src="{{ url_for('static', filename='pages/ProfilePage/profilepage.js') }}"></script>
-
 {% endblock %}
